@@ -7,7 +7,8 @@
     "normalConvention": "OpenGL +Y",
     "sRGB": [
       "baseColor"
-    ]
+    ],
+    "color": "#b8a58d"
   },
   "darkwood": {
     "baseColor": "assets/wood-albedo.jpg",
@@ -17,7 +18,8 @@
     "normalConvention": "OpenGL +Y",
     "sRGB": [
       "baseColor"
-    ]
+    ],
+    "color": "#695b47"
   },
   "stone": {
     "baseColor": "assets/stone-albedo.jpg",
@@ -27,7 +29,8 @@
     "normalConvention": "OpenGL +Y",
     "sRGB": [
       "baseColor"
-    ]
+    ],
+    "color": "#b3b5a9"
   },
   "roof": {
     "baseColor": "assets/roof-albedo.jpg",
@@ -37,7 +40,8 @@
     "normalConvention": "OpenGL +Y",
     "sRGB": [
       "baseColor"
-    ]
+    ],
+    "color": "#8e9894"
   },
   "thatch": {
     "baseColor": "assets/thatch-albedo.jpg",
@@ -47,7 +51,8 @@
     "normalConvention": "OpenGL +Y",
     "sRGB": [
       "baseColor"
-    ]
+    ],
+    "color": "#c3b391"
   },
   "bark": {
     "baseColor": "assets/bark-albedo.jpg",
@@ -57,7 +62,8 @@
     "normalConvention": "OpenGL +Y",
     "sRGB": [
       "baseColor"
-    ]
+    ],
+    "color": "#b5a590"
   },
   "soil": {
     "baseColor": "assets/pbr/Ground048-Color.jpg",
@@ -68,7 +74,8 @@
     "sRGB": [
       "baseColor"
     ],
-    "terrainTileMetres": 6.666666666666667
+    "terrainTileMetres": 1.8461538461538463,
+    "color": "#b9b8a6"
   },
   "leaf": {
     "baseColor": "assets/cedar-spray.png",
@@ -87,22 +94,26 @@
     "wind": "reimplement per engine"
   },
   "moss": {
-    "baseColor": "assets/pbr/Moss002-Color.jpg",
-    "normal": "assets/pbr/Moss002-NormalGL.jpg",
-    "roughness": "assets/pbr/Moss002-Roughness.jpg",
-    "terrainTileMetres": 6.666666666666667,
+    "baseColor": "assets/botanical/grass-ground.jpg",
+    "normal": "assets/pbr/Ground103-NormalGL.jpg",
+    "roughness": "assets/pbr/Ground103-Roughness.jpg",
+    "terrainTileMetres": 4.615384615384615,
     "normalConvention": "OpenGL +Y",
     "sRGB": [
       "baseColor"
-    ]
+    ],
+    "color": "#e3dfc2"
   },
   "paper": {
     "color": "#beb49c",
     "roughness": 0.92
   },
   "vermilion": {
-    "color": "#993e2c",
-    "roughness": 0.83
+    "color": "#b95d43",
+    "roughness": 0.83,
+    "baseColor": "assets/wood-albedo.jpg",
+    "normal": "assets/wood-normal.png",
+    "normalScale": 0.11
   },
   "metal": {
     "color": "#727e7d",
@@ -116,5 +127,55 @@
     "clearcoat": 0.35,
     "envMapIntensity": 0.25,
     "reimplement": "normal-scroll + environment reflections"
+  },
+  "photobark": {
+    "baseColor": "assets/botanical/pine-bark-Color.jpg",
+    "normal": "assets/botanical/pine-bark-NormalGL.jpg",
+    "roughness": "assets/botanical/pine-bark-Roughness.jpg",
+    "repeat": [
+      1,
+      3
+    ],
+    "normalConvention": "OpenGL +Y",
+    "sRGB": [
+      "baseColor"
+    ],
+    "color": "#a69b87"
+  },
+  "pine-leaves": {
+    "baseColor": "assets/botanical/pine.png",
+    "doubleSided": true,
+    "alphaMode": "MASK",
+    "alphaCutoff": 0.35,
+    "roughness": 1,
+    "wind": "reimplement per engine",
+    "license": "MIT / Daniel Greenheck",
+    "color": "#a0ad8c"
+  },
+  "oak-leaves": {
+    "baseColor": "assets/botanical/oak.png",
+    "doubleSided": true,
+    "alphaMode": "MASK",
+    "alphaCutoff": 0.35,
+    "roughness": 1,
+    "wind": "reimplement per engine",
+    "license": "MIT / Daniel Greenheck",
+    "color": "#a5b082"
+  },
+  "fern": {
+    "color": "#667d47",
+    "roughness": 1,
+    "doubleSided": true
+  },
+  "glass": {
+    "color": "#283a39",
+    "roughness": 0.22,
+    "metallic": 0.2
+  },
+  "plaster": {
+    "color": "#aaa38c",
+    "roughness": 1,
+    "normal": "assets/stone-normal.png",
+    "normalScale": 0.08
   }
 }

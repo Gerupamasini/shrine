@@ -2,7 +2,7 @@
 
 ## 共有データ
 
-- `public/assets/models/*.glb`：独自制作モデル。メートル・Y-up。原本は`tools/build-models.mjs`。Blenderのファイルを原本としているとは主張しない。
+- `public/assets/models/*.glb`：建築・小物は独自制作、樹木はMITのEZ Tree派生。メートル・Y-up。原本は`tools/build-models.mjs`と`tools/build-trees.mjs`。Blenderのファイルを原本としているとは主張しない。
 - `public/assets/*-{albedo,normal,roughness}.*`：独立したオリジナルPBR画像。
 - `public/assets/pbr/`：外部PBR。`ASSET_CREDITS.md`と同梱ライセンスを保持。
 - `public/assets/venice_sunset_1k.hdr`：CC0の環境照明。背景は日本の景観を保つため動的な空を使用する。
@@ -10,7 +10,7 @@
 - `public/world/scene.json`：固定シード、全配置、200段の寸法・位置、水田区画、時刻、負荷予算。
 - `heightmap.r16`：ヘッダーなし、513×513、uint16 little endian、row-major。
 - `heightmap.png`：同じ16-bit値を持つ確認用PNG。8-bitへ変換しない。
-- `surface-mask.png`：RGB。R=土/草、G=山地/岩、B=参道。3つの重みを必要に応じて正規化する。写真による植生分布の測量データではない。
+- `surface-mask.png`：RGB。R=低地の土/草、G=森林斜面、B=参道/境内。3つの重みを必要に応じて正規化する。写真による植生分布の測量データではない。
 - `materials.json`：モデル内の材質名と外部テクスチャ・色・パラメータの対応。
 
 ## 座標
@@ -42,4 +42,13 @@ LOD0/1/2は別GLB。LODGroupを作り、元の距離を画面占有率へ調整�
 
 Sky、ACES露出、太陽・環境光、霧、葉の風、水面法線スクロール、Web Audioの距離減衰、Rapierの歩行、UIをそのまま移植しない。JSONの環境パラメータを基準にUnity側で調整する。HDRIと太陽の二重照明に注意。現在は天文学的な日時計算ではなく、17〜19時の美術調整である。
 
-高品質な実樹木、風化した神社の写真モデル、実録ヒグラシは未導入。ライセンスが検証できた素材に差し替える場合、材質名とモデルの接地ピボットを保ち、GLB寸法・衝突サイズ・負荷予算を再検証する。
+樹木はEZ Treeの3D分岐と外部の葉・樹皮画像。スギ・ヒノキの正確な樹種モデル、風化した神社の写真モデル、実録ヒグラシは未導入。ライセンスが検証できた素材に差し替える場合、材質名とモデルの接地ピボットを保ち、GLB寸法・衝突サイズ・負荷予算を再検証する。
+
+## 再構築版の追加データ
+
+- 地形は下流方向へ下がる川、水平な56区画の水田、水田より1.15m高い宅地を先に決めてから造成。`tools/generate_world.py`が原本。
+- 家屋・納屋・神社の`-low.glb`は建築用LOD。Three.js標準では75mで切替。
+- 近景の樹木は32m、中景105m、遠景410mの3段階。大きさと視野角でUnityのLODGroup閾値を調整。
+- `assets/botanical/*-impostor.png`は遠景専用。元の3D形状は同梱GLB。`impostors.json`にベイク時の寸法。UnityではSpeedTree相当のビルボードや別のインポスターへ置換可能。
+- 葉はalpha clip 0.35、両面。樹皮は法線・roughness・色を別画像で保持。MIT本文と出典を一緒に移植する。
+- 遠景樹冠11,000本の位置・回転・スケール・線形RGBは`public/world/canopy.json`。原本は`tools/generate-canopy.mjs`。Three.jsはこのJSONを読み込むため、Unityへも同じ配置を移せる。遠景用の平面は1×1m、原点が底辺中央、3枚をY軸回転0/60/120度で交差させる。近づいたときの立体モデルへの切替は遠景樹冠では未実装。

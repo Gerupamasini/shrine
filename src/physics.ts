@@ -68,6 +68,9 @@ export class Walker {
     }
     box(0, -0.15, 2.5, 2.7, 0.15, 2.5);
     box(0, 37.85, -129, 24, 0.15, 24);
+    const bridgeX = 83 + 9 * Math.sin(115 * 0.025),
+      bridgeY = terrain.sample(bridgeX + 6, 115) + 0.15;
+    box(bridgeX, bridgeY, 115, 5, 0.15, 1.5);
     // Physical rail at the lookout edge, without sealing the view.
     box(21, 38.55, -106, 3.5, 0.55, 0.1);
     for (const p of data.objects) {
@@ -83,7 +86,13 @@ export class Walker {
         );
       } else {
         const h = p.collider.halfExtents ?? [4, 3, 3];
-        box(x, y + h[1] * s, z, h[0] * s, h[1] * s, h[2] * s);
+        const c = box(x, y + h[1] * s, z, h[0] * s, h[1] * s, h[2] * s);
+        c.setRotation({
+          x: 0,
+          y: Math.sin(p.rotation[1] / 2),
+          z: 0,
+          w: Math.cos(p.rotation[1] / 2),
+        });
       }
     }
     // Torii pillars; lantern bases and shrine water basin.

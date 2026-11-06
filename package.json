@@ -8,7 +8,7 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview --host 0.0.0.0",
     "test": "node tests/world.test.mjs",
-    "assets": "python tools/generate_world.py && python tools/generate_foliage.py && python tools/generate_audio.py && node tools/build-models.mjs && python tools/catalog-assets.py",
+    "assets": "python tools/generate_world.py && python tools/generate_foliage.py && python tools/generate_audio.py && node tools/build-models.mjs && node tools/build-trees.mjs && node tools/generate-canopy.mjs && python tools/catalog-assets.py",
     "test:browser": "playwright test",
     "build:pages": "tsc --noEmit && vite build --base=/shrine/"
   },

@@ -67,5 +67,47 @@
     "sourceSha256": "0e72ed46b5316cb5fb67fc81ff85b024a09146fd89ef3811a8d2299647ada118",
     "target": "assets/venice_sunset_1k.hdr",
     "targetSha256": "0e72ed46b5316cb5fb67fc81ff85b024a09146fd89ef3811a8d2299647ada118"
+  },
+  {
+    "target": "assets/botanical/pine.png",
+    "url": "https://raw.githubusercontent.com/dgreenheck/ez-tree/75b02ff9155c765441fce42862dd24a4efa39777/src/lib/assets/leaves/pine_color.png",
+    "sourceSha256": "88be36a2387554ac4b7c7d1549eae454a37ad896e8e33a7d6ae5956bd169ab08",
+    "targetSha256": "88be36a2387554ac4b7c7d1549eae454a37ad896e8e33a7d6ae5956bd169ab08"
+  },
+  {
+    "target": "assets/botanical/oak.png",
+    "url": "https://raw.githubusercontent.com/dgreenheck/ez-tree/75b02ff9155c765441fce42862dd24a4efa39777/src/lib/assets/leaves/oak_color.png",
+    "sourceSha256": "24451223cf396d22910a4932b8bb996a7274e63d81e24128c96a430ab67822b1",
+    "targetSha256": "24451223cf396d22910a4932b8bb996a7274e63d81e24128c96a430ab67822b1"
+  },
+  {
+    "target": "assets/botanical/ash.png",
+    "url": "https://raw.githubusercontent.com/dgreenheck/ez-tree/75b02ff9155c765441fce42862dd24a4efa39777/src/lib/assets/leaves/ash_color.png",
+    "sourceSha256": "5ec987db3829a839856c32c79b18a33a78f209e911cad55c65abfb77f30e2d29",
+    "targetSha256": "5ec987db3829a839856c32c79b18a33a78f209e911cad55c65abfb77f30e2d29"
+  },
+  {
+    "target": "assets/botanical/pine-bark-Color.jpg",
+    "url": "https://raw.githubusercontent.com/dgreenheck/ez-tree/75b02ff9155c765441fce42862dd24a4efa39777/src/lib/assets/bark/pine_color_1k.jpg",
+    "sourceSha256": "01389d2297e901a583d3d3f824c829689fce8afcffcb0eaabcb666688a781e70",
+    "targetSha256": "01389d2297e901a583d3d3f824c829689fce8afcffcb0eaabcb666688a781e70"
+  },
+  {
+    "target": "assets/botanical/pine-bark-NormalGL.jpg",
+    "url": "https://raw.githubusercontent.com/dgreenheck/ez-tree/75b02ff9155c765441fce42862dd24a4efa39777/src/lib/assets/bark/pine_normal_1k.jpg",
+    "sourceSha256": "f60be6b239e2a8aeb63dfb78d62a88c6ee05b241d78b69c197ff429eefb080d3",
+    "targetSha256": "f60be6b239e2a8aeb63dfb78d62a88c6ee05b241d78b69c197ff429eefb080d3"
+  },
+  {
+    "target": "assets/botanical/pine-bark-Roughness.jpg",
+    "url": "https://raw.githubusercontent.com/dgreenheck/ez-tree/75b02ff9155c765441fce42862dd24a4efa39777/src/lib/assets/bark/pine_roughness_1k.jpg",
+    "sourceSha256": "85b9fa99b700bbb629c90cee5deeebec78fef7cd40443aa361f5edb090fd3341",
+    "targetSha256": "85b9fa99b700bbb629c90cee5deeebec78fef7cd40443aa361f5edb090fd3341"
+  },
+  {
+    "target": "assets/botanical/grass-ground.jpg",
+    "url": "https://raw.githubusercontent.com/dgreenheck/ez-tree/75b02ff9155c765441fce42862dd24a4efa39777/src/app/public/grass.jpg",
+    "sourceSha256": "632d94c4225546aa57db7b75b3f6819c4cc95343b4b7add5ada44688f8722942",
+    "targetSha256": "632d94c4225546aa57db7b75b3f6819c4cc95343b4b7add5ada44688f8722942"
   }
 ]

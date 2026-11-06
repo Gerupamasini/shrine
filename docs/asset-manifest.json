@@ -36,6 +36,78 @@
     "origin": "original"
   },
   {
+    "file": "assets/botanical/EZ-TREE-LICENSE.txt",
+    "bytes": 1073,
+    "sha256": "20e4afadfb10c67952b3d73cd2982d21d165ab4ae82b0dd9e4d6f2166ee349b6",
+    "origin": "dgreenheck/ez-tree (MIT; modified generator and botanical textures)"
+  },
+  {
+    "file": "assets/botanical/LICENSE.md",
+    "bytes": 1072,
+    "sha256": "f934fd3e320c1638dc88852c28cd9f1c96f1614acf27502ac6df22bab27d556e",
+    "origin": "dgreenheck/ez-tree (MIT; modified generator and botanical textures)"
+  },
+  {
+    "file": "assets/botanical/ash.png",
+    "bytes": 181423,
+    "sha256": "5ec987db3829a839856c32c79b18a33a78f209e911cad55c65abfb77f30e2d29",
+    "origin": "dgreenheck/ez-tree (MIT; modified generator and botanical textures)"
+  },
+  {
+    "file": "assets/botanical/broadleaf-impostor.png",
+    "bytes": 449923,
+    "sha256": "a950044e432acc45cadee4cef96ad774ceb1a477eb294a3796f6367399f2e3ae",
+    "origin": "dgreenheck/ez-tree (MIT; modified generator and botanical textures)"
+  },
+  {
+    "file": "assets/botanical/cedar0-impostor.png",
+    "bytes": 381539,
+    "sha256": "b87916c0d7fbb77dccd48d017a69a80812e8afe268986da7034e1579d6f70747",
+    "origin": "dgreenheck/ez-tree (MIT; modified generator and botanical textures)"
+  },
+  {
+    "file": "assets/botanical/grass-ground.jpg",
+    "bytes": 322486,
+    "sha256": "632d94c4225546aa57db7b75b3f6819c4cc95343b4b7add5ada44688f8722942",
+    "origin": "dgreenheck/ez-tree (MIT; modified generator and botanical textures)"
+  },
+  {
+    "file": "assets/botanical/impostors.json",
+    "bytes": 186,
+    "sha256": "58762e8d0945ff774efc1e5e4e29222d42953f36892eb6fbd31c21c877f5a269",
+    "origin": "dgreenheck/ez-tree (MIT; modified generator and botanical textures)"
+  },
+  {
+    "file": "assets/botanical/oak.png",
+    "bytes": 238115,
+    "sha256": "24451223cf396d22910a4932b8bb996a7274e63d81e24128c96a430ab67822b1",
+    "origin": "dgreenheck/ez-tree (MIT; modified generator and botanical textures)"
+  },
+  {
+    "file": "assets/botanical/pine-bark-Color.jpg",
+    "bytes": 196361,
+    "sha256": "01389d2297e901a583d3d3f824c829689fce8afcffcb0eaabcb666688a781e70",
+    "origin": "dgreenheck/ez-tree (MIT; modified generator and botanical textures)"
+  },
+  {
+    "file": "assets/botanical/pine-bark-NormalGL.jpg",
+    "bytes": 58237,
+    "sha256": "f60be6b239e2a8aeb63dfb78d62a88c6ee05b241d78b69c197ff429eefb080d3",
+    "origin": "dgreenheck/ez-tree (MIT; modified generator and botanical textures)"
+  },
+  {
+    "file": "assets/botanical/pine-bark-Roughness.jpg",
+    "bytes": 36136,
+    "sha256": "85b9fa99b700bbb629c90cee5deeebec78fef7cd40443aa361f5edb090fd3341",
+    "origin": "dgreenheck/ez-tree (MIT; modified generator and botanical textures)"
+  },
+  {
+    "file": "assets/botanical/pine.png",
+    "bytes": 303684,
+    "sha256": "88be36a2387554ac4b7c7d1549eae454a37ad896e8e33a7d6ae5956bd169ab08",
+    "origin": "dgreenheck/ez-tree (MIT; modified generator and botanical textures)"
+  },
+  {
     "file": "assets/broadleaf.png",
     "bytes": 3538,
     "sha256": "b3bffc496ac6fd908f2987c8c8b4a1c76a42f932730fd270ea4a7791351bc8fc",
@@ -61,128 +133,170 @@
   },
   {
     "file": "assets/models/broadleaf-far.glb",
-    "bytes": 18368,
-    "sha256": "d797002d6fab5cc13ec45159fb7d7e6811fdd66eb4c88f512edbc8ef081755ef",
-    "origin": "original"
+    "bytes": 98804,
+    "sha256": "e489646598bfa5dc44620e099303da4384b7cf0f89584be5714f87e10437af4a",
+    "origin": "dgreenheck/ez-tree (MIT; modified generator and botanical textures)"
   },
   {
     "file": "assets/models/broadleaf-low.glb",
-    "bytes": 51020,
-    "sha256": "7733553da9234db42eacb11b8dc20a1d288d9e5bc3dbe0811a051a6ca67b05ca",
-    "origin": "original"
+    "bytes": 232504,
+    "sha256": "36c9d335d3457a12c6ea4fa1a3485d268fcf4f68ae9a2ba88884b8c71f8ce6e4",
+    "origin": "dgreenheck/ez-tree (MIT; modified generator and botanical textures)"
   },
   {
     "file": "assets/models/broadleaf.glb",
-    "bytes": 785308,
-    "sha256": "019ac57f5056f4a7cfe475ab049bc8ee752f46e0ca301329949ddda90cf287d2",
-    "origin": "original"
+    "bytes": 661244,
+    "sha256": "e7ead575130e70d1425a94da972d825d31ef0f44b1d9dee08410c4fff9ac9a2f",
+    "origin": "dgreenheck/ez-tree (MIT; modified generator and botanical textures)"
   },
   {
     "file": "assets/models/cedar-far.glb",
-    "bytes": 18356,
-    "sha256": "c8e0fd84d0a255d4745048c077f92b874b99a6712ad75a4cc2ed124e9a4015d2",
-    "origin": "original"
+    "bytes": 46208,
+    "sha256": "b5527a157dbb3d26c90de89b720f11a6f2254e58e2b1c03277a259f7bdb77693",
+    "origin": "dgreenheck/ez-tree (MIT; modified generator and botanical textures)"
   },
   {
     "file": "assets/models/cedar-low.glb",
-    "bytes": 51004,
-    "sha256": "35890d72a05b8d744c351b5da0270b733d151ec325608f9b46e5c3902ad0d733",
-    "origin": "original"
+    "bytes": 145312,
+    "sha256": "e56950b3e5a38a3204b154b7653e718d376e2e54a58afebbbaa91ae6a78d0f8c",
+    "origin": "dgreenheck/ez-tree (MIT; modified generator and botanical textures)"
   },
   {
     "file": "assets/models/cedar0.glb",
-    "bytes": 994176,
-    "sha256": "1e94a70ba5e4046ee665fa7265f6bda9a07daa77dfe0d57cd93a911b6e0ce8b8",
-    "origin": "original"
+    "bytes": 487208,
+    "sha256": "56fc75935a8daa10c727cd2cb10872db7e9f6ebed4248339dd1d18ad3cfd67db",
+    "origin": "dgreenheck/ez-tree (MIT; modified generator and botanical textures)"
   },
   {
     "file": "assets/models/cedar1.glb",
-    "bytes": 994176,
-    "sha256": "d5026cdee8bdd9359e4760d21c6e44ff252fbd095aef421e2e61359d50662e11",
-    "origin": "original"
+    "bytes": 487208,
+    "sha256": "903288589f6205dddaf4e40785d2c55cf6017b4c8e14447209268452f1352f87",
+    "origin": "dgreenheck/ez-tree (MIT; modified generator and botanical textures)"
   },
   {
     "file": "assets/models/cedar2.glb",
-    "bytes": 961924,
-    "sha256": "06df244ccbc3e6ef53b07ad332ecd74213627598f2adfe73d8f6973f6fa43a0f",
-    "origin": "original"
+    "bytes": 487196,
+    "sha256": "f0ab5347955f8a7a1e8be735020f0ab728a62862cf1ac8be23d09c610d865246",
+    "origin": "dgreenheck/ez-tree (MIT; modified generator and botanical textures)"
   },
   {
     "file": "assets/models/ema.glb",
-    "bytes": 144132,
-    "sha256": "ea26ee8597ea9602ab49379a29c4bafbe300eff9616f56fc5435415db1ac9a67",
+    "bytes": 272316,
+    "sha256": "813ddb6afe6302532f7667fc214d897ef730831fb7bf64c8a5f1976200e1df2f",
+    "origin": "original"
+  },
+  {
+    "file": "assets/models/fern.glb",
+    "bytes": 22800,
+    "sha256": "bd5742b5b4d2be94110bcad8e87a1005444db0140304d7dcb2f08fa097479ad2",
+    "origin": "original"
+  },
+  {
+    "file": "assets/models/house-low.glb",
+    "bytes": 473192,
+    "sha256": "5be914126bb79fabb7524767d9ba0fdad097570a5896b0123c96c2614a17974c",
     "origin": "original"
   },
   {
     "file": "assets/models/house.glb",
-    "bytes": 569604,
-    "sha256": "fd446ae8036bad4559a086cf69f9be5e913026e4d81ec75b5d905521c72b74e7",
+    "bytes": 1281896,
+    "sha256": "558ca2982353bd5b7663c949248070509ab8ef51016cd34f552cc14f0b2e72e5",
     "origin": "original"
   },
   {
     "file": "assets/models/komainu.glb",
-    "bytes": 56868,
-    "sha256": "5e81e6ebb79d582e9a32dd699c8045b4894956982db89262672a2ccc982c4f46",
+    "bytes": 1496492,
+    "sha256": "87a220f1af5d4013608a82229fd7c3aca333870f8af2b61a21c516f2b7b6414e",
     "origin": "original"
   },
   {
     "file": "assets/models/lantern.glb",
-    "bytes": 17424,
-    "sha256": "838bf8988342ee11fd76fe231d726689c8202f4c07db93db86e95a684a21af39",
+    "bytes": 136960,
+    "sha256": "2eb3de6ecd1a3ecae40a90a1f871930565788a8b6f6cc94bfde4a8cb3e2eea66",
+    "origin": "original"
+  },
+  {
+    "file": "assets/models/metal-house-low.glb",
+    "bytes": 527560,
+    "sha256": "4a549a90c95ae4603ea5daf8c623722a3791036f58a0ca78bb507c91305a682c",
     "origin": "original"
   },
   {
     "file": "assets/models/metal-house.glb",
-    "bytes": 419988,
-    "sha256": "61fa899b7a2b47adb81d371be79d299d784b30d65aa002b7e0573f24efb0c6d1",
+    "bytes": 1042868,
+    "sha256": "7fe42d8bc41b9ac61805b5522b9dcca86aa09f7d6e48db06d413a0f8f4404b57",
+    "origin": "original"
+  },
+  {
+    "file": "assets/models/office-low.glb",
+    "bytes": 473196,
+    "sha256": "37cc02a64630628b6cd70150c950dbb4b0c6d563f3378fceb87deb25d756c5fe",
     "origin": "original"
   },
   {
     "file": "assets/models/office.glb",
-    "bytes": 569604,
-    "sha256": "8e469c2e8628e70ab423bfae83b366fe246399a8d835d47b3888ba5a6ccc20db",
+    "bytes": 1281896,
+    "sha256": "ecab33063180ac07efbe2c83bc11319f51bd5f6d863cfa1fbfc12e97a9214ced",
     "origin": "original"
   },
   {
     "file": "assets/models/pole.glb",
-    "bytes": 19564,
-    "sha256": "864b02d52ca1e8208a6fd9fe30e468fe5db1e17a2ab12ba0b9f77448ff5b4366",
+    "bytes": 107168,
+    "sha256": "3b64c2983290e660eb9206ae6779ad4ab5eb995b96aec3fa565c97f5d141fdd7",
     "origin": "original"
   },
   {
     "file": "assets/models/rock.glb",
     "bytes": 18608,
-    "sha256": "a97dc4f30006e7b10eb3fcb7680484ee075a2eab8d69bdd45339d2a0f7b5692e",
+    "sha256": "eb0b35e4bfe900e0f30ec45dfde4674151a62632bb18edb06b57aa7065b049c7",
+    "origin": "original"
+  },
+  {
+    "file": "assets/models/shed-low.glb",
+    "bytes": 103700,
+    "sha256": "48dbe1ddaa74a4cb73c1d49db6fccce012c0b9e2d3bc854e29ea241d5e2ba801",
     "origin": "original"
   },
   {
     "file": "assets/models/shed.glb",
-    "bytes": 419980,
-    "sha256": "441bb3f28da070f592a1027cb5848950c254db75e054a7795e68a20edf85bdb6",
+    "bytes": 328732,
+    "sha256": "9632380bc2af37a1f1335621cae18f3961a3966fecdd87fa3a19cb12c777f225",
+    "origin": "original"
+  },
+  {
+    "file": "assets/models/shrine-low.glb",
+    "bytes": 1019624,
+    "sha256": "e87453fe79c7303ce74dc78bc3589db48a2c3177f799a906ae8c38d3263a5b74",
     "origin": "original"
   },
   {
     "file": "assets/models/shrine.glb",
-    "bytes": 1599936,
-    "sha256": "42e3c35874e695757e28e59d9237491c3b07d34030d4c85d6051ca0eae9f0c39",
+    "bytes": 3540232,
+    "sha256": "8064fc13f9743eb0659ec788a8e09d1ccc87f8dbfa51fcabbfd925b3fcdc4538",
     "origin": "original"
   },
   {
     "file": "assets/models/temizuya.glb",
-    "bytes": 200308,
-    "sha256": "e46ba85d3cdec8ea5f7535ce5ab57a3b84e7cd852d04b020937d8c2a2e874380",
+    "bytes": 372352,
+    "sha256": "62fbaad2615c13d0ecadd5783fef23ad0055b709fad3c9426254729a07aa097b",
+    "origin": "original"
+  },
+  {
+    "file": "assets/models/thatch-house-low.glb",
+    "bytes": 429396,
+    "sha256": "50025d6b197473b20d111d944e6553bede8a945a22426566b5ae9870a2fef7be",
     "origin": "original"
   },
   {
     "file": "assets/models/thatch-house.glb",
-    "bytes": 629652,
-    "sha256": "71afacd83d352bb46c1b22f82317801d0904d1e47d3c638e6436378b1b663cd0",
+    "bytes": 946268,
+    "sha256": "3277277eee0792840c817557a1bfe07c7a12e084522e74d775d7c293e736952b",
     "origin": "original"
   },
   {
     "file": "assets/models/torii.glb",
-    "bytes": 35688,
-    "sha256": "614408a1ebe1f663a993b8b2264d6132df860bf80f4a3d1ef353f0c9987e5dab",
+    "bytes": 87536,
+    "sha256": "f9dc0c835bad6ad074ed474edf98d5fb3f3d2dc23a0d4be86103a64fdd5f93c6",
     "origin": "original"
   },
   {
