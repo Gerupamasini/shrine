@@ -1,0 +1,16 @@
+import {chromium} from '@playwright/test';
+import assert from 'node:assert/strict';
+import {writeFile} from 'node:fs/promises';
+const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox','--enable-unsafe-swiftshader','--use-angle=swiftshader','--disable-dev-shm-usage']});
+try {
+ const page=await browser.newPage({viewport:{width:960,height:600}});const errors=[];page.on('pageerror',e=>errors.push(e.message));page.on('response',r=>{if(r.status()>=400)errors.push(r.status()+' '+r.url())});
+ const baseURL=process.env.SMOKE_BASE_URL||'http://127.0.0.1:4173';await page.goto(baseURL);await page.waitForFunction(()=>window.__satoyama?.ready,null,{timeout:90000});
+ await page.evaluate(()=>window.__satoyama.setQuality('low'));await page.click('#enter');await page.waitForTimeout(800);
+ const before=await page.evaluate(()=>window.__satoyama.state);await page.keyboard.down('w');await page.waitForFunction(z=>window.__satoyama.state.position[2]<z-.2,before.position[2],{timeout:15000}).catch(e=>console.log('INPUT WAIT',e.message));await page.keyboard.up('w');const after=await page.evaluate(()=>window.__satoyama.state);console.log('INPUT',JSON.stringify({before,after,errors}));assert.ok(after.position[2]<before.position[2]-.1,'Real WASD input must move the Rapier player');
+ await page.keyboard.press('Escape');await page.waitForFunction(()=>document.pointerLockElement===null);await page.click('#settings-button');await page.locator('#time').fill('1140');await page.locator('#time').dispatchEvent('input');assert.equal(await page.locator('#clock').textContent(),'19:00');await page.locator('#time').fill('1080');await page.locator('#time').dispatchEvent('input');await page.click('[data-place="village"]');await page.waitForTimeout(800);
+ const village=await page.evaluate(()=>window.__satoyama.state);assert.ok(Math.abs(village.position[0]+15.75)<.2,'Village bookmark remains on the road');
+ await page.keyboard.press('f');assert.equal(await page.evaluate(()=>window.__satoyama.state.free),true);await page.keyboard.down('e');await page.waitForFunction(y=>window.__satoyama.state.position[1]>y+.3,village.position[1],{timeout:15000});await page.keyboard.up('e');const flying=await page.evaluate(()=>window.__satoyama.state);assert.ok(flying.position[1]>village.position[1]+.2);await page.keyboard.press('f');await page.waitForTimeout(500);const restored=await page.evaluate(()=>window.__satoyama.state);assert.equal(restored.free,false);assert.ok(Math.abs(restored.position[0]-village.position[0])<.2);assert.ok(Math.abs(restored.position[1]-village.position[1])<.3);
+ await page.evaluate(()=>{window.__satoyama.setQuality('standard');window.__satoyama.look(0,.02)});await page.waitForTimeout(800);await page.screenshot({path:'artifacts/test-village.png'});
+ await page.evaluate(()=>{window.__satoyama.teleport('river');window.__satoyama.look(-1.5,-.12)});await page.waitForTimeout(800);await page.screenshot({path:'artifacts/test-river.png'});
+ assert.deepEqual(errors,[]);const result={baseURL,inputBefore:before,inputAfter:after,village,freeCamera:flying,restored,errors};await writeFile('artifacts/production-smoke.json',JSON.stringify(result,null,2));console.log('PRODUCTION SMOKE PASSED',JSON.stringify(result));
+} finally {await browser.close()}
