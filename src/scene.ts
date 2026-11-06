@@ -21,6 +21,9 @@ export class Landscape {
   sky = new Sky();
   treeBatches: TreeBatch[] = [];
   treeClock = 0;
+  lastView = new T.Quaternion();
+  densityMeshes: { mesh: T.InstancedMesh; full: number }[] = [];
+  buildingBatches: TreeBatch[] = [];
   quality = "standard";
   water: T.Mesh;
   windGrass: T.MeshStandardMaterial;
@@ -34,7 +37,7 @@ export class Landscape {
   ) {
     this.materials = new Materials(renderer);
     const s = this.scene;
-    s.fog = new T.FogExp2(0xa6b4b3, 0.0022);
+    s.fog = new T.FogExp2(0xbbb9af, 0.0012);
     s.background = new T.Color("#b8cad0");
     const ground = this.materials.get("moss").clone();
     ground.vertexColors = true;
@@ -55,25 +58,27 @@ export class Landscape {
     this.sun.shadow.normalBias = 0.07;
     this.sun.shadow.bias = -0.00015;
     this.setTime(18);
+    this.horizonForest();
     this.paths();
     this.water = this.river();
     this.windGrass = this.vegetation();
     this.paddies();
     this.wires();
+    this.farmyards();
     this.details();
   }
   setTime(time: number) {
     const h = time - 17,
       elevation = T.MathUtils.degToRad(14 - h * 6.5),
-      azimuth = T.MathUtils.degToRad(263 + h * 5);
+      azimuth = T.MathUtils.degToRad(235 + h * 5);
     const pos = new T.Vector3().setFromSphericalCoords(
       1,
       Math.PI / 2 - elevation,
       azimuth,
     );
     const u = this.sky.material.uniforms;
-    u.turbidity.value = 3;
-    u.rayleigh.value = 1.6;
+    u.turbidity.value = 3.2;
+    u.rayleigh.value = 2.2;
     u.mieCoefficient.value = 0.003;
     u.mieDirectionalG.value = 0.83;
     u.sunPosition.value.copy(pos);
@@ -81,15 +86,15 @@ export class Landscape {
       .copy(pos.multiplyScalar(260))
       .add(new T.Vector3(0, 20, -50));
     this.sun.target.position.set(0, 20, -50);
-    this.sun.intensity = T.MathUtils.lerp(3.5, 0.5, h / 2);
-    this.sun.color.setHSL(0.105 - h * 0.018, 0.34 + h * 0.1, 0.82);
-    this.hemi.intensity = T.MathUtils.lerp(3.6, 1.6, h / 2);
-    this.renderer.toneMappingExposure = T.MathUtils.lerp(1.1, 0.85, h / 2);
-    (this.scene.fog as T.FogExp2).color.setHSL(
-      0.55 - h * 0.055,
-      0.12,
-      0.68 - h * 0.06,
-    );
+    this.sun.intensity = T.MathUtils.lerp(6.5, 1, h / 2);
+    this.sun.color
+      .copy(new T.Color("#fff1d3"))
+      .lerp(new T.Color("#fda462"), h / 2);
+    this.hemi.intensity = T.MathUtils.lerp(2.0, 0.8, h / 2);
+    this.renderer.toneMappingExposure = T.MathUtils.lerp(1.3, 0.95, h / 2);
+    (this.scene.fog as T.FogExp2).color
+      .copy(new T.Color("#c3cfce"))
+      .lerp(new T.Color("#ceb2a1"), h / 2);
   }
   async load(onProgress: (n: number) => void) {
     const hdr = await new RGBELoader().loadAsync(
@@ -98,7 +103,7 @@ export class Landscape {
     const pmrem = new T.PMREMGenerator(this.renderer);
     const env = pmrem.fromEquirectangular(hdr);
     this.scene.environment = env.texture;
-    this.scene.environmentIntensity = 0.55;
+    this.scene.environmentIntensity = 0.4;
     hdr.dispose();
     pmrem.dispose();
     const loader = new GLTFLoader();
@@ -109,11 +114,21 @@ export class Landscape {
       "cedar-far",
       "broadleaf-low",
       "broadleaf-far",
+      ...[
+        "house",
+        "thatch-house",
+        "metal-house",
+        "office",
+        "shed",
+        "shrine",
+      ].map((n) => n + "-low"),
     ];
     let done = 0;
     await Promise.all(
       names.map(async (name) => {
-        const gltf = await loader.loadAsync(publicUrl(`assets/models/${name}.glb`));
+        const gltf = await loader.loadAsync(
+          publicUrl(`assets/models/${name}.glb`),
+        );
         gltf.scene.traverse((o) => {
           if (o instanceof T.Mesh) {
             const old = o.material as T.MeshStandardMaterial;
@@ -129,11 +144,19 @@ export class Landscape {
     const nonTrees = this.data.objects.filter(
       (o) => !o.asset.startsWith("cedar") && o.asset !== "broadleaf",
     );
-    for (const name of new Set(nonTrees.map((o) => o.asset)))
-      this.batchModel(
-        name,
-        nonTrees.filter((o) => o.asset === name),
-      );
+    for (const name of new Set(nonTrees.map((o) => o.asset))) {
+      const entries = nonTrees.filter((o) => o.asset === name);
+      if (this.models.has(name + "-low"))
+        for (let lod = 0; lod < 2; lod++)
+          this.batchModel(
+            name + (lod ? "-low" : ""),
+            entries,
+            lod,
+            false,
+            true,
+          );
+      else this.batchModel(name, entries);
+    }
     const trees = this.data.objects.filter(
       (o) => o.asset.startsWith("cedar") || o.asset === "broadleaf",
     );
@@ -162,6 +185,7 @@ export class Landscape {
       });
     }
     this.batchModel("rock", stones);
+    await this.materials.ready();
     this.updateTrees(new T.Vector3(0, 2, 12));
   }
   batchModel(
@@ -169,6 +193,7 @@ export class Landscape {
     entries: Placement[],
     lod?: number,
     isBroad = false,
+    building = false,
   ) {
     const source = this.models.get(name)!;
     source.updateMatrixWorld(true);
@@ -197,25 +222,66 @@ export class Landscape {
       }
       m.instanceMatrix.needsUpdate = true;
       if (lod !== undefined)
-        this.treeBatches.push({ mesh: m, entries, lod, isBroad });
-      else m.computeBoundingSphere();
+        (building ? this.buildingBatches : this.treeBatches).push({
+          mesh: m,
+          entries,
+          lod,
+          isBroad,
+        });
+      else {
+        if(name === "fern")this.density(m);
+        m.computeBoundingSphere();
+      }
       this.scene.add(m);
     });
   }
-  updateTrees(camera: T.Vector3) {
+  updateTrees(camera: T.Vector3, view?: T.Camera) {
+    const frustum = new T.Frustum(),
+      sphere = new T.Sphere();
+    if (view) {
+      view.updateMatrixWorld();
+      frustum.setFromProjectionMatrix(
+        new T.Matrix4().multiplyMatrices(
+          view.projectionMatrix,
+          view.matrixWorldInverse,
+        ),
+      );
+    }
+
     const matrix = new T.Matrix4(),
       q = new T.Quaternion(),
       p3 = new T.Vector3(),
       scale = new T.Vector3();
-    for (const b of this.treeBatches) {
+    for (const b of [...this.treeBatches, ...this.buildingBatches]) {
+      const building = this.buildingBatches.includes(b);
       let visible = 0;
-      const near = this.quality === "low" ? 22 : 58,
-        mid = this.quality === "low" ? 90 : 190,
-        far = this.quality === "low" ? 280 : 410;
+      const near = this.quality === "low" ? 12 : 32,
+        mid = this.quality === "low" ? 45 : 105,
+        far = this.quality === "low" ? 190 : 410;
       for (const p of b.entries) {
         const d = p3.fromArray(p.position).distanceTo(camera);
-        const target = d < near ? 0 : d < mid ? 1 : d < far ? 2 : 3;
+        const target = building
+          ? d < (this.quality === "low" ? 38 : 75)
+            ? 0
+            : d < 520
+              ? 1
+              : 3
+          : d < near
+            ? 0
+            : d < mid
+              ? 1
+              : d < far
+                ? 2
+                : 3;
         if (target !== b.lod) continue;
+        // Only non-shadow LODs are culled against the view: offscreen near trees
+        // still cast their visible shadows. A generous bound avoids crown popping.
+        if (view && b.lod > 0) {
+          sphere.center.copy(p3).add(new T.Vector3(0, building ? 4 : 15, 0));
+          sphere.radius = (building ? 18 : 25) * p.scale[0];
+          if (!frustum.intersectsSphere(sphere)) continue;
+        }
+
         q.setFromAxisAngle(T.Object3D.DEFAULT_UP, p.rotation[1]);
         scale.fromArray(p.scale);
         matrix.compose(p3, q, scale);
@@ -225,6 +291,37 @@ export class Landscape {
       b.mesh.instanceMatrix.needsUpdate = true;
       b.mesh.computeBoundingSphere();
     }
+  }
+  density(mesh: T.InstancedMesh) {
+    // Shuffle before truncating so low quality thins every field, not whole rows.
+    const random = seeded(351),
+      a = mesh.instanceMatrix.array,
+      c = mesh.instanceColor?.array;
+    for (let i = mesh.count - 1; i > 0; i--) {
+      const j = Math.floor(random() * (i + 1));
+      for (let k = 0; k < 16; k++) {
+        const t = a[i * 16 + k];
+        a[i * 16 + k] = a[j * 16 + k];
+        a[j * 16 + k] = t;
+      }
+      if (c)
+        for (let k = 0; k < 3; k++) {
+          const t = c[i * 3 + k];
+          c[i * 3 + k] = c[j * 3 + k];
+          c[j * 3 + k] = t;
+        }
+    }
+    mesh.instanceMatrix.needsUpdate = true;
+    if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+    this.densityMeshes.push({ mesh, full: mesh.count });
+  }
+  groundMaterial(repeat = 4) {
+    const m = this.materials.get("soil").clone();
+    for (const key of ["map", "normalMap", "roughnessMap"] as const) {
+      m[key] = m[key]!.clone();
+      m[key]!.repeat.set(repeat, repeat);
+    }
+    return m;
   }
   paths() {
     const geo: T.BufferGeometry[] = [];
@@ -281,11 +378,9 @@ export class Landscape {
       const x = -32 + 18 * Math.sin(z * 0.015);
       roadPts.push(new T.Vector3(x, this.terrain.sample(x, z) + 0.055, z));
     }
-    this.ribbon(
-      roadPts,
-      4,
-      new T.MeshStandardMaterial({ color: 0x696b5c, roughness: 1 }),
-    );
+    const asphalt = this.groundMaterial(1);
+    asphalt.color.set(0x99998e);
+    this.ribbon(roadPts, 4, asphalt);
     const footPts = [];
     for (let i = 0; i <= 20; i++) {
       const t = i / 20,
@@ -293,7 +388,7 @@ export class Landscape {
         z = 8 + 20 * t;
       footPts.push(new T.Vector3(x, this.terrain.sample(x, z) + 0.06, z));
     }
-    this.ribbon(footPts, 3, this.materials.get("soil"));
+    this.ribbon(footPts, 3, this.groundMaterial(2));
   }
   ribbon(points: T.Vector3[], width: number, material: T.Material) {
     const pos: number[] = [],
@@ -319,9 +414,9 @@ export class Landscape {
   }
   river() {
     const pts = [];
-    for (let z = -15; z <= 370; z += 3) {
+    for (let z = -15; z <= 590; z += 3) {
       const x = 83 + 9 * Math.sin(z * 0.025);
-      pts.push(new T.Vector3(x, this.terrain.sample(x, z) + 0.55, z));
+      pts.push(new T.Vector3(x, 0.55 - 0.003 * z, z));
     }
     this.riverLine = pts;
     this.ribbon(
@@ -338,7 +433,7 @@ export class Landscape {
       clearcoat: 0.35,
       envMapIntensity: 0.25,
       clearcoatRoughness: 0.15,
-      normalMap: this.materials.loader.load(publicUrl("assets/water-normal.png")),
+      normalMap: this.materials.texture(publicUrl("assets/water-normal.png")),
       normalScale: new T.Vector2(0.2, 0.13),
       depthWrite: false,
     });
@@ -357,7 +452,7 @@ export class Landscape {
     );
     bridge.position.set(
       83 + 9 * Math.sin(115 * 0.025),
-      this.terrain.sample(83, 115) + 0.75,
+      this.terrain.sample(83 + 9 * Math.sin(115 * 0.025) + 6, 115) + 0.15,
       115,
     );
     bridge.castShadow = bridge.receiveShadow = true;
@@ -367,24 +462,38 @@ export class Landscape {
   vegetation() {
     const rand = seeded(883);
     const geo = new T.BufferGeometry();
-    const pos = [
-      -0.055, 0, 0, 0.055, 0, 0, 0.015, 0.75, 0.04, -0.03, 0, -0.04, 0.03, 0,
-      0.04, -0.05, 0.53, 0.13, 0, 0, -0.04, 0, 0, 0.04, 0.22, 0.59, 0,
-    ];
+    const pos: number[] = [];
+    for (let blade = 0; blade < 3; blade++) {
+      const a = blade * 2.399,
+        width = 0.018 + rand() * 0.012,
+        height = 0.35 + rand() * 0.4,
+        lean = 0.18 + rand() * 0.15;
+      for (let j = 0; j < 3; j++) {
+        const point = (t: number, side: number) => [
+          Math.cos(a) * lean * t * t + Math.sin(a) * width * (1 - t) * side,
+          height * t,
+          Math.sin(a) * lean * t * t - Math.cos(a) * width * (1 - t) * side,
+        ];
+        const lo = j / 3,
+          hi = (j + 1) / 3;
+        pos.push(...point(lo, -1), ...point(lo, 1), ...point(hi, -1));
+        if (j < 2) pos.push(...point(lo, 1), ...point(hi, 1), ...point(hi, -1));
+      }
+    }
     geo.setAttribute("position", new T.Float32BufferAttribute(pos, 3));
     geo.computeVertexNormals();
     const mat = new T.MeshStandardMaterial({
-      color: 0x5f7041,
+      color: 0x75864a,
       roughness: 1,
       side: T.DoubleSide,
     });
     this.animateGrass(mat);
-    const mesh = new T.InstancedMesh(geo, mat, 6500);
+    const mesh = new T.InstancedMesh(geo, mat, 9500);
     const matrix = new T.Matrix4(),
       q = new T.Quaternion();
-    for (let i = 0; i < 6500; i++) {
+    for (let i = 0; i < 9500; i++) {
       let x, z;
-      if (i < 4200) {
+      if (i < 4500) {
         z = -rand() * 108;
         x = (rand() < 0.5 ? -1 : 1) * (3.2 + rand() * 8);
       } else {
@@ -400,14 +509,15 @@ export class Landscape {
         new T.Vector3(x, y, z),
         q.setFromAxisAngle(T.Object3D.DEFAULT_UP, rand() * 6.28),
         new T.Vector3(
-          0.6 + rand() * 0.6,
-          0.35 + rand() * 0.8,
-          0.6 + rand() * 0.6,
+          0.8 + rand() * 0.7,
+          0.5 + rand() * 0.6,
+          0.8 + rand() * 0.7,
         ),
       );
       mesh.setMatrixAt(i, matrix);
     }
     mesh.receiveShadow = true;
+    this.density(mesh);
     mesh.computeBoundingSphere();
     this.scene.add(mesh);
     return mat;
@@ -434,7 +544,7 @@ export class Landscape {
   paddies() {
     const before = new Set(this.scene.children);
     const fieldMat = new T.MeshStandardMaterial({
-      color: 0x4f6234,
+      color: 0x55662c,
       roughness: 0.98,
       envMapIntensity: 0.15,
     });
@@ -445,39 +555,39 @@ export class Landscape {
         x = Math.cos(a) * 0.05,
         z = Math.sin(a) * 0.05;
       pos.push(
-        x - 0.028,
+        x - 0.045,
         0,
         z,
-        x + 0.028,
+        x + 0.045,
         0,
         z,
-        x + Math.cos(a) * 0.11,
+        x + Math.cos(a) * 0.38,
         0.78 + rand() * 0.13,
-        z + Math.sin(a) * 0.11,
+        z + Math.sin(a) * 0.38,
       );
     }
     const g = new T.BufferGeometry();
     g.setAttribute("position", new T.Float32BufferAttribute(pos, 3));
     g.computeVertexNormals();
     const mat = new T.MeshStandardMaterial({
-      color: 0x66843b,
+      color: 0x768e3e,
       roughness: 1,
       envMapIntensity: 0.25,
       side: T.DoubleSide,
     });
     this.animateGrass(mat);
-    const count = this.data.fields.length * 22 * 26;
+    const count = this.data.fields.length * 28 * 32;
     const rice = new T.InstancedMesh(g, mat, count);
     let i = 0;
     const matrix = new T.Matrix4(),
       q = new T.Quaternion();
     for (const f of this.data.fields) {
-      const [x, , z] = f.center,
+      const [x, level, z] = f.center,
         [w, d] = f.size;
       const pts = [];
       for (let j = 0; j <= 20; j++) {
         const zz = z - d / 2 + (j * d) / 20;
-        pts.push(new T.Vector3(x, this.terrain.sample(x, zz) + 0.05, zz));
+        pts.push(new T.Vector3(x, level + 0.035, zz));
       }
       this.ribbon(pts, w, fieldMat);
       for (const s of [-1, 1]) {
@@ -489,20 +599,29 @@ export class Landscape {
           this.materials.get("soil"),
         );
       }
-      for (let r = 0; r < 26; r++)
-        for (let c = 0; c < 22; c++) {
+      for (let r = 0; r < 32; r++)
+        for (let c = 0; c < 28; c++) {
           const xx =
-              x - w / 2 + 0.7 + (c * (w - 1.4)) / 21 + (rand() - 0.5) * 0.12,
-            zz = z - d / 2 + 0.8 + (r * (d - 1.6)) / 25;
+              x - w / 2 + 0.7 + (c * (w - 1.4)) / 27 + (rand() - 0.5) * 0.12,
+            zz = z - d / 2 + 0.8 + (r * (d - 1.6)) / 31;
           matrix.compose(
-            new T.Vector3(xx, this.terrain.sample(xx, zz) + 0.08, zz),
+            new T.Vector3(xx, level + 0.06, zz),
             q.setFromAxisAngle(T.Object3D.DEFAULT_UP, rand() * 6.28),
             new T.Vector3(1, 0.83 + rand() * 0.3, 1),
+          );
+          rice.setColorAt(
+            i,
+            new T.Color().setHSL(
+              0.19 + rand() * 0.025,
+              0.34,
+              0.6 + rand() * 0.13,
+            ),
           );
           rice.setMatrixAt(i++, matrix);
         }
     }
     rice.receiveShadow = true;
+    this.density(rice);
     rice.computeBoundingSphere();
     this.scene.add(rice);
     const batches = new Map<T.Material, T.BufferGeometry[]>();
@@ -523,6 +642,84 @@ export class Landscape {
       this.scene.add(mesh);
       gs.forEach((g) => g.dispose());
     }
+  }
+  horizonForest() {
+    // Distant canopy uses offline renders of the same branched GLBs, never solid blobs.
+    const parts: T.BufferGeometry[] = [];
+    for (let i = 0; i < 3; i++) {
+      const g = new T.PlaneGeometry(1, 1);
+      g.translate(0, 0.5, 0);
+      g.rotateY((i * Math.PI) / 3);
+      parts.push(g);
+    }
+    const geometry = mergeGeometries(parts);
+    parts.forEach((g) => g.dispose());
+    for (const species of ["broadleaf", "cedar0"]) {
+      const texture = this.materials.texture(
+        publicUrl(`assets/botanical/${species}-impostor.png`),
+      );
+      texture.colorSpace = T.SRGBColorSpace;
+      const material = new T.MeshBasicMaterial({
+        map: texture,
+        alphaTest: 0.4,
+        side: T.DoubleSide,
+        color: 0xd1c9a0,
+        fog: true,
+      });
+      const entries = this.data.canopy.filter((o) => o.asset === species),
+        trees = new T.InstancedMesh(geometry, material, entries.length),
+        matrix = new T.Matrix4(),
+        quat = new T.Quaternion();
+      let count = 0;
+      for (const o of entries) {
+        matrix.compose(
+          new T.Vector3().fromArray(o.position),
+          quat.setFromAxisAngle(T.Object3D.DEFAULT_UP, o.rotation[1]),
+          new T.Vector3().fromArray(o.scale),
+        );
+        trees.setMatrixAt(count, matrix);
+        trees.setColorAt(count, new T.Color().fromArray(o.color));
+        count++;
+      }
+      trees.count = count;
+      this.density(trees);
+      trees.computeBoundingSphere();
+      this.scene.add(trees);
+    }
+  }
+  farmyards() {
+    const geometries: T.BufferGeometry[] = [],
+      random = seeded(493);
+    const mat = this.materials.get("stone"),
+      ground = this.groundMaterial(4);
+    for (const o of this.data.objects.filter((o) =>
+      ["house", "metal-house", "thatch-house"].includes(o.asset),
+    )) {
+      const [x, y, z] = o.position;
+      const yard = new T.Mesh(new T.PlaneGeometry(14, 12), ground);
+      yard.rotation.x = -Math.PI / 2;
+      yard.position.set(x, y + 0.03, z);
+      yard.receiveShadow = true;
+      this.scene.add(yard);
+      for (const side of [-1, 1])
+        for (let j = 0; j < 12; j++) {
+          const g = new T.BoxGeometry(0.85, 0.32 + random() * 0.15, 0.6);
+          g.translate(x + side * 7.2, y + 0.2, z - 5.5 + j);
+          geometries.push(g);
+        }
+      const roadX = -32 + 18 * Math.sin(z * 0.015);
+      const lane = new T.Mesh(
+        new T.PlaneGeometry(Math.abs(roadX - x), 2.3),
+        ground,
+      );
+      lane.rotation.x = -Math.PI / 2;
+      lane.position.set((x + roadX) / 2, y + 0.04, z);
+      lane.receiveShadow = true;
+      this.scene.add(lane);
+    }
+    const stonework = new T.Mesh(mergeGeometries(geometries), mat);
+    stonework.castShadow = stonework.receiveShadow = true;
+    this.scene.add(stonework);
   }
   wires() {
     const poles = this.data.objects.filter((o) => o.asset === "pole");
@@ -592,12 +789,21 @@ export class Landscape {
     rail.position.set(21, 39.1, -106);
     this.scene.add(rail);
   }
-  update(dt: number, time: number, position: T.Vector3) {
+  update(dt: number, time: number, position: T.Vector3, camera: T.Camera) {
+    const lightDirection = this.sun.position
+      .clone()
+      .sub(this.sun.target.position);
+    this.sun.target.position.copy(position).add(new T.Vector3(0, -1.6, 0));
+    this.sun.position.copy(this.sun.target.position).add(lightDirection);
     this.materials.wind.value = time;
     this.treeClock += dt;
-    if (this.treeClock > 0.5) {
+    if (
+      this.treeClock > 0.5 ||
+      this.lastView.angleTo(camera.quaternion) > 0.03
+    ) {
+      this.lastView.copy(camera.quaternion);
       this.treeClock = 0;
-      this.updateTrees(position);
+      this.updateTrees(position, camera);
     }
     const mat = this.water.material as T.MeshPhysicalMaterial;
     if (mat.normalMap) {
@@ -607,6 +813,8 @@ export class Landscape {
   }
   setQuality(q: string) {
     this.quality = q;
+    for (const d of this.densityMeshes)
+      d.mesh.count = Math.floor(d.full * (q === "low" ? 0.18 : 1));
     const dpr =
       q === "low"
         ? 1

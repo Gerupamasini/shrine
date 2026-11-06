@@ -41,7 +41,7 @@ test("arrival → 200-step climb → shrine → lookout → village; settings an
   await page.evaluate(() => {
     const g = (window as any).__satoyama;
     g.teleport("lookout");
-    g.look(Math.PI, -0.16);
+    g.look(Math.PI - 0.2, -0.21);
   });
   await page.waitForTimeout(600);
   await page.screenshot({ path: "artifacts/test-lookout.png" });
@@ -55,7 +55,11 @@ test("arrival → 200-step climb → shrine → lookout → village; settings an
     g.walk(0, -1, 1650, true);
     return g.walk(0, 1, 1800, true);
   });
-  expect(bottom[1]).toBeLessThan(4);
+  const ground = await page.evaluate(
+    () => (window as any).__satoyama.state.groundHeight,
+  );
+  expect(bottom[1] - ground).toBeGreaterThan(1.5);
+  expect(bottom[1] - ground).toBeLessThan(1.9);
   expect(bottom[2]).toBeGreaterThan(0);
   await page.keyboard.press("Escape");
   await page.waitForFunction(() => document.pointerLockElement === null);

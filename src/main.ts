@@ -150,6 +150,7 @@ $<HTMLInputElement>("time").oninput = (e) => {
 };
 $<HTMLSelectElement>("quality").onchange = (e) => {
   land.setQuality((e.target as HTMLSelectElement).value);
+  land.updateTrees(camera.position, camera);
   resize();
 };
 $<HTMLInputElement>("diagnostics").onchange = (e) =>
@@ -160,8 +161,8 @@ document.querySelectorAll<HTMLButtonElement>("[data-place]").forEach(
       const place = b.dataset.place!;
       walker.teleport(land.data.landmarks[place]);
       if (place === "lookout") {
-        yaw = Math.PI;
-        pitch = -0.15;
+        yaw = Math.PI - 0.2;
+        pitch = -0.21;
       } else if (place === "shrine") {
         yaw = 0;
         pitch = 0;
@@ -171,7 +172,7 @@ document.querySelectorAll<HTMLButtonElement>("[data-place]").forEach(
       }
       keys.clear();
       updateCamera();
-      land.updateTrees(camera.position);
+      land.updateTrees(camera.position, camera);
       setSettings(false);
     }),
 );
@@ -216,7 +217,7 @@ function frame(dt: number, wallDt: number) {
       fixedAccumulator -= 1 / 60;
     }
     updateCamera();
-    land.update(dt, elapsed, camera.position);
+    land.update(dt, elapsed, camera.position, camera);
     audio.update(camera);
     renderer.render(land.scene, camera);
     measureTime += wallDt;
@@ -296,6 +297,7 @@ async function boot() {
     get state() {
       return {
         position: walker.position.toArray(),
+        groundHeight: terrain.sample(walker.position.x, walker.position.z),
         grounded: walker.grounded,
         free: walker.free,
         triangles: renderer.info.render.triangles,
@@ -308,23 +310,25 @@ async function boot() {
     teleport: (name: string) => {
       walker.teleport(data.landmarks[name]);
       updateCamera();
-      land.updateTrees(camera.position);
+      land.updateTrees(camera.position, camera);
     },
     look: (y: number, p: number) => {
       yaw = y;
       pitch = p;
       updateCamera();
+      land.updateTrees(camera.position, camera);
     },
     walk: (x: number, z: number, frames: number, run = false) => {
       for (let i = 0; i < frames; i++)
         walker.move(new T.Vector3(x, 0, z), 1 / 60, run);
       updateCamera();
-      land.updateTrees(camera.position);
+      land.updateTrees(camera.position, camera);
       return walker.position.toArray();
     },
     setTime: (t: number) => land.setTime(t),
     setQuality: (q: string) => {
       land.setQuality(q);
+      land.updateTrees(camera.position, camera);
       resize();
     },
     get world() {

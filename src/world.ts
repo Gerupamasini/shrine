@@ -10,6 +10,7 @@ export type Placement = {
 };
 export type WorldData = {
   seed: number;
+  canopy: (Placement & { color: number[] })[];
   extent: number;
   resolution: number;
   objects: Placement[];
@@ -57,9 +58,42 @@ export class Terrain {
     );
   }
   geometry() {
-    const n = 257,
-      g = new THREE.PlaneGeometry(this.extent, this.extent, n - 1, n - 1);
-    g.rotateX(-Math.PI / 2);
+    // Keep the 16-bit source spacing around farms and the narrow river. Coarse
+    // samples outside the basin share the same vertices, so there are no LOD cracks.
+    const axis = (lo: number, hi: number) => {
+      const a: number[] = [];
+      for (let i = 0; i <= 512; i++) {
+        const v = (i / 512 - 0.5) * this.extent;
+        if (i % 2 === 0 || (v >= lo && v <= hi)) a.push(v);
+      }
+      return a;
+    };
+    const xs = axis(-210, 210),
+      zs = axis(-165, 370),
+      positions: number[] = [],
+      uv: number[] = [],
+      indices: number[] = [];
+    for (const z of zs)
+      for (const x of xs) {
+        positions.push(x, 0, z);
+        uv.push(x / this.extent + 0.5, 0.5 - z / this.extent);
+      }
+    for (let j = 0; j < zs.length - 1; j++)
+      for (let i = 0; i < xs.length - 1; i++) {
+        const a = j * xs.length + i;
+        indices.push(
+          a,
+          a + xs.length,
+          a + 1,
+          a + 1,
+          a + xs.length,
+          a + xs.length + 1,
+        );
+      }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+    g.setAttribute("uv", new THREE.Float32BufferAttribute(uv, 2));
+    g.setIndex(indices);
     const p = g.attributes.position;
     const colors = new Float32Array(p.count * 3);
     const c = new THREE.Color();
@@ -71,8 +105,8 @@ export class Terrain {
       const noise =
         (Math.sin(x * 0.29 + z * 0.12) + Math.sin(x * 0.067 - z * 0.075)) *
         0.025;
-      c.setRGB(0.8 + noise, 0.84 + noise, 0.65 + noise);
-      if (h > 55) c.lerp(new THREE.Color("#3a5042"), 0.55);
+      c.setRGB(0.67 + noise, 0.73 + noise, 0.47 + noise);
+      if (h > 15) c.lerp(new THREE.Color("#92a271"), 0.45);
       colors.set([c.r, c.g, c.b], i * 3);
     }
     g.setAttribute("color", new THREE.BufferAttribute(colors, 3));
@@ -87,7 +121,7 @@ export function seeded(seed: number) {
   };
 }
 export async function loadWorld() {
-  const [data, buffer] = await Promise.all([
+  const [data, buffer, canopy] = await Promise.all([
     fetch(publicUrl("world/scene.json")).then((r) => {
       if (!r.ok) throw Error("scene.json");
       return r.json() as Promise<WorldData>;
@@ -96,7 +130,12 @@ export async function loadWorld() {
       if (!r.ok) throw Error("heightmap");
       return r.arrayBuffer();
     }),
+    fetch(publicUrl("world/canopy.json")).then((r) => {
+      if (!r.ok) throw Error("canopy.json");
+      return r.json();
+    }),
   ]);
+  data.canopy = canopy.entries;
   return {
     data,
     terrain: new Terrain(new Uint16Array(buffer), data.resolution, data.extent),
