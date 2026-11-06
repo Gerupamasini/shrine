@@ -1,0 +1,97 @@
+{
+ "fern_02": {
+  "before": 6232,
+  "after": 1600,
+  "bytes": 182120
+ },
+ "shrub_02": {
+  "before": 27254,
+  "after": 2378,
+  "bytes": 280608
+ },
+ "shrub_03": {
+  "before": 8287,
+  "after": 2399,
+  "bytes": 295080
+ },
+ "shrub_04": {
+  "before": 27327,
+  "after": 2263,
+  "bytes": 284648
+ },
+ "weed_plant_02": {
+  "before": 11116,
+  "after": 1498,
+  "bytes": 253704
+ },
+ "nettle_plant": {
+  "before": 31304,
+  "after": 4060,
+  "bytes": 341288
+ },
+ "rock_moss_set_01": {
+  "before": 63127,
+  "after": 2198,
+  "bytes": 191152
+ },
+ "rock_moss_set_02": {
+  "before": 57647,
+  "after": 2200,
+  "bytes": 235192
+ },
+ "rock_07": {
+  "before": 14844,
+  "after": 1396,
+  "bytes": 194984
+ },
+ "rock_09": {
+  "before": 12416,
+  "after": 1200,
+  "bytes": 176164
+ },
+ "stone_01": {
+  "before": 53520,
+  "after": 1152,
+  "bytes": 237080
+ },
+ "tree_stump_01": {
+  "before": 41046,
+  "after": 1800,
+  "bytes": 320872
+ },
+ "dead_tree_trunk": {
+  "before": 101802,
+  "after": 2400,
+  "bytes": 257296
+ },
+ "wooden_bucket_01": {
+  "before": 5116,
+  "after": 3000,
+  "bytes": 269352
+ },
+ "wooden_barrels_01": {
+  "before": 33142,
+  "after": 9406,
+  "bytes": 941484
+ },
+ "wooden_crate_01": {
+  "before": 6576,
+  "after": 3000,
+  "bytes": 247552
+ },
+ "wicker_basket_01": {
+  "before": 22276,
+  "after": 5000,
+  "bytes": 340916
+ },
+ "wooden_ladder": {
+  "before": 8492,
+  "after": 3999,
+  "bytes": 332980
+ },
+ "wooden_broom": {
+  "before": 14258,
+  "after": 4706,
+  "bytes": 499000
+ }
+}

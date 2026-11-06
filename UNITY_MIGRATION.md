@@ -1,54 +1,103 @@
 # Unity移植
 
-## 共有データ
+再利用するのは、モデル・地形・配置・材質・環境設定のデータです。照明・ポストエフェクト・風・水・草・霞のシェーダーは、移植先のレンダーパイプライン（HDRP/URP）で作り直す前提です。Three.js固有のシェーダーは、データとしては持ち込みません。
 
-- `public/assets/models/*.glb`：建築・小物は独自制作、樹木はMITのEZ Tree派生。メートル・Y-up。原本は`tools/build-models.mjs`と`tools/build-trees.mjs`。Blenderのファイルを原本としているとは主張しない。
-- `public/assets/*-{albedo,normal,roughness}.*`：独立したオリジナルPBR画像。
-- `public/assets/pbr/`：外部PBR。`ASSET_CREDITS.md`と同梱ライセンスを保持。
-- `public/assets/venice_sunset_1k.hdr`：CC0の環境照明。背景は日本の景観を保つため動的な空を使用する。
-- `public/assets/audio/`：自作合成PCM。実録ヒグラシではない。
-- `public/world/scene.json`：固定シード、全配置、200段の寸法・位置、水田区画、時刻、負荷予算。
-- `heightmap.r16`：ヘッダーなし、513×513、uint16 little endian、row-major。
-- `heightmap.png`：同じ16-bit値を持つ確認用PNG。8-bitへ変換しない。
-- `surface-mask.png`：RGB。R=低地の土/草、G=森林斜面、B=参道/境内。3つの重みを必要に応じて正規化する。写真による植生分布の測量データではない。
-- `materials.json`：モデル内の材質名と外部テクスチャ・色・パラメータの対応。
+## 座標と単位
 
-## 座標
+| | このプロジェクト（Three.js） | Unity |
+|---|---|---|
+| 手系 | 右手系 | 左手系 |
+| 上 | +Y | +Y |
+| 北 | −Z | +Z（Z反転後） |
+| 単位 | 1 = 1m | 1 = 1m |
 
-Three.jsは右手系、+Yが上、カメラ正面は-Z。Unityは左手系、+Yが上、カメラ正面は+Z。1単位=1mを共通にする。
+- **位置**：`(x, y, z) → (x, y, −z)`
+- **Y軸回転（JSONの `rotation[1]`、ラジアン）**：`Quaternion.Euler(0, -yaw * Mathf.Rad2Deg, 0)`
+- **一般のクォータニオン**：`(qx, qy, qz, qw) → (−qx, −qy, qz, qw)`
+- **glTFのインポート**：glTFastなどのインポーターが、モデル内部の座標変換をすでに行います。配置座標の変換と二重に掛けないでください。
+- **方位**：シーン内の方位はコンパス方位（北0°・時計回り）。前方ベクトルは `(sin az, 0, −cos az)` です。
 
-配置位置は`(x,y,z) → (x,y,-z)`。JSONの回転はXYZ順のラジアン。現在の配置はY回転のみなのでUnityでは`Quaternion.Euler(0,-yaw*Rad2Deg,0)`。一般のクォータニオンでは`(qx,qy,qz,qw) → (-qx,-qy,qz,qw)`。glTFインポーターが行うモデル内部の座標変換と、配置座標の変換を重複させない。配置スケールは正のXYZ値。
+## 地形（Unity Terrain）
 
-glTFastなどのglTF 2.0インポーターを使用する。FBXへ変換する場合はBlenderにGLBを読み、単位・適用スケール・マテリアル名・ピボットを確認してから書き出す。全シーンを一つの巨大なGLBに固めない。
+`public/world/scene.json` の `heightEncoding` を参照します。
 
-## Unity Terrain
+1. `TerrainData.heightmapResolution = 1025`、`size = (1200, 420, 1200)` にし、Terrainの位置を `(−600, −20, −600)` にする。
+2. `heightmap.r16` を読む。ヘッダーなし、uint16 little-endian、行優先、1行目がz=−600（北端）、1列目がx=−600。
+   - 高さは `y = raw / 65535 × 420 − 20`、Unityに入れる値は `raw / 65535f`。
+3. Z反転のため、`heights[row, col]` に入れる際に行を逆順にする（Unityの行0は南端になる）。
+4. `splat0.png` と `splat1.png`（RGBA×2で8層）をAlphamapにする。層の順番と使うテクスチャは `materials.json` の `terrainLayers` にある。
+   - 順番：grass / forest / dirt / rock / paddy / riverbed / gravel / asphalt
+   - 画像も同じく上下反転する。各層の `size` がTerrainLayerの `tileSize` に当たる。
+5. `vegetation-mask.png` を植生・Detailの密度に使う。
+   - R：森の密度
+   - G：区画IDのハッシュ
+   - B：稲の内側
+   - A：草の密度
+6. `paddy-level.png` は稲がある区画の田面高さ（16-bit、高さマップと同じ変換式）。稲以外のセルは−20（最小値）。
+7. `far-heightmap.png`（257²、14km四方、0〜1600m）は遠景の山並み。別のTerrain、またはLODを粗くしたメッシュとして配置する。
 
-1. TerrainDataのheightmapResolutionを513にする。
-2. `size = (1200,256,1200)`、Terrainオブジェクト位置を`(-600,-8,-600)`にする。
-3. RAWをlittle endianの16-bitとして読み、値を`65535f`で割る。
-4. 元データrow0はThree.jsのz=-600。Z反転後のUnityではz=+600となるため、Unityの`heights[row,col]`へ入れるときは行を反転する。
-5. `SetHeights(0,0,heights)`を実行する。マスク画像も同じ向きで読み、TerrainLayerへ割り当てる。
-6. 村の川底は高さマップに含まれる。水面・護岸・橋は別メッシュとして再構築する。
+## 配置
 
-高さの復元式は`y = raw/65535*256-8`。OpenGLテクスチャの上下反転と、地形配列のZ反転を混同しない。
+| ファイル | 内容 | 形式 |
+|---|---|---|
+| `scene.json` の `objects` | 建物・鳥居・灯籠など | `asset`・`position`・`rotation`・`scale`・`variant`・コライダー寸法 |
+| `scene.json` の `steps` | 200段の各段 | 段鼻のx、踏面の上端y、z、幅、奥行き、蹴上げ |
+| `scene.json` の `stair` | 石段の全体寸法 | |
+| `vegetation.json` | 樹木（樹種ごと） | `[x, y, z, scale, yaw, variant, lean]` |
+| `clutter.json` | 下草・岩など | `[x, y, z, scale, yaw, variant]` |
+| `scene.json` の `river.points` | 川の中心線 | `[x, waterY, z, width]` |
+| `scene.json` の `roads` | 道 | |
+| `scene.json` の `powerLine` | 電柱の位置 | 電線は3本、たわみ0.65m |
 
-## 地形とは別の構造物
+`asset` 名からGLBへの対応は `src/world/architecture.ts` の `resolve()` と同じ規則です。
 
-参道は4フライト×50段、蹴上げ0.19m、踏面0.48m、幅5.4m、踊り場3m。JSONの各段を使って石段を生成し、接触用には各フライトの連続した斜面を別途作る。200個の細かい段差をCharacterControllerへ直接ぶつけない。境内床はy=38m。木の幹は円柱、建物は単純なボックスを基本とし、屋根や葉にメッシュ衝突を付けない。
+- `minka-*` → `<asset>_<variant>.glb`
+- `naya` → 番号の偶奇で `naya_0` / `naya_1`
+- `toro` → 3つに1つが `toro_1`
+- `komainu` → `komainu-a` または `komainu-un`
+- `denchu` → 3つに1つが `denchu-trans`
+- `prop-*` → `props/` 内のPoly Havenモデル
+- `block-wall` と `ishigaki` → 2mのモジュールを `length` に沿って並べる（`ishigaki` は高さ方向に `height` 倍）
 
-LOD0/1/2は別GLB。LODGroupを作り、元の距離を画面占有率へ調整する。GLBの材質名を`materials.json`と照合し、URP Lit/HDRP Litに外部画像を割り当てる。albedoだけsRGB、法線・roughnessは線形。Unityではsmoothness=1-roughnessへ変換し、使用するレンダーパイプラインのmask channelへパックする。法線の緑チャンネルは選択インポーターの規約をテストして決める。
+石段・石畳・境内の石垣は `architecture/stairs.glb` に**ワールド座標のまま**入っています。原点に置いてください。
 
-## エンジンごとに再実装するもの
+## モデル
 
-Sky、ACES露出、太陽・環境光、霧、葉の風、水面法線スクロール、Web Audioの距離減衰、Rapierの歩行、UIをそのまま移植しない。JSONの環境パラメータを基準にUnity側で調整する。HDRIと太陽の二重照明に注意。現在は天文学的な日時計算ではなく、17〜19時の美術調整である。
+| 種類 | ファイル | 内容 |
+|---|---|---|
+| 建築 | `public/assets/models/architecture/*.glb` | 位置と法線をKHR_mesh_quantizationで量子化。glTFastは対応済み |
+| 樹木 | `public/assets/models/trees/<樹種>_<0-3>.glb` | 1ファイルに `_lod0` と `_lod1` の2メッシュ |
+| 小物 | `public/assets/models/props/*.glb` | Poly HavenのCC0素材を軽量化したもの。テクスチャを内蔵 |
 
-樹木はEZ Treeの3D分岐と外部の葉・樹皮画像。スギ・ヒノキの正確な樹種モデル、風化した神社の写真モデル、実録ヒグラシは未導入。ライセンスが検証できた素材に差し替える場合、材質名とモデルの接地ピボットを保ち、GLB寸法・衝突サイズ・負荷予算を再検証する。
+- 寸法・三角形数は `architecture/index.json` と `trees/trees.json` にあります。
+- 樹木はLODGroupにし、LOD0とLOD1の切り替え距離（標準45m / 140m）を画面占有率に換算してください。遠景は、Unityで再生成したビルボード（Impostor）を使ってください。
+- 樹木の頂点カラー `COLOR_0` は風の重みです。R=幹の揺れ、G=枝のしなり、B=葉の揺れの位相。SpeedTree風の風シェーダーを作る際の入力にしてください。
 
-## 再構築版の追加データ
+## 材質
 
-- 地形は下流方向へ下がる川、水平な56区画の水田、水田より1.15m高い宅地を先に決めてから造成。`tools/generate_world.py`が原本。
-- 家屋・納屋・神社の`-low.glb`は建築用LOD。Three.js標準では75mで切替。
-- 近景の樹木は32m、中景105m、遠景410mの3段階。大きさと視野角でUnityのLODGroup閾値を調整。
-- `assets/botanical/*-impostor.png`は遠景専用。元の3D形状は同梱GLB。`impostors.json`にベイク時の寸法。UnityではSpeedTree相当のビルボードや別のインポスターへ置換可能。
-- 葉はalpha clip 0.35、両面。樹皮は法線・roughness・色を別画像で保持。MIT本文と出典を一緒に移植する。
-- 遠景樹冠11,000本の位置・回転・スケール・線形RGBは`public/world/canopy.json`。原本は`tools/generate-canopy.mjs`。Three.jsはこのJSONを読み込むため、Unityへも同じ配置を移せる。遠景用の平面は1×1m、原点が底辺中央、3枚をY軸回転0/60/120度で交差させる。近づいたときの立体モデルへの切替は遠景樹冠では未実装。
+`public/world/materials.json` が唯一の原本です。
+
+- **名前の対応**：GLB内の材質名は、`architecture`・`vegetation`・`terrainLayers` のいずれかに必ず載っています。
+- **テクスチャの場所**：`public/assets/textures/<tex>/{albedo,normal,arm}.jpg`。`albedo` だけsRGB、他はリニアで読み込む。
+- **arm**：R=AO、G=Roughness、B=Metalness（glTFのORM）。
+  - URPのLit / HDRPのMask Mapは R=Metallic、G=AO、A=Smoothness です。チャンネルを並べ替え、Smoothness = 1 − Roughness にしてください。
+- **法線**：OpenGL規約（+Y）。Unityも+Yなので、そのまま使えます。
+- **size**：テクスチャ1枚が覆う長さ（m）。GLBのUVはメートル単位なので、tiling = 1 / size です。
+- **color**：albedoに乗算する色（sRGBの16進）。
+- **葉**：アルファカットオフ0.5、両面描画、半透過（HDRPならTranslucent / Subsurface）。
+
+## 環境（照明の再現）
+
+- **太陽**：`scene.json` の `environment` にある日付・緯度・経度・タイムゾーンで太陽位置を計算する。式は `src/engine/sun.ts`（NOAAの近似式）。
+  - 18:00は方位285.6°・高度6.7°。直射光の色は大気減衰の近似で決める（`sunlight()`）。
+- **空**：`public/assets/sky/backdrop.jpg`（上半球のLDR）と `environment_1k.hdr`。
+  - `sky.json` に元画像の太陽方位がある。空の回転は「太陽方位 − 元画像の太陽方位」。
+  - HDRIを環境光に使う場合は、直射光と二重にならないよう太陽部分を抑える（`lighting.ts` では輝度6以上をクランプしている）。
+- **霞**：指数関数的な高さフォグ。密度0.00036/m、高さ減衰0.0042/m。太陽方向にHenyey–Greensteinのg=0.72で暖色を加える。HDRPならVolumetric Fogで再現する。
+- **トーンマッピング**：ACES。露出は18:00で約1.05。
+
+## 作り直す必要があるもの
+
+草と稲のGPU生成、田の遠景面、川の水面、葉の透過光、風、霞、空のドーム、ポストエフェクト、立体音響は、Three.jsのシェーダーとWeb Audioの実装です。Unity側で同等の表現を作り直してください（Terrain Detail・VFX Graph・水のシェーダー・Audio Mixer）。
+
+Unity化の際も、ヒグラシの録音（CC BY 4.0）のクレジットは必ず表記してください。

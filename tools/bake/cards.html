@@ -1,0 +1,115 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>foliage card bake</title>
+<style>html,body{margin:0;background:transparent}canvas{display:block}</style>
+<script type="importmap">{"imports":{"three":"/node_modules/three/build/three.module.js","three/addons/":"/node_modules/three/examples/jsm/"}}</script>
+</head>
+<body>
+<script type="module">
+// Offline baker: renders Poly Haven CC0 plant geometry (with its own alpha masks)
+// orthographically into RGBA albedo + tangent-space normal cards.
+import * as THREE from "three";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
+renderer.setPixelRatio(1);
+renderer.setClearColor(0x000000, 0);
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.localClippingEnabled = true;
+document.body.appendChild(renderer.domElement);
+const tl = new THREE.TextureLoader();
+async function loadPlant(url, alphaMaps) {
+  const g = await new GLTFLoader().loadAsync(url);
+  const meshes = [];
+  g.scene.updateMatrixWorld(true);
+  g.scene.traverse((o) => {
+    if (!o.isMesh) return;
+    const m = o.material;
+    const a = alphaMaps[m.name];
+    if (a) {
+      const tex = tl.load(a);
+      tex.flipY = false;
+      tex.colorSpace = THREE.NoColorSpace;
+      m.alphaMap = tex;
+      m.alphaTest = 0.5;
+      m.transparent = false;
+    }
+    m.side = THREE.DoubleSide;
+    meshes.push(o);
+  });
+  await new Promise((r) => setTimeout(r, 1500));
+  return { scene: g.scene, meshes };
+}
+// Albedo pass: unlit base colour (map) only, so the card carries no baked lighting.
+function albedoMaterial(src, planes) {
+  return new THREE.MeshBasicMaterial({ map: src.map, alphaMap: src.alphaMap, alphaTest: src.alphaMap ? 0.5 : 0,
+    side: THREE.DoubleSide, clippingPlanes: planes, color: 0xffffff });
+}
+// Normal pass: world-space normal of the geometry, encoded for a card lying in
+// the XZ plane looking down -Y (card +X = world +X, card +Y = world -Z).
+function normalMaterial(src, planes) {
+  const m = new THREE.ShaderMaterial({
+    uniforms: { alphaMap: { value: src.alphaMap }, hasAlpha: { value: src.alphaMap ? 1 : 0 } },
+    side: THREE.DoubleSide, clipping: true,
+    vertexShader: `#include <clipping_planes_pars_vertex>
+      varying vec3 vN; varying vec2 vUv;
+      void main(){ vUv = uv; vec4 mv = modelViewMatrix*vec4(position,1.);
+        vN = normalize(mat3(modelMatrix)*normal);
+        #include <clipping_planes_vertex>
+        gl_Position = projectionMatrix*mv; }`,
+    fragmentShader: `#include <clipping_planes_pars_fragment>
+      uniform sampler2D alphaMap; uniform float hasAlpha; varying vec3 vN; varying vec2 vUv;
+      void main(){ #include <clipping_planes_fragment>
+        if(hasAlpha>0.5 && texture2D(alphaMap,vUv).g<0.5) discard;
+        vec3 n = normalize(vN); if(!gl_FrontFacing) n = -n; if(n.y<0.) n = -n;
+        vec3 t = vec3(n.x, -n.z, n.y);
+        gl_FragColor = vec4(t*0.5+0.5, 1.0); }`,
+  });
+  m.clippingPlanes = planes;
+  return m;
+}
+window.bake = async function (job) {
+  const plant = await loadPlant(job.url, job.alphaMaps || {});
+  const results = [];
+  for (const view of job.views) {
+    const size = view.size || 512;
+    renderer.setSize(size, size, false);
+    const planes = (view.planes || []).map((p) => new THREE.Plane(new THREE.Vector3(...p.slice(0, 3)).normalize(), p[3]));
+    const cam = new THREE.OrthographicCamera(-view.half, view.half, view.half, -view.half, 0.01, 50);
+    cam.position.set(view.center[0], view.center[1] + 20, view.center[2]);
+    cam.up.set(0, 0, -1);
+    cam.lookAt(view.center[0], view.center[1], view.center[2]);
+    if (view.side) { // side view (for impostors of small plants): look along -Z
+      cam.position.set(view.center[0], view.center[1], view.center[2] + 20);
+      cam.up.set(0, 1, 0);
+      cam.lookAt(view.center[0], view.center[1], view.center[2]);
+    }
+    const out = {};
+    for (const pass of ["albedo", "normal"]) {
+      const scene = new THREE.Scene();
+      for (const o of plant.meshes) {
+        const m = new THREE.Mesh(o.geometry, pass === "albedo" ? albedoMaterial(o.material, planes) : normalMaterial(o.material, planes));
+        m.matrixAutoUpdate = false;
+        m.matrix.copy(o.matrixWorld);
+        if (view.rotY) m.matrix.premultiply(new THREE.Matrix4().makeTranslation(-view.pivot[0], 0, -view.pivot[2]))
+          .premultiply(new THREE.Matrix4().makeRotationY(view.rotY))
+          .premultiply(new THREE.Matrix4().makeTranslation(view.pivot[0], 0, view.pivot[2]));
+        scene.add(m);
+      }
+      renderer.render(scene, cam);
+      out[pass] = renderer.domElement.toDataURL("image/png");
+    }
+    results.push({ name: view.name, ...out });
+  }
+  return results;
+};
+window.info = async function (url) {
+  const g = await new GLTFLoader().loadAsync(url);
+  const box = new THREE.Box3().setFromObject(g.scene);
+  const list = [];
+  g.scene.traverse((o) => { if (o.isMesh) { const b = new THREE.Box3().setFromObject(o); list.push({ name: o.name, mat: o.material.name, min: b.min.toArray(), max: b.max.toArray() }); } });
+  return { min: box.min.toArray(), max: box.max.toArray(), list };
+};
+window.ready = true;
+</script>
+</body>
+</html>

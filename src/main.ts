@@ -1,46 +1,44 @@
 import "./style.css";
 import * as T from "three";
-import { loadWorld } from "./world";
-import { Landscape } from "./scene";
+import { installAtmosphere } from "./engine/atmosphere";
+import { Post } from "./engine/post";
+import type { Quality } from "./engine/lighting";
+import { loadWorld } from "./world/data";
+import { Landscape } from "./world/landscape";
+import { populate } from "./world/populate";
 import { Walker } from "./physics";
 import { Soundscape } from "./audio";
-const $ = <E extends HTMLElement = HTMLElement>(id: string) =>
-  document.getElementById(id) as E;
-const canvas = $<HTMLCanvasElement>("world"),
-  enter = $<HTMLButtonElement>("enter");
+
+installAtmosphere();
+const $ = <E extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as E;
+const canvas = $<HTMLCanvasElement>("world");
+const enter = $<HTMLButtonElement>("enter");
 enter.disabled = true;
-const audio = new Soundscape();
-let renderer: T.WebGLRenderer, land: Landscape, walker: Walker;
-const camera = new T.PerspectiveCamera(
-  65,
-  innerWidth / innerHeight,
-  0.08,
-  1800,
-);
+const params = new URLSearchParams(location.search);
+let quality = (params.get("quality") as Quality) || "standard";
+const camera = new T.PerspectiveCamera(60, innerWidth / innerHeight, 0.1, 9000);
 camera.rotation.order = "YXZ";
-let yaw = 0,
-  pitch = 0.08,
-  started = false,
-  locked = false,
-  settings = false,
-  ready = false,
-  elapsed = 0;
+const audio = new Soundscape();
+let renderer: T.WebGLRenderer, land: Landscape, walker: Walker, post: Post;
+let yaw = Math.PI / 2, pitch = 0, started = false, locked = false, settingsOpen = false, ready = false;
+let elapsed = 0, fps = 0, frames = 0, measure = 0, acc = 0, timeOfDay = 18;
 const keys = new Set<string>();
-let frameCount = 0,
-  fps = 0,
-  measureTime = 0;
-let fixedAccumulator = 0;
-function error(e: unknown) {
+
+function fail(e: unknown) {
   console.error(e);
   $("error").hidden = false;
-  $("error").textContent =
-    "風景を開始できませんでした。" +
-    (e instanceof Error ? e.message : String(e));
+  $("error").textContent = "風景を開始できませんでした。" + (e instanceof Error ? e.message : String(e));
   $("loading").textContent = "読み込みに失敗しました";
+}
+function pixelRatio() {
+  const b = { low: 0.75, standard: 1, high: 1.5 }[quality];
+  return Math.min(devicePixelRatio, b);
 }
 function resize() {
   if (!renderer) return;
-  renderer.setSize(innerWidth, innerHeight);
+  renderer.setPixelRatio(pixelRatio());
+  renderer.setSize(innerWidth, innerHeight, false);
+  post.setSize(innerWidth, innerHeight, pixelRatio());
   camera.aspect = innerWidth / innerHeight;
   camera.updateProjectionMatrix();
 }
@@ -48,154 +46,146 @@ addEventListener("resize", resize);
 function requestLook() {
   if (!ready) return;
   try {
-    const result = canvas.requestPointerLock();
-    result?.catch(() => {
-      $("resume").textContent = "画面をドラッグして視点を動かせます";
-    });
-  } catch {}
+    const r = canvas.requestPointerLock() as unknown as Promise<void> | undefined;
+    r?.catch?.(() => ($("resume").textContent = "画面をドラッグして視点を動かせます"));
+  } catch {
+    /* pointer lock unavailable: drag to look */
+  }
 }
 function setSettings(open: boolean) {
-  settings = open;
+  settingsOpen = open;
   $("settings").hidden = !open;
   if (open) document.exitPointerLock();
   $("resume").hidden = !started || open || locked;
 }
-function updateAudio() {
-  const text = audio.muted ? "オフ" : "オン";
-  $("audio").textContent = text;
-  $("sound-short").textContent = "♪ " + text;
+function audioLabel() {
+  const t = audio.muted || !audio.context ? "オフ" : "オン";
+  $("audio").textContent = t;
+  $("sound-short").textContent = "♪ " + t;
 }
 async function toggleAudio() {
   try {
     if (!audio.context) await audio.start();
     else audio.setMuted(!audio.muted);
-    updateAudio();
   } catch (e) {
-    $("audio").textContent = "読込失敗";
     console.error(e);
   }
+  audioLabel();
 }
 $("audio").onclick = toggleAudio;
 $("sound-short").onclick = toggleAudio;
 enter.onclick = () => {
   started = true;
   $("welcome").hidden = true;
+  document.body.classList.add("exploring");
   requestLook();
-  audio
-    .start()
-    .then(updateAudio)
-    .catch((e) => console.error(e));
+  audio.start().then(audioLabel).catch(console.error);
 };
-canvas.onclick = () => {
-  if (started && !settings) requestLook();
-};
-$("settings-button").onclick = () => setSettings(!settings);
+canvas.onclick = () => started && !settingsOpen && requestLook();
+$("settings-button").onclick = () => setSettings(!settingsOpen);
 $("close-settings").onclick = () => setSettings(false);
 addEventListener("pointerlockchange", () => {
   locked = document.pointerLockElement === canvas;
   $("crosshair").hidden = !locked;
-  $("resume").hidden = !started || locked || settings;
+  $("resume").hidden = !started || locked || settingsOpen;
   keys.clear();
 });
 let dragging = false;
 canvas.addEventListener("pointerdown", () => (dragging = true));
 addEventListener("pointerup", () => (dragging = false));
 addEventListener("mousemove", (e) => {
-  if ((locked || dragging) && !settings && started) {
-    yaw -= e.movementX * 0.0019;
-    pitch = T.MathUtils.clamp(pitch - e.movementY * 0.0019, -1.5, 1.5);
+  if ((locked || dragging) && !settingsOpen && started) {
+    yaw -= e.movementX * 0.0018;
+    pitch = T.MathUtils.clamp(pitch - e.movementY * 0.0018, -1.45, 1.45);
   }
 });
-let walkBookmark: number[] | null = null;
+let bookmark: number[] | null = null;
 function setFree(v: boolean) {
-  if (v && !walker.free) walkBookmark = walker.position.toArray();
-  if (!v && walker.free && walkBookmark) walker.teleport(walkBookmark);
+  if (v && !walker.free) bookmark = walker.position.toArray();
   walker.free = v;
+  if (!v && bookmark) walker.teleport(bookmark);
   $<HTMLInputElement>("free").checked = v;
-  walker.vertical = 0;
 }
 addEventListener("keydown", (e) => {
   if ((e.target as HTMLElement).matches("input,select")) return;
-  if (
-    ["KeyW", "KeyA", "KeyS", "KeyD", "Space", "ArrowUp", "ArrowDown"].includes(
-      e.code,
-    )
-  )
-    e.preventDefault();
+  if (["KeyW", "KeyA", "KeyS", "KeyD", "Space", "ArrowUp", "ArrowDown"].includes(e.code)) e.preventDefault();
   keys.add(e.code);
   if (e.repeat) return;
   if (e.code === "KeyF" && ready) setFree(!walker.free);
   if (e.code === "KeyH") document.body.classList.toggle("hide-ui");
   if (e.code === "Escape") {
     keys.clear();
-    if (document.pointerLockElement) document.exitPointerLock();
-    if (settings) setSettings(false);
+    if (settingsOpen) setSettings(false);
   }
 });
 addEventListener("keyup", (e) => keys.delete(e.code));
 addEventListener("blur", () => keys.clear());
-document.addEventListener("visibilitychange", () => {
-  keys.clear();
-  fixedAccumulator = 0;
-});
-$<HTMLInputElement>("free").onchange = (e) =>
-  setFree((e.target as HTMLInputElement).checked);
-$<HTMLInputElement>("time").oninput = (e) => {
-  const t = +(e.target as HTMLInputElement).value / 60,
-    total = Math.round(t * 60),
-    label = `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")}`;
-  land.setTime(t);
-  $("time-value").textContent = label;
-  $("clock").textContent = label;
-};
-$<HTMLSelectElement>("quality").onchange = (e) => {
-  land.setQuality((e.target as HTMLSelectElement).value);
-  land.updateTrees(camera.position, camera);
+$<HTMLInputElement>("free").onchange = (e) => setFree((e.target as HTMLInputElement).checked);
+function clockLabel(h: number) {
+  const m = Math.round(h * 60);
+  return `${Math.floor(m / 60)}:${String(m % 60).padStart(2, "0")}`;
+}
+function setTime(h: number) {
+  timeOfDay = h;
+  land.setTime(h);
+  $("time-value").textContent = clockLabel(h);
+  $("clock").textContent = clockLabel(h);
+  $<HTMLInputElement>("time").value = String(Math.round(h * 60));
+}
+$<HTMLInputElement>("time").oninput = (e) => setTime(+(e.target as HTMLInputElement).value / 60);
+function setQuality(q: Quality) {
+  quality = q;
+  land.setQuality(q);
+  post.setQuality(q);
+  $<HTMLSelectElement>("quality").value = q;
   resize();
-};
-$<HTMLInputElement>("diagnostics").onchange = (e) =>
-  ($("stats").hidden = !(e.target as HTMLInputElement).checked);
-document.querySelectorAll<HTMLButtonElement>("[data-place]").forEach(
-  (b) =>
-    (b.onclick = () => {
-      const place = b.dataset.place!;
-      walker.teleport(land.data.landmarks[place]);
-      if (place === "lookout") {
-        yaw = Math.PI - 0.2;
-        pitch = -0.21;
-      } else if (place === "shrine") {
-        yaw = 0;
-        pitch = 0;
-      } else {
-        yaw = 0;
-        pitch = 0.08;
-      }
-      keys.clear();
-      updateCamera();
-      land.updateTrees(camera.position, camera);
-      setSettings(false);
-    }),
-);
-function updateCamera() {
+}
+$<HTMLSelectElement>("quality").onchange = (e) => setQuality((e.target as HTMLSelectElement).value as Quality);
+$<HTMLInputElement>("diagnostics").onchange = (e) => ($("stats").hidden = !(e.target as HTMLInputElement).checked);
+function goto(name: string) {
+  const l = land.world.data.landmarks[name];
+  if (!l) return;
+  walker.teleport(l);
+  yaw = -T.MathUtils.degToRad(l[3] ?? 0); // compass azimuth -> camera yaw (forward = -Z at yaw 0)
+  pitch = T.MathUtils.degToRad(l[4] ?? 0);
+  keys.clear();
+  updateCamera(0);
+}
+document.querySelectorAll<HTMLButtonElement>("[data-place]").forEach((b) => (b.onclick = () => (goto(b.dataset.place!), setSettings(false))));
+
+function updateCamera(dt: number) {
   camera.position.copy(walker.position);
+  if (!walker.free && walker.grounded && walker.speed > 0.2) camera.position.y += Math.sin(walker.bob * Math.PI * 2) * 0.018 * Math.min(1, walker.speed / 1.5);
   camera.rotation.set(pitch, yaw, 0);
+  void dt;
 }
-function place() {
+const PLACES: [string, string, (p: T.Vector3) => boolean][] = [
+  ["見晴らし", "村を見下ろす、境内の外れ。", (p) => p.y > 40 && p.z > -22],
+  ["山上の神社", "杉木立に包まれた、静かな境内。", (p) => p.y > 40],
+  ["表参道の石段", "", (p) => p.x > 120 && p.x < 205 && Math.abs(p.z + 40) < 6],
+  ["麓の鳥居", "山へと続く、二百段。", (p) => p.x > 92 && p.x <= 124 && Math.abs(p.z + 40) < 14],
+  ["小川のほとり", "水音をたどる、夕暮れの道。", (p) => Math.abs(p.x - riverX(p.z)) < 14],
+  ["山里の集落", "田んぼを渡る、晩夏の風。", () => true],
+];
+function riverX(z: number) {
+  const pts = land.world.data.river.points;
+  const i = T.MathUtils.clamp(Math.round((z + 600) / 2.5), 0, pts.length - 1);
+  return pts[i][0];
+}
+function placeName(): [string, string] {
   const p = walker.position;
-  if (p.y > 30)
-    return p.x > 12
-      ? ["見晴らしの庭", "風の向こうに、村の暮らし。"]
-      : ["山上の神社", "杉木立に包まれた、静かな境内。"];
-  if (p.z < 0)
-    return [
-      "表参道の石段",
-      `${Math.min(200, Math.max(0, Math.round(p.y / 0.19)))} / 200 段　木陰を抜けて。`,
-    ];
-  if (p.x > 65 && p.z > 30)
-    return ["小川のほとり", "水音をたどる、夕暮れの道。"];
-  if (p.z > 32) return ["山里の集落", "田んぼを渡る、晩夏の風。"];
-  return ["麓の鳥居", "山へと続く、二百段。"];
+  for (const [name, cap, test] of PLACES)
+    if (test(p)) {
+      if (name === "表参道の石段") {
+        const st = land.world.data.stair;
+        const n = Math.round((p.y - EYE_OFFSET - st.footY) / st.rise);
+        return [name, `${T.MathUtils.clamp(n, 0, st.steps)} / ${st.steps} 段　木陰を抜けて。`];
+      }
+      return [name, cap];
+    }
+  return ["", ""];
 }
+const EYE_OFFSET = 1.62;
 function intent() {
   const d = new T.Vector3(
     (keys.has("KeyD") ? 1 : 0) - (keys.has("KeyA") ? 1 : 0),
@@ -207,132 +197,151 @@ function intent() {
   else d.applyAxisAngle(T.Object3D.DEFAULT_UP, yaw);
   return d;
 }
-function frame(dt: number, wallDt: number) {
+function frame(dt: number, wall: number) {
   elapsed += dt;
-  if (ready) {
-    fixedAccumulator = Math.min(fixedAccumulator + dt, 0.15);
-    const dir = started && !settings ? intent() : new T.Vector3();
-    while (fixedAccumulator >= 1 / 60) {
-      walker.move(dir, 1 / 60, keys.has("ShiftLeft") || keys.has("ShiftRight"));
-      fixedAccumulator -= 1 / 60;
-    }
-    updateCamera();
-    land.update(dt, elapsed, camera.position, camera);
-    audio.update(camera);
-    renderer.render(land.scene, camera);
-    measureTime += wallDt;
-    frameCount++;
-    if (measureTime > 0.7) {
-      fps = Math.round(frameCount / measureTime);
-      frameCount = 0;
-      measureTime = 0;
-      const [name, caption] = place();
-      $("place-name").textContent = name;
-      $("place-caption").textContent = caption;
-      const info = renderer.info.render;
-      const mb = land.materials.textures.reduce(
-        (s, t) =>
-          s +
-          (t.image
-            ? (t.image.width * t.image.height * 4 * 1.333) / 1048576
-            : 0),
-        0,
-      );
-      $("stats").textContent =
-        `${fps} fps · ${land.quality}\n${info.triangles.toLocaleString()} triangles / ${info.calls} calls\nTexture estimate ${mb.toFixed(1)} MiB (maps only)\n${camera.position
-          .toArray()
-          .map((v) => v.toFixed(1))
-          .join(
-            ", ",
-          )} m\n${walker.free ? "FREE CAMERA" : walker.grounded ? "GROUNDED" : "AIR"} · ${audio.status}`;
-    }
+  if (!ready) return;
+  acc = Math.min(acc + dt, 0.2);
+  const dir = started && !settingsOpen ? intent() : new T.Vector3();
+  const run = keys.has("ShiftLeft") || keys.has("ShiftRight");
+  while (acc >= 1 / 60) {
+    walker.move(dir, 1 / 60, run);
+    acc -= 1 / 60;
+  }
+  updateCamera(dt);
+  land.update(dt, elapsed);
+  audio.update(camera, land.world, timeOfDay);
+  renderer.info.reset();
+  post.draw(dt);
+  measure += wall;
+  frames++;
+  if (measure > 0.7) {
+    fps = Math.round(frames / measure);
+    frames = measure = 0;
+    const [n, c] = placeName();
+    $("place-name").textContent = n;
+    $("place-caption").textContent = c;
+    const info = renderer.info.render;
+    $("stats").textContent = `${fps} fps · ${quality}\n${info.triangles.toLocaleString()} tris / ${info.calls} calls\n${camera.position
+      .toArray()
+      .map((v) => v.toFixed(1))
+      .join(", ")}\n${walker.free ? "FREE" : walker.grounded ? "GROUNDED" : "AIR"} · ${audio.status}`;
   }
 }
 let last = performance.now();
+const CAPTURE = params.has("capture");
 function loop(t: number) {
-  const wallDt = (t - last) / 1000,
-    dt = Math.min(wallDt, 0.1);
+  if (CAPTURE) return; // capture mode renders only on explicit request (offline review)
+  const wall = (t - last) / 1000, dt = Math.min(wall, 0.1);
   last = t;
-  frame(dt, wallDt);
+  try {
+    frame(dt, wall);
+  } catch (e) {
+    ready = false;
+    fail(e);
+  }
   requestAnimationFrame(loop);
 }
 async function boot() {
-  renderer = new T.WebGLRenderer({
-    canvas,
-    antialias: true,
-    powerPreference: "high-performance",
-  });
-  renderer.setPixelRatio(Math.min(devicePixelRatio, 1.25));
+  renderer = new T.WebGLRenderer({ canvas, antialias: false, powerPreference: "high-performance", stencil: false });
   renderer.outputColorSpace = T.SRGBColorSpace;
   renderer.toneMapping = T.ACESFilmicToneMapping;
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = T.PCFSoftShadowMap;
-  resize();
+  renderer.info.autoReset = false;
   canvas.addEventListener("webglcontextlost", (e) => {
     e.preventDefault();
     ready = false;
-    $("error").hidden = false;
-    $("error").textContent = "描画接続が失われました。復旧を待っています。";
+    fail(Error("WebGL context lost"));
   });
-  canvas.addEventListener("webglcontextrestored", () => location.reload());
-  const { data, terrain } = await loadWorld();
-  land = new Landscape(renderer, data, terrain);
-  $("loading").textContent = "建物と木立を読み込んでいます…";
-  const physics = Walker.create(data, terrain);
-  await land.load(
-    (n) =>
-      ($("loading").textContent =
-        `風景を準備しています　${Math.round(n * 100)}%`),
-  );
+  const progress = (p: number, label: string) => ($("loading").textContent = `${label}　${Math.round(p * 100)}%`);
+  progress(0.01, "地形データを読み込んでいます");
+  const world = await loadWorld();
+  land = new Landscape(renderer, camera, world);
+  land.quality = quality;
+  post = new Post(renderer, land.scene, camera);
+  post.setQuality(quality);
+  resize();
+  const physics = Walker.create(world);
+  await land.load(progress);
+  await populate(land, progress);
   walker = await physics;
-  updateCamera();
+  progress(0.98, "仕上げています");
+  await land.lib.ready();
+  const start = params.get("place") ?? "foot";
+  goto(start);
+  setTime(params.has("time") ? +params.get("time")! : world.data.environment.defaultTime);
+  // compile shaders before the first visible frame
+  land.update(0, 0);
+  renderer.compile(land.scene, camera);
   ready = true;
   enter.disabled = false;
   $("loading").textContent = "準備ができました";
-  // Explicit diagnostics hook for repeatable traversal, collision and capture checks.
-  (window as any).__satoyama = {
+  (window as unknown as { __satoyama: unknown }).__satoyama = {
     get ready() {
       return ready;
     },
     get state() {
       return {
         position: walker.position.toArray(),
-        groundHeight: terrain.sample(walker.position.x, walker.position.z),
+        groundHeight: world.height.sample(walker.position.x, walker.position.z),
         grounded: walker.grounded,
         free: walker.free,
         triangles: renderer.info.render.triangles,
         calls: renderer.info.render.calls,
         fps,
         audio: audio.status,
-        steps: data.steps.length,
+        steps: world.data.steps.length,
+        time: timeOfDay,
+        place: placeName()[0],
       };
     },
-    teleport: (name: string) => {
-      walker.teleport(data.landmarks[name]);
-      updateCamera();
-      land.updateTrees(camera.position, camera);
-    },
+    teleport: (name: string) => goto(name),
     look: (y: number, p: number) => {
       yaw = y;
       pitch = p;
-      updateCamera();
-      land.updateTrees(camera.position, camera);
+      updateCamera(0);
     },
-    walk: (x: number, z: number, frames: number, run = false) => {
-      for (let i = 0; i < frames; i++)
-        walker.move(new T.Vector3(x, 0, z), 1 / 60, run);
-      updateCamera();
-      land.updateTrees(camera.position, camera);
+    lookCompass: (az: number, p: number) => {
+      yaw = -T.MathUtils.degToRad(az);
+      pitch = T.MathUtils.degToRad(p);
+      updateCamera(0);
+    },
+    walk: (x: number, z: number, n: number, run = false) => {
+      const d = new T.Vector3(x, 0, z);
+      if (d.lengthSq()) d.normalize();
+      for (let i = 0; i < n; i++) walker.move(d, 1 / 60, run);
+      updateCamera(0);
       return walker.position.toArray();
     },
-    setTime: (t: number) => land.setTime(t),
-    setQuality: (q: string) => {
-      land.setQuality(q);
-      land.updateTrees(camera.position, camera);
-      resize();
+    place: (x: number, y: number, z: number) => walker.teleport([x, y, z]),
+    setFree: (v: boolean) => setFree(v),
+    setTime,
+    setQuality,
+    renderFrames: (n: number) => {
+      for (let i = 0; i < n; i++) {
+        updateCamera(0);
+        land.update(1 / 60, (elapsed += 1 / 60));
+        renderer.info.reset();
+        post.draw(1 / 60);
+      }
+      return renderer.info.render.triangles;
     },
-    get world() {
-      return data;
+    /** main-pass triangle estimate per system (before frustum culling), shadow casters separately */
+    breakdown: () => {
+      const out: Record<string, { tris: number; shadow: number }> = {};
+      land.scene.traverse((o) => {
+        const m = o as T.Mesh;
+        if (!m.isMesh || !m.visible) return;
+        const g = m.geometry;
+        const per = (g.index ? g.index.count : g.attributes.position.count) / 3;
+        const inst = (m as T.InstancedMesh).isInstancedMesh ? (m as T.InstancedMesh).count : (g as T.InstancedBufferGeometry).isInstancedBufferGeometry ? (g as T.InstancedBufferGeometry).instanceCount : 1;
+        const mat = m.material as T.Material;
+        const key = m.name ? m.name.replace(/_\d+(_lod\d)?$/, "$1").replace(/^(architecture|props)\/.*/, "$1") : (mat.customProgramCacheKey?.() ?? "").split("|").pop() || mat.type;
+        const e = (out[key] ??= { tris: 0, shadow: 0 });
+        e.tris += per * inst;
+        if (m.castShadow) e.shadow += per * inst;
+      });
+      return Object.fromEntries(Object.entries(out).sort((a, b) => b[1].tris - a[1].tris).map(([k, v]) => [k, { tris: Math.round(v.tris), shadow: Math.round(v.shadow) }]));
     },
     get scene() {
       return land.scene;
@@ -340,7 +349,13 @@ async function boot() {
     get camera() {
       return camera;
     },
+    get world() {
+      return world.data;
+    },
   };
-  requestAnimationFrame(loop);
+  requestAnimationFrame((t) => {
+    last = t;
+    loop(t);
+  });
 }
-boot().catch(error);
+boot().catch(fail);

@@ -1,0 +1,305 @@
+{
+  "_comment": "Every external source used by the project. Fetched by tools/assets/fetch.py into .cache/ and processed into public/assets. Licences were checked on the distribution pages (Poly Haven /license: CC0 1.0; Wikimedia Commons file pages).",
+  "polyhaven": {
+    "licence": "CC0 1.0 Universal",
+    "licenceUrl": "https://polyhaven.com/license",
+    "hdri": [
+      {
+        "id": "evening_road_01_puresky",
+        "res": "4k",
+        "use": "sky dome backdrop (clouds) and image based light"
+      }
+    ],
+    "textures": [
+      {
+        "id": "forest_leaves_02",
+        "res": "1k",
+        "out": 1024,
+        "use": "terrain: forest floor (needle and leaf litter, moss)"
+      },
+      {
+        "id": "leafy_grass",
+        "res": "2k",
+        "out": 1024,
+        "use": "terrain: mown grass, embankments"
+      },
+      {
+        "id": "stony_dirt_path",
+        "res": "1k",
+        "out": 1024,
+        "use": "terrain: footpaths, farm tracks"
+      },
+      {
+        "id": "brown_mud_leaves_01",
+        "res": "1k",
+        "out": 1024,
+        "use": "terrain: paddy mud, wet soil"
+      },
+      {
+        "id": "river_small_rocks",
+        "res": "2k",
+        "out": 1024,
+        "use": "terrain: river bed"
+      },
+      {
+        "id": "mossy_rock",
+        "res": "1k",
+        "out": 1024,
+        "use": "terrain: steep rock"
+      },
+      {
+        "id": "gravel_floor_02",
+        "res": "2k",
+        "out": 1024,
+        "use": "shrine precinct gravel"
+      },
+      {
+        "id": "worn_asphalt",
+        "res": "1k",
+        "out": 1024,
+        "use": "village road"
+      },
+      {
+        "id": "rock_surface",
+        "res": "2k",
+        "out": 1024,
+        "use": "stone steps, lanterns, komainu"
+      },
+      {
+        "id": "japanese_stone_wall",
+        "res": "2k",
+        "out": 1024,
+        "use": "ishigaki retaining walls"
+      },
+      {
+        "id": "mossy_stone_wall",
+        "res": "1k",
+        "out": 1024,
+        "use": "mossy walls, step risers"
+      },
+      {
+        "id": "hinoki_planks",
+        "res": "2k",
+        "out": 1024,
+        "use": "shrine timber"
+      },
+      {
+        "id": "japanese_cedar_planks",
+        "res": "1k",
+        "out": 1024,
+        "use": "house timber"
+      },
+      {
+        "id": "weathered_plank_siding",
+        "res": "1k",
+        "out": 1024,
+        "use": "shitami-ita board siding"
+      },
+      {
+        "id": "wood_peeling_paint_weathered",
+        "res": "1k",
+        "out": 1024,
+        "use": "paint mask source for the derived vermilion texture"
+      },
+      {
+        "id": "grey_roof_tiles",
+        "res": "2k",
+        "out": 1024,
+        "use": "kawara roofs"
+      },
+      {
+        "id": "thatch_roof_angled",
+        "res": "2k",
+        "out": 1024,
+        "use": "kayabuki thatch"
+      },
+      {
+        "id": "rusty_corrugated_iron",
+        "res": "1k",
+        "out": 1024,
+        "use": "tin roofs, sheds"
+      },
+      {
+        "id": "white_plaster_rough_01",
+        "res": "1k",
+        "out": 1024,
+        "use": "shikkui plaster walls"
+      },
+      {
+        "id": "clay_plaster",
+        "res": "1k",
+        "out": 1024,
+        "use": "tsuchikabe clay walls"
+      },
+      {
+        "id": "concrete_block_wall",
+        "res": "1k",
+        "out": 1024,
+        "use": "block walls"
+      },
+      {
+        "id": "japanese_cedar_bark",
+        "res": "2k",
+        "out": 1024,
+        "use": "sugi trunks"
+      },
+      {
+        "id": "metasequoia_bark",
+        "res": "1k",
+        "out": 1024,
+        "use": "hinoki trunks (similar fibrous strip bark)"
+      },
+      {
+        "id": "pine_bark",
+        "res": "1k",
+        "out": 1024,
+        "use": "akamatsu lower trunk"
+      },
+      {
+        "id": "japanese_zelkova_bark",
+        "res": "1k",
+        "out": 1024,
+        "use": "broadleaf trunks"
+      }
+    ],
+    "models": [
+      {
+        "id": "fern_02",
+        "use": "fern clutter",
+        "targetTris": 1600
+      },
+      {
+        "id": "shrub_02",
+        "use": "undergrowth shrub",
+        "targetTris": 2400
+      },
+      {
+        "id": "shrub_03",
+        "use": "undergrowth shrub",
+        "targetTris": 2400
+      },
+      {
+        "id": "shrub_04",
+        "use": "undergrowth shrub",
+        "targetTris": 2400
+      },
+      {
+        "id": "weed_plant_02",
+        "use": "roadside weed",
+        "targetTris": 1500
+      },
+      {
+        "id": "nettle_plant",
+        "use": "roadside weed",
+        "targetTris": 1800
+      },
+      {
+        "id": "rock_moss_set_01",
+        "use": "mossy rocks",
+        "targetTris": 2200
+      },
+      {
+        "id": "rock_moss_set_02",
+        "use": "mossy rocks",
+        "targetTris": 2200
+      },
+      {
+        "id": "rock_07",
+        "use": "river boulder",
+        "targetTris": 1400
+      },
+      {
+        "id": "rock_09",
+        "use": "river boulder",
+        "targetTris": 1200
+      },
+      {
+        "id": "stone_01",
+        "use": "river stones",
+        "targetTris": 900
+      },
+      {
+        "id": "tree_stump_01",
+        "use": "forest stump",
+        "targetTris": 1800
+      },
+      {
+        "id": "dead_tree_trunk",
+        "use": "fallen trunk",
+        "targetTris": 2400
+      },
+      {
+        "id": "wooden_bucket_01",
+        "use": "village prop",
+        "targetTris": 3000
+      },
+      {
+        "id": "wooden_barrels_01",
+        "use": "village prop",
+        "targetTris": 9000
+      },
+      {
+        "id": "wooden_crate_01",
+        "use": "village prop",
+        "targetTris": 3000
+      },
+      {
+        "id": "wicker_basket_01",
+        "use": "village prop",
+        "targetTris": 5000
+      },
+      {
+        "id": "wooden_ladder",
+        "use": "village prop",
+        "targetTris": 4000
+      },
+      {
+        "id": "wooden_broom",
+        "use": "shrine prop",
+        "targetTris": 4000
+      }
+    ],
+    "foliageSources": [
+      {
+        "id": "fir_sapling",
+        "use": "baked into conifer spray cards (sugi/hinoki tint)"
+      },
+      {
+        "id": "pine_sapling_small",
+        "use": "baked into pine needle cards (akamatsu)"
+      },
+      {
+        "id": "tree_small_02",
+        "use": "baked into broadleaf leaf cluster cards"
+      },
+      {
+        "id": "grass_medium_01",
+        "use": "baked into grass clump cards"
+      }
+    ]
+  },
+  "commons": {
+    "audio": [
+      {
+        "title": "File:Tanna japonensis v01.ogg",
+        "page": "https://commons.wikimedia.org/wiki/File:Tanna_japonensis_v01.ogg",
+        "url": "https://upload.wikimedia.org/wikipedia/commons/3/3b/Tanna_japonensis_v01.ogg",
+        "author": "Σ64",
+        "licence": "CC BY 4.0",
+        "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+        "recorded": "2011-07-17, Asao Ward, Kawasaki, Kanagawa",
+        "use": "higurashi chorus (main)"
+      },
+      {
+        "title": "File:Higurashi 06c5856.ogg",
+        "page": "https://commons.wikimedia.org/wiki/File:Higurashi_06c5856.ogg",
+        "url": "https://upload.wikimedia.org/wikipedia/commons/b/b5/Higurashi_06c5856.ogg",
+        "author": "ISAKA Yoji (cory)",
+        "licence": "CC BY 2.1 JP",
+        "licenceUrl": "https://creativecommons.org/licenses/by/2.1/jp/",
+        "recorded": "2006-08-01, Higashitakane Shinrin-koen, Miyamae, Kawasaki",
+        "use": "higurashi second voice (car noise segments excluded)"
+      }
+    ]
+  }
+}

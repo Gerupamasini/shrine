@@ -3,3 +3,4 @@ dist/
 .playwright/
 test-results/
 *.log
+.cache/

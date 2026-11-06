@@ -1,181 +1,360 @@
 {
-  "wood": {
-    "baseColor": "assets/wood-albedo.jpg",
-    "normal": "assets/wood-normal.png",
-    "roughness": "assets/wood-roughness.jpg",
-    "metallic": 0,
-    "normalConvention": "OpenGL +Y",
-    "sRGB": [
-      "baseColor"
-    ],
-    "color": "#b8a58d"
+ "_doc": "Material name (as written into GLBs) -> photographic PBR texture set in public/assets/textures/<tex>/{albedo,normal,arm}.jpg. size = metres per texture repeat (GLB UVs are in metres). arm = R ambient occlusion, G roughness, B metalness (glTF ORM). Normal maps use the OpenGL (+Y) convention. colour multiplies the albedo (sRGB hex).",
+ "architecture": {
+  "stone_granite": {
+   "tex": "rock_surface",
+   "size": 1.2,
+   "color": "#c4bfb4"
   },
-  "darkwood": {
-    "baseColor": "assets/wood-albedo.jpg",
-    "normal": "assets/wood-normal.png",
-    "roughness": "assets/wood-roughness.jpg",
-    "metallic": 0,
-    "normalConvention": "OpenGL +Y",
-    "sRGB": [
-      "baseColor"
-    ],
-    "color": "#695b47"
+  "stone_step": {
+   "tex": "rock_surface",
+   "size": 0.9,
+   "color": "#b5aea1",
+   "normalScale": 1.3
   },
-  "stone": {
-    "baseColor": "assets/stone-albedo.jpg",
-    "normal": "assets/stone-normal.png",
-    "roughness": "assets/stone-roughness.jpg",
-    "metallic": 0,
-    "normalConvention": "OpenGL +Y",
-    "sRGB": [
-      "baseColor"
-    ],
-    "color": "#b3b5a9"
+  "stone_moss": {
+   "tex": "mossy_stone_wall",
+   "size": 1.4,
+   "color": "#c8c8b8"
   },
-  "roof": {
-    "baseColor": "assets/roof-albedo.jpg",
-    "normal": "assets/roof-normal.png",
-    "roughness": "assets/roof-roughness.jpg",
-    "metallic": 0,
-    "normalConvention": "OpenGL +Y",
-    "sRGB": [
-      "baseColor"
-    ],
-    "color": "#8e9894"
+  "stone_old": {
+   "tex": "mossy_rock",
+   "size": 0.9,
+   "color": "#b9b6aa"
   },
-  "thatch": {
-    "baseColor": "assets/thatch-albedo.jpg",
-    "normal": "assets/thatch-normal.png",
-    "roughness": "assets/thatch-roughness.jpg",
-    "metallic": 0,
-    "normalConvention": "OpenGL +Y",
-    "sRGB": [
-      "baseColor"
-    ],
-    "color": "#c3b391"
+  "stone_dark": {
+   "color": "#211e1b",
+   "roughness": 1
   },
-  "bark": {
-    "baseColor": "assets/bark-albedo.jpg",
-    "normal": "assets/bark-normal.png",
-    "roughness": "assets/bark-roughness.jpg",
-    "metallic": 0,
-    "normalConvention": "OpenGL +Y",
-    "sRGB": [
-      "baseColor"
-    ],
-    "color": "#b5a590"
+  "ishigaki": {
+   "tex": "japanese_stone_wall",
+   "size": 3,
+   "color": "#c0bab0"
   },
-  "soil": {
-    "baseColor": "assets/pbr/Ground048-Color.jpg",
-    "normal": "assets/pbr/Ground048-NormalGL.jpg",
-    "roughness": "assets/pbr/Ground048-Roughness.jpg",
-    "metallic": 0,
-    "normalConvention": "OpenGL +Y",
-    "sRGB": [
-      "baseColor"
-    ],
-    "terrainTileMetres": 1.8461538461538463,
-    "color": "#b9b8a6"
+  "wood_old": {
+   "tex": "hinoki_planks",
+   "size": 2,
+   "color": "#9a8b7a"
   },
-  "leaf": {
-    "baseColor": "assets/cedar-spray.png",
-    "doubleSided": true,
-    "alphaMode": "MASK",
-    "alphaCutoff": 0.13,
-    "roughness": 1,
-    "wind": "reimplement per engine"
+  "wood_planks": {
+   "tex": "hinoki_planks",
+   "size": 2,
+   "color": "#b09c84"
   },
-  "broadleaf": {
-    "baseColor": "assets/broadleaf.png",
-    "doubleSided": true,
-    "alphaMode": "MASK",
-    "alphaCutoff": 0.13,
-    "roughness": 1,
-    "wind": "reimplement per engine"
+  "wood_dark": {
+   "tex": "japanese_cedar_planks",
+   "size": 2,
+   "color": "#3a2f27"
   },
-  "moss": {
-    "baseColor": "assets/botanical/grass-ground.jpg",
-    "normal": "assets/pbr/Ground103-NormalGL.jpg",
-    "roughness": "assets/pbr/Ground103-Roughness.jpg",
-    "terrainTileMetres": 4.615384615384615,
-    "normalConvention": "OpenGL +Y",
-    "sRGB": [
-      "baseColor"
-    ],
-    "color": "#e3dfc2"
+  "wood_light": {
+   "tex": "hinoki_planks",
+   "size": 1,
+   "color": "#e3d2b5"
   },
-  "paper": {
-    "color": "#beb49c",
-    "roughness": 0.92
+  "wood_siding": {
+   "tex": "weathered_plank_siding",
+   "size": 2.4,
+   "color": "#b3a596"
   },
   "vermilion": {
-    "color": "#b95d43",
-    "roughness": 0.83,
-    "baseColor": "assets/wood-albedo.jpg",
-    "normal": "assets/wood-normal.png",
-    "normalScale": 0.11
+   "tex": "vermilion_paint",
+   "size": 2
   },
-  "metal": {
-    "color": "#727e7d",
-    "roughness": 0.65,
-    "metallic": 0.25
+  "lacquer_black": {
+   "tex": "hinoki_planks",
+   "size": 2,
+   "color": "#2a2725",
+   "roughness": 0.7
   },
-  "water": {
-    "normal": "assets/water-normal.png",
-    "roughness": 0.18,
-    "opacity": 0.66,
-    "clearcoat": 0.35,
-    "envMapIntensity": 0.25,
-    "reimplement": "normal-scroll + environment reflections"
+  "roof_kawara": {
+   "tex": "grey_roof_tiles",
+   "size": 1.6,
+   "color": "#a5a7a8",
+   "normalScale": 1.2
   },
-  "photobark": {
-    "baseColor": "assets/botanical/pine-bark-Color.jpg",
-    "normal": "assets/botanical/pine-bark-NormalGL.jpg",
-    "roughness": "assets/botanical/pine-bark-Roughness.jpg",
-    "repeat": [
-      1,
-      3
-    ],
-    "normalConvention": "OpenGL +Y",
-    "sRGB": [
-      "baseColor"
-    ],
-    "color": "#a69b87"
+  "roof_kawara_ridge": {
+   "tex": "grey_roof_tiles",
+   "size": 0.8,
+   "color": "#6c6e70"
   },
-  "pine-leaves": {
-    "baseColor": "assets/botanical/pine.png",
-    "doubleSided": true,
-    "alphaMode": "MASK",
-    "alphaCutoff": 0.35,
-    "roughness": 1,
-    "wind": "reimplement per engine",
-    "license": "MIT / Daniel Greenheck",
-    "color": "#a0ad8c"
+  "roof_thatch": {
+   "tex": "thatch_roof_angled",
+   "size": 2.2,
+   "color": "#b7a68c",
+   "normalScale": 1.4
   },
-  "oak-leaves": {
-    "baseColor": "assets/botanical/oak.png",
-    "doubleSided": true,
-    "alphaMode": "MASK",
-    "alphaCutoff": 0.35,
-    "roughness": 1,
-    "wind": "reimplement per engine",
-    "license": "MIT / Daniel Greenheck",
-    "color": "#a5b082"
+  "roof_tin": {
+   "tex": "rusty_corrugated_iron",
+   "size": 1.4,
+   "color": "#b38a74",
+   "metalness": 0.35
   },
-  "fern": {
-    "color": "#667d47",
-    "roughness": 1,
-    "doubleSided": true
+  "roof_copper": {
+   "tex": "white_plaster_rough_01",
+   "size": 2,
+   "color": "#6b9283",
+   "roughness": 0.75,
+   "metalness": 0.25
+  },
+  "roof_wood": {
+   "tex": "japanese_cedar_planks",
+   "size": 1.5,
+   "color": "#6f655b"
+  },
+  "plaster_white": {
+   "tex": "white_plaster_rough_01",
+   "size": 3,
+   "color": "#ece6da"
+  },
+  "plaster_clay": {
+   "tex": "clay_plaster",
+   "size": 3,
+   "color": "#d6c4a8"
+  },
+  "concrete": {
+   "tex": "white_plaster_rough_01",
+   "size": 3,
+   "color": "#a9a6a0"
+  },
+  "concrete_block": {
+   "tex": "concrete_block_wall",
+   "size": 2,
+   "color": "#c9c5bd"
+  },
+  "concrete_pole": {
+   "tex": "white_plaster_rough_01",
+   "size": 2,
+   "color": "#b4b1aa"
   },
   "glass": {
-    "color": "#283a39",
-    "roughness": 0.22,
-    "metallic": 0.2
+   "color": "#0c1214",
+   "roughness": 0.04,
+   "metalness": 0.2,
+   "envIntensity": 1.8
   },
-  "plaster": {
-    "color": "#aaa38c",
-    "roughness": 1,
-    "normal": "assets/stone-normal.png",
-    "normalScale": 0.08
+  "glass_dark": {
+   "color": "#06090a",
+   "roughness": 0.06,
+   "metalness": 0.2,
+   "envIntensity": 1.5
+  },
+  "interior_lit": {
+   "color": "#1a140c",
+   "emissive": "#ffc98a",
+   "emissiveIntensity": 0.9
+  },
+  "interior_dark": {
+   "color": "#0d0b09",
+   "roughness": 1
+  },
+  "aluminium": {
+   "color": "#b6b9b8",
+   "metalness": 0.85,
+   "roughness": 0.35
+  },
+  "paper": {
+   "color": "#eee8db",
+   "roughness": 0.95,
+   "doubleSided": true
+  },
+  "rope_straw": {
+   "tex": "thatch_roof_angled",
+   "size": 0.6,
+   "color": "#d9c48e"
+  },
+  "brass": {
+   "color": "#a8843a",
+   "metalness": 0.9,
+   "roughness": 0.38
+  },
+  "cloth_red": {
+   "color": "#a52a1f",
+   "roughness": 0.9,
+   "doubleSided": true
+  },
+  "water_still": {
+   "color": "#16201f",
+   "roughness": 0.04,
+   "envIntensity": 1.5
+  },
+  "bamboo_green": {
+   "color": "#7d8b47",
+   "roughness": 0.5
+  },
+  "metal_dark": {
+   "color": "#2b2c2e",
+   "metalness": 0.6,
+   "roughness": 0.5
+  },
+  "metal_grey": {
+   "color": "#7d8185",
+   "metalness": 0.5,
+   "roughness": 0.45
+  },
+  "porcelain": {
+   "color": "#e6e5e0",
+   "roughness": 0.2
+  },
+  "car_paint": {
+   "color": "#e5e5df",
+   "roughness": 0.32,
+   "metalness": 0.15
+  },
+  "rubber": {
+   "color": "#141414",
+   "roughness": 0.9
+  },
+  "light_lens": {
+   "color": "#d8ceb0",
+   "roughness": 0.2
+  },
+  "sign_blue": {
+   "color": "#2e5a99",
+   "roughness": 0.5
   }
+ },
+ "terrainLayers": [
+  {
+   "id": "leafy_grass",
+   "size": 3.2,
+   "tint": [
+    0.62,
+    0.78,
+    0.5
+   ]
+  },
+  {
+   "id": "forest_leaves_02",
+   "size": 3,
+   "tint": [
+    0.82,
+    0.8,
+    0.72
+   ]
+  },
+  {
+   "id": "stony_dirt_path",
+   "size": 2.6,
+   "tint": [
+    0.95,
+    0.92,
+    0.88
+   ]
+  },
+  {
+   "id": "mossy_rock",
+   "size": 4.5,
+   "tint": [
+    0.9,
+    0.92,
+    0.86
+   ]
+  },
+  {
+   "id": "brown_mud_leaves_01",
+   "size": 2.4,
+   "tint": [
+    0.8,
+    0.78,
+    0.72
+   ]
+  },
+  {
+   "id": "river_small_rocks",
+   "size": 2.2,
+   "tint": [
+    0.9,
+    0.9,
+    0.88
+   ]
+  },
+  {
+   "id": "gravel_floor_02",
+   "size": 1.6,
+   "tint": [
+    0.7,
+    0.68,
+    0.64
+   ]
+  },
+  {
+   "id": "worn_asphalt",
+   "size": 3.5,
+   "tint": [
+    0.9,
+    0.9,
+    0.9
+   ]
+  }
+ ],
+ "vegetation": {
+  "bark_sugi": {
+   "tex": "japanese_cedar_bark",
+   "size": 1,
+   "color": "#d8cfc4"
+  },
+  "bark_hinoki": {
+   "tex": "metasequoia_bark",
+   "size": 1,
+   "color": "#d9c2b0"
+  },
+  "bark_pine": {
+   "tex": "pine_bark",
+   "size": 1,
+   "color": "#e6c3a4"
+  },
+  "bark_broadleaf": {
+   "tex": "japanese_zelkova_bark",
+   "size": 1,
+   "color": "#9b968b"
+  },
+  "bark_keyaki": {
+   "tex": "japanese_zelkova_bark",
+   "size": 1,
+   "color": "#a8a296"
+  },
+  "foliage_sugi": {
+   "albedo": "assets/foliage/needle-albedo.png",
+   "normal": "assets/foliage/needle-normal.png",
+   "alphaCutoff": 0.5,
+   "doubleSided": true,
+   "color": "#8c9a78",
+   "translucency": true
+  },
+  "foliage_hinoki": {
+   "albedo": "assets/foliage/needle-albedo.png",
+   "normal": "assets/foliage/needle-normal.png",
+   "alphaCutoff": 0.5,
+   "doubleSided": true,
+   "color": "#93a37e",
+   "translucency": true
+  },
+  "foliage_pine": {
+   "albedo": "assets/foliage/pine-albedo.png",
+   "normal": "assets/foliage/pine-normal.png",
+   "alphaCutoff": 0.5,
+   "doubleSided": true,
+   "color": "#a6ad86",
+   "translucency": true
+  },
+  "foliage_broadleaf": {
+   "albedo": "assets/foliage/leaf-albedo.png",
+   "normal": "assets/foliage/leaf-normal.png",
+   "alphaCutoff": 0.5,
+   "doubleSided": true,
+   "color": "#b8c098",
+   "translucency": true
+  },
+  "bamboo_leaf": {
+   "albedo": "assets/foliage/bamboo-leaf-albedo.png",
+   "alphaCutoff": 0.5,
+   "doubleSided": true,
+   "color": "#c4cfa0",
+   "translucency": true
+  },
+  "bamboo_culm": {
+   "albedo": "assets/foliage/bamboo-culm-albedo.jpg",
+   "roughness": 0.55
+  }
+ }
 }

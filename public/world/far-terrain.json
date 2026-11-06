@@ -1,0 +1,8 @@
+{
+ "file": "far-heightmap.png",
+ "resolution": 257,
+ "extent": 14000.0,
+ "minHeight": 0,
+ "range": 1600,
+ "note": "Distant ranges for the horizon. The inner 1.2 km is covered by the detailed terrain."
+}

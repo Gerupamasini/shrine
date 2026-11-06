@@ -1,99 +1,243 @@
-import { publicUrl } from "./urls";
 import * as T from "three";
-export class Soundscape {
-  context: AudioContext | null = null;
-  master: GainNode | null = null;
-  muted = true;
-  sources: AudioBufferSourceNode[] = [];
-  stream: PannerNode | null = null;
-  status = "未開始";
-  async start() {
-    if (this.context) {
-      await this.context.resume();
-      this.setMuted(false);
-      return;
-    }
-    this.context = new AudioContext();
-    await this.context.resume();
-    this.master = this.context.createGain();
-    this.master.gain.value = 0.48;
-    this.master.connect(this.context.destination);
-    this.status = "読込中";
-    try {
-      await Promise.all([
-        this.sound("summer-insects-synth.wav", [-10, 15, -55], 0.55),
-        this.sound("summer-insects-synth.wav", [23, 47, -140], 0.5, 17),
-        this.sound("wind-synth.wav", [0, 45, -125], 0.55, 9),
-        this.sound("stream-synth.wav", [85, 1, 115], 0.75, 0, true),
-      ]);
-      this.muted = false;
-      this.status = "合成環境音";
-    } catch (e) {
-      this.status = "音源読込失敗";
-      throw e;
+import { publicUrl } from "./urls";
+import type { InstanceRow, World } from "./world/data";
+
+/**
+ * Evening soundscape. BGM-free.
+ *  - Higurashi: a real CC BY 4.0 field recording (Wikimedia Commons, Σ64), played from
+ *    several HRTF sources anchored in the forest around the listener, each from its own
+ *    offset and rate so the 96 s source never repeats audibly; plus a distant stereo bed.
+ *  - Stream and wind/leaves are synthesised (filtered noise with gusts) and labelled as such.
+ * Gains follow the time of day and the place (river, forest, shrine height).
+ */
+type Voice = { src: AudioBufferSourceNode; gain: GainNode; pan: PannerNode; anchor: T.Vector3; base: number; next: number };
+
+function noiseBuffer(ctx: AudioContext, seconds: number, colour: "pink" | "brown") {
+  const n = Math.floor(ctx.sampleRate * seconds);
+  const buf = ctx.createBuffer(1, n, ctx.sampleRate);
+  const d = buf.getChannelData(0);
+  let b0 = 0, b1 = 0, b2 = 0, last = 0;
+  for (let i = 0; i < n; i++) {
+    const w = Math.random() * 2 - 1;
+    if (colour === "pink") {
+      b0 = 0.99765 * b0 + w * 0.099046;
+      b1 = 0.963 * b1 + w * 0.2965164;
+      b2 = 0.57 * b2 + w * 1.0526913;
+      d[i] = (b0 + b1 + b2 + w * 0.1848) * 0.18;
+    } else {
+      last = (last + 0.02 * w) / 1.02;
+      d[i] = last * 3.5;
     }
   }
-  async sound(
-    file: string,
-    position: number[],
-    gain: number,
-    offset = 0,
-    river = false,
-  ) {
-    const ctx = this.context!;
-    const res = await fetch(publicUrl("assets/audio/" + file));
-    if (!res.ok) throw Error(file);
-    const buffer = await ctx.decodeAudioData(await res.arrayBuffer());
-    const src = ctx.createBufferSource();
-    src.buffer = buffer;
-    src.loop = true;
-    const p = new PannerNode(ctx, {
-      panningModel: "HRTF",
-      distanceModel: "inverse",
-      refDistance: river ? 8 : 22,
-      maxDistance: 350,
-      rolloffFactor: river ? 1.2 : 0.6,
-      positionX: position[0],
-      positionY: position[1],
-      positionZ: position[2],
-    });
-    const g = ctx.createGain();
-    g.gain.value = gain;
-    src.connect(g);
-    g.connect(p);
-    p.connect(this.master!);
-    src.start(0, offset);
-    this.sources.push(src);
-    if (river) this.stream = p;
+  // crossfade the loop seam
+  const f = Math.floor(ctx.sampleRate * 0.25);
+  for (let i = 0; i < f; i++) {
+    const t = i / f;
+    d[i] = d[i] * t + d[n - f + i] * (1 - t);
+  }
+  return buf;
+}
+
+export class Soundscape {
+  context: AudioContext | null = null;
+  muted = false;
+  status = "off";
+  master!: GainNode;
+  higurashi: Voice[] = [];
+  bed!: GainNode;
+  stream: { gain: GainNode; pan: PannerNode }[] = [];
+  wind!: GainNode;
+  leaves!: GainNode;
+  leafFilter!: BiquadFilterNode;
+  windFilter!: BiquadFilterNode;
+  private t = 0;
+  async start() {
+    if (this.context) return;
+    const ctx = new AudioContext();
+    this.context = ctx;
+    this.status = "loading";
+    this.master = ctx.createGain();
+    this.master.gain.value = 0;
+    this.master.connect(ctx.destination);
+    this.master.gain.setTargetAtTime(this.muted ? 0 : 0.9, ctx.currentTime, 1.5);
+    const fmt = new Audio().canPlayType('audio/ogg; codecs="vorbis"') ? "ogg" : "mp3";
+    const load = async (name: string) => ctx.decodeAudioData(await (await fetch(publicUrl(`assets/audio/${name}.${fmt}`))).arrayBuffer());
+    const [mono, stereo] = await Promise.all([load("higurashi-tanna-mono"), load("higurashi-tanna-stereo")]);
+    // distant chorus bed (stereo, softened)
+    {
+      const s = ctx.createBufferSource();
+      s.buffer = stereo;
+      s.loop = true;
+      s.playbackRate.value = 0.985;
+      const lp = ctx.createBiquadFilter();
+      lp.type = "lowpass";
+      lp.frequency.value = 5200;
+      this.bed = ctx.createGain();
+      this.bed.gain.value = 0.16;
+      s.connect(lp).connect(this.bed).connect(this.master);
+      s.start(0, 31.7);
+    }
+    for (let i = 0; i < 5; i++) {
+      const src = ctx.createBufferSource();
+      src.buffer = mono;
+      src.loop = true;
+      src.playbackRate.value = 0.965 + i * 0.017;
+      const gain = ctx.createGain();
+      gain.gain.value = 0;
+      const pan = new PannerNode(ctx, { panningModel: "HRTF", distanceModel: "inverse", refDistance: 9, rolloffFactor: 1.15, maxDistance: 400 });
+      src.connect(gain).connect(pan).connect(this.master);
+      src.start(0, (i * 19.3) % mono.duration);
+      this.higurashi.push({ src, gain, pan, anchor: new T.Vector3(1e9, 0, 0), base: 0.55 + Math.random() * 0.35, next: 0 });
+    }
+    // stream: brown + pink noise through resonant bands, three moving sources along the river
+    const brown = noiseBuffer(ctx, 9, "brown"), pink = noiseBuffer(ctx, 7, "pink");
+    for (let i = 0; i < 3; i++) {
+      const a = ctx.createBufferSource(), b = ctx.createBufferSource();
+      a.buffer = brown;
+      b.buffer = pink;
+      a.loop = b.loop = true;
+      const bp = ctx.createBiquadFilter();
+      bp.type = "bandpass";
+      bp.frequency.value = 650 + i * 240;
+      bp.Q.value = 0.7;
+      const hp = ctx.createBiquadFilter();
+      hp.type = "highpass";
+      hp.frequency.value = 1800 + i * 500;
+      const mix = ctx.createGain();
+      const gain = ctx.createGain();
+      gain.gain.value = 0.0;
+      const pan = new PannerNode(ctx, { panningModel: "HRTF", distanceModel: "inverse", refDistance: 4, rolloffFactor: 1.4, maxDistance: 300 });
+      a.connect(bp).connect(mix);
+      const g2 = ctx.createGain();
+      g2.gain.value = 0.35;
+      b.connect(hp).connect(g2).connect(mix);
+      mix.connect(gain).connect(pan).connect(this.master);
+      // babbling: slow random modulation of the band
+      const lfo = ctx.createOscillator();
+      lfo.frequency.value = 0.7 + i * 0.37;
+      const lg = ctx.createGain();
+      lg.gain.value = 180;
+      lfo.connect(lg).connect(bp.frequency);
+      lfo.start();
+      a.start(0, i * 2.1);
+      b.start(0, i * 1.7);
+      this.stream.push({ gain, pan });
+    }
+    // wind and leaves (non-positional, gusting)
+    {
+      const n = ctx.createBufferSource();
+      n.buffer = brown;
+      n.loop = true;
+      this.windFilter = ctx.createBiquadFilter();
+      this.windFilter.type = "lowpass";
+      this.windFilter.frequency.value = 420;
+      this.wind = ctx.createGain();
+      this.wind.gain.value = 0.0;
+      n.connect(this.windFilter).connect(this.wind).connect(this.master);
+      n.start(0, 4.3);
+      const l = ctx.createBufferSource();
+      l.buffer = pink;
+      l.loop = true;
+      this.leafFilter = ctx.createBiquadFilter();
+      this.leafFilter.type = "bandpass";
+      this.leafFilter.frequency.value = 3400;
+      this.leafFilter.Q.value = 0.5;
+      this.leaves = ctx.createGain();
+      this.leaves.gain.value = 0.0;
+      l.connect(this.leafFilter).connect(this.leaves).connect(this.master);
+      l.start(0, 2.2);
+    }
+    this.status = "playing";
   }
   setMuted(m: boolean) {
     this.muted = m;
-    if (this.master && this.context)
-      this.master.gain.setTargetAtTime(
-        m ? 0 : 0.48,
-        this.context.currentTime,
-        0.3,
-      );
-  }
-  update(camera: T.PerspectiveCamera) {
     if (!this.context) return;
-    const l = this.context.listener,
-      p = camera.position,
-      d = camera.getWorldDirection(new T.Vector3());
-    l.positionX.value = p.x;
-    l.positionY.value = p.y;
-    l.positionZ.value = p.z;
-    l.forwardX.value = d.x;
-    l.forwardY.value = d.y;
-    l.forwardZ.value = d.z;
-    l.upX.value = 0;
-    l.upY.value = 1;
-    l.upZ.value = 0;
-    if (this.stream) {
-      const z = T.MathUtils.clamp(p.z, -15, 370);
-      this.stream.positionX.value = 83 + 9 * Math.sin(z * 0.025);
-      this.stream.positionZ.value = z;
-      this.stream.positionY.value = 0;
+    this.master.gain.setTargetAtTime(m ? 0 : 0.9, this.context.currentTime, 0.4);
+    this.status = m ? "muted" : "playing";
+  }
+  private forestPoint(w: World, around: T.Vector3, k: number) {
+    // a sugi/hinoki/broadleaf tree 18-70 m away; deterministic per voice and position bucket
+    const rows = [...(w.trees.sugi ?? []), ...(w.trees.hinoki ?? []), ...(w.trees.broadleaf ?? [])];
+    let best: InstanceRow | null = null, bestScore = 1e9;
+    const want = 22 + k * 11;
+    for (let i = (k * 977) % 37; i < rows.length; i += 37) {
+      const r = rows[i];
+      const d = Math.hypot(r[0] - around.x, r[2] - around.z);
+      const ang = Math.atan2(r[0] - around.x, r[2] - around.z);
+      const score = Math.abs(d - want) + Math.abs(((ang - k * 1.26 + Math.PI * 3) % (Math.PI * 2)) - Math.PI) * 6;
+      if (score < bestScore) (bestScore = score), (best = r);
     }
+    return best ? new T.Vector3(best[0], best[1] + 10, best[2]) : around.clone().add(new T.Vector3(30, 10, 0));
+  }
+  update(cam: T.Camera, w: World, time: number) {
+    const ctx = this.context;
+    if (!ctx || this.status === "loading") return;
+    const now = ctx.currentTime;
+    const p = cam.position;
+    const l = ctx.listener;
+    const fwd = new T.Vector3(0, 0, -1).applyQuaternion(cam.quaternion);
+    const up = new T.Vector3(0, 1, 0).applyQuaternion(cam.quaternion);
+    if (l.positionX) {
+      l.positionX.setTargetAtTime(p.x, now, 0.05);
+      l.positionY.setTargetAtTime(p.y, now, 0.05);
+      l.positionZ.setTargetAtTime(p.z, now, 0.05);
+      l.forwardX.setTargetAtTime(fwd.x, now, 0.05);
+      l.forwardY.setTargetAtTime(fwd.y, now, 0.05);
+      l.forwardZ.setTargetAtTime(fwd.z, now, 0.05);
+      l.upX.setTargetAtTime(up.x, now, 0.05);
+      l.upY.setTargetAtTime(up.y, now, 0.05);
+      l.upZ.setTargetAtTime(up.z, now, 0.05);
+    }
+    this.t += 1 / 60;
+    // time of day: higurashi strongest 17:45-18:40, fading into dusk
+    const hig = T.MathUtils.smoothstep(time, 17.0, 17.75) * (1 - T.MathUtils.smoothstep(time, 18.6, 19.05)) * 0.85 + 0.15;
+    // place: forest density around the listener
+    const forest = T.MathUtils.clamp(this.forestCount(w, p) / 30, 0, 1);
+    const height = T.MathUtils.smoothstep(p.y, 20, 42);
+    for (let k = 0; k < this.higurashi.length; k++) {
+      const v = this.higurashi[k];
+      if (v.anchor.distanceTo(p) > 85 || v.anchor.x > 1e8) {
+        v.anchor.copy(this.forestPoint(w, p, k));
+        v.pan.positionX.setValueAtTime(v.anchor.x, now);
+        v.pan.positionY.setValueAtTime(v.anchor.y, now);
+        v.pan.positionZ.setValueAtTime(v.anchor.z, now);
+      }
+      if (now > v.next) {
+        // individual cicadas swell and pause
+        const on = Math.random() < 0.78;
+        v.gain.gain.setTargetAtTime(on ? v.base * hig * (0.6 + forest * 0.6) : 0.0, now, on ? 1.2 : 2.5);
+        v.next = now + 4 + Math.random() * 9;
+      }
+    }
+    this.bed.gain.setTargetAtTime((0.1 + 0.12 * forest) * hig, now, 1.5);
+    // stream: nearest river points
+    const pts = w.data.river.points;
+    let best = 0, bd = 1e9;
+    for (let i = 0; i < pts.length; i += 2) {
+      const d = Math.hypot(pts[i][0] - p.x, pts[i][2] - p.z);
+      if (d < bd) (bd = d), (best = i);
+    }
+    this.stream.forEach((s, i) => {
+      const q = pts[T.MathUtils.clamp(best + (i - 1) * 6, 0, pts.length - 1)];
+      s.pan.positionX.setTargetAtTime(q[0], now, 0.3);
+      s.pan.positionY.setTargetAtTime(q[1], now, 0.3);
+      s.pan.positionZ.setTargetAtTime(q[2], now, 0.3);
+      s.gain.gain.setTargetAtTime(bd < 160 ? 0.55 : 0.0, now, 1.0);
+    });
+    // wind: gusts, stronger and broader on the shrine height and in the trees
+    const gust = 0.55 + 0.3 * Math.sin(this.t * 0.21) + 0.15 * Math.sin(this.t * 0.73 + 1.3);
+    this.wind.gain.setTargetAtTime((0.05 + 0.1 * height) * gust, now, 0.8);
+    this.windFilter.frequency.setTargetAtTime(300 + 260 * gust + 200 * height, now, 0.8);
+    this.leaves.gain.setTargetAtTime((0.012 + 0.05 * forest) * gust * gust, now, 0.6);
+  }
+  private fc = { at: new T.Vector3(1e9, 0, 0), n: 0 };
+  private forestCount(w: World, p: T.Vector3) {
+    if (this.fc.at.distanceTo(p) < 8) return this.fc.n;
+    let n = 0;
+    for (const k of ["sugi", "hinoki", "broadleaf", "keyaki", "bamboo"])
+      for (const r of w.trees[k] ?? []) if (Math.abs(r[0] - p.x) < 30 && Math.abs(r[2] - p.z) < 30) n++;
+    this.fc.at.copy(p);
+    this.fc.n = n;
+    return n;
   }
 }
