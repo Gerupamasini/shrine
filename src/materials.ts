@@ -1,3 +1,4 @@
+import { publicUrl } from "./urls";
 import * as T from "three";
 export class Materials {
   loader = new T.TextureLoader();
@@ -33,7 +34,7 @@ export class Materials {
     const texName = name === "darkwood" ? "wood" : name;
     if (["soil", "wood", "stone", "roof", "thatch", "bark"].includes(texName)) {
       const tex = (suffix: string, srgb = false) => {
-        const t = this.loader.load(`/assets/${texName}-${suffix}`);
+        const t = this.loader.load(publicUrl(`assets/${texName}-${suffix}`));
         t.wrapS = t.wrapT = T.RepeatWrapping;
         t.colorSpace = srgb ? T.SRGBColorSpace : T.NoColorSpace;
         t.anisotropy = Math.min(
@@ -51,7 +52,7 @@ export class Materials {
     }
     if (name === "leaf" || name === "broadleaf") {
       const t = this.loader.load(
-        "/assets/" + (name === "leaf" ? "cedar-spray.png" : "broadleaf.png"),
+        publicUrl("assets/" + (name === "leaf" ? "cedar-spray.png" : "broadleaf.png")),
       );
       t.colorSpace = T.SRGBColorSpace;
       t.anisotropy = 4;
@@ -74,7 +75,7 @@ export class Materials {
     if (name === "soil" || name === "moss") {
       const base = name === "moss" ? "Moss002" : "Ground048";
       const tex = (suffix: string, srgb = false) => {
-        const t = this.loader.load(`/assets/pbr/${base}-${suffix}.jpg`);
+        const t = this.loader.load(publicUrl(`assets/pbr/${base}-${suffix}.jpg`));
         t.wrapS = t.wrapT = T.RepeatWrapping;
         t.repeat.set(180, 180);
         t.colorSpace = srgb ? T.SRGBColorSpace : T.NoColorSpace;

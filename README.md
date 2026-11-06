@@ -78,3 +78,11 @@ npm run assets
 - KTX2などへのテクスチャ圧縮、遠方村の建築LOD、影のカスケードは未実装。
 
 素材サイトへの直接通信は現在のクラウド実行環境で403となりました。必要なドメインは環境設定ドラフトへ保存済みです。公開済みGitHubで取得できた素材以外の調達は、環境設定への反映後に再開できます。公開環境へのデプロイやGitHubへのpushは行っていません。
+
+## GitHub Pages
+
+リポジトリの **Settings → Pages → Build and deployment → Source** を **GitHub Actions** に設定します。PRをmainへマージすると`.github/workflows/pages.yml`が検証・ビルド・公開します。PRではビルドのみ実行し、公開内容は変更しません。
+
+公開先の予定は `https://gerupamasini.github.io/shrine/`。`npm run build:pages`が`/shrine/`用の静的ファイルを生成し、地形・モデル・画像・音声もこのサブパスから読み込みます。リポジトリ名を変更する場合は`build:pages`の`--base`も変更してください。独自ドメインを使う場合は`/`へ変更します。
+
+ローカルでは`npm run build:pages`の後に`npm run preview -- --base=/shrine/`を実行し、`/shrine/`を開いて確認できます。WebGL2対応PCブラウザ向けです。音声とマウス操作は開始ボタンを押すまで有効になりません。

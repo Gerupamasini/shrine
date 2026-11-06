@@ -1,3 +1,4 @@
+import { publicUrl } from "./urls";
 import * as THREE from "three";
 export type Placement = {
   id: string;
@@ -87,11 +88,11 @@ export function seeded(seed: number) {
 }
 export async function loadWorld() {
   const [data, buffer] = await Promise.all([
-    fetch("/world/scene.json").then((r) => {
+    fetch(publicUrl("world/scene.json")).then((r) => {
       if (!r.ok) throw Error("scene.json");
       return r.json() as Promise<WorldData>;
     }),
-    fetch("/world/heightmap.r16").then((r) => {
+    fetch(publicUrl("world/heightmap.r16")).then((r) => {
       if (!r.ok) throw Error("heightmap");
       return r.arrayBuffer();
     }),

@@ -1,30 +1,30 @@
 {
-  "baseURL": "production preview :4173",
+  "baseURL": "http://127.0.0.1:4173/shrine/",
   "inputBefore": {
     "position": [
-      -4.546228353774495e-7,
-      1.8170221421212773,
-      11.999972216741526
+      -9.010248618324113e-7,
+      1.8168616566224955,
+      11.999980762195491
     ],
     "grounded": true,
     "free": false,
-    "triangles": 605230,
-    "calls": 77,
+    "triangles": 942018,
+    "calls": 79,
     "fps": 0,
     "audio": "合成環境音",
     "steps": 200
   },
   "inputAfter": {
     "position": [
-      -0.00011962907797169464,
-      1.8139163886196912,
-      11.719621360301971
+      -0.00016985184629447758,
+      1.8152514614746906,
+      11.720123387873173
     ],
     "grounded": true,
     "free": false,
     "triangles": 605230,
     "calls": 77,
-    "fps": 0,
+    "fps": 1,
     "audio": "合成環境音",
     "steps": 200
   },
@@ -45,8 +45,8 @@
   "freeCamera": {
     "position": [
       -15.75,
-      5.189765739440918,
-      75.25570678710938
+      3.5948830127716063,
+      75.12785339355469
     ],
     "grounded": true,
     "free": true,
@@ -59,10 +59,10 @@
   "restored": {
     "position": [
       -15.75,
-      2,
+      1.9947217932902277,
       75
     ],
-    "grounded": true,
+    "grounded": false,
     "free": false,
     "triangles": 604622,
     "calls": 95,

@@ -1,3 +1,4 @@
+import { publicUrl } from "./urls";
 import * as T from "three";
 export class Soundscape {
   context: AudioContext | null = null;
@@ -40,7 +41,7 @@ export class Soundscape {
     river = false,
   ) {
     const ctx = this.context!;
-    const res = await fetch("/assets/audio/" + file);
+    const res = await fetch(publicUrl("assets/audio/" + file));
     if (!res.ok) throw Error(file);
     const buffer = await ctx.decodeAudioData(await res.arrayBuffer());
     const src = ctx.createBufferSource();

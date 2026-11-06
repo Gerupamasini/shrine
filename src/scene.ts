@@ -1,3 +1,4 @@
+import { publicUrl } from "./urls";
 import * as T from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
@@ -92,7 +93,7 @@ export class Landscape {
   }
   async load(onProgress: (n: number) => void) {
     const hdr = await new RGBELoader().loadAsync(
-      "/assets/venice_sunset_1k.hdr",
+      publicUrl("assets/venice_sunset_1k.hdr"),
     );
     const pmrem = new T.PMREMGenerator(this.renderer);
     const env = pmrem.fromEquirectangular(hdr);
@@ -112,7 +113,7 @@ export class Landscape {
     let done = 0;
     await Promise.all(
       names.map(async (name) => {
-        const gltf = await loader.loadAsync(`/assets/models/${name}.glb`);
+        const gltf = await loader.loadAsync(publicUrl(`assets/models/${name}.glb`));
         gltf.scene.traverse((o) => {
           if (o instanceof T.Mesh) {
             const old = o.material as T.MeshStandardMaterial;
@@ -337,7 +338,7 @@ export class Landscape {
       clearcoat: 0.35,
       envMapIntensity: 0.25,
       clearcoatRoughness: 0.15,
-      normalMap: this.materials.loader.load("/assets/water-normal.png"),
+      normalMap: this.materials.loader.load(publicUrl("assets/water-normal.png")),
       normalScale: new T.Vector2(0.2, 0.13),
       depthWrite: false,
     });

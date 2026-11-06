@@ -9,7 +9,8 @@
     "preview": "vite preview --host 0.0.0.0",
     "test": "node tests/world.test.mjs",
     "assets": "python tools/generate_world.py && python tools/generate_foliage.py && python tools/generate_audio.py && node tools/build-models.mjs && python tools/catalog-assets.py",
-    "test:browser": "playwright test"
+    "test:browser": "playwright test",
+    "build:pages": "tsc --noEmit && vite build --base=/shrine/"
   },
   "dependencies": {
     "three": "^0.180.0",

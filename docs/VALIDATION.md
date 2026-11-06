@@ -56,3 +56,7 @@
 - `artifacts/test-arrival.png`、`test-shrine.png`、`test-lookout.png`、`test-village.png`、`test-river.png`、`test-mobile-settings.png`。
 
 `install_script`と`start_skill`、素材サイトの許可ドメインは環境ドラフトへ保存済み。保存は適用・Publish・新規タスクでの復元検証を意味しない。環境のPublishとGitHubへのpushは行っていない。
+
+## GitHub Pages対応
+
+`npm run build:pages`（base=/shrine/）が成功。公開用Actionsはmainへのpushでデプロイし、PRでは検証のみ実行する。素材・地形・音声のURLは`import.meta.env.BASE_URL`経由で解決する。`/shrine/`配下の本番スモークテストも成功（地形・GLB・画像・音声・WASD・時刻・フリーカメラ、HTTPエラー0）。実際のGitHub Pagesへのデプロイは未実施。
