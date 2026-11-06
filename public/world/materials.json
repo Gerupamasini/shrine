@@ -1,0 +1,120 @@
+{
+  "wood": {
+    "baseColor": "assets/wood-albedo.jpg",
+    "normal": "assets/wood-normal.png",
+    "roughness": "assets/wood-roughness.jpg",
+    "metallic": 0,
+    "normalConvention": "OpenGL +Y",
+    "sRGB": [
+      "baseColor"
+    ]
+  },
+  "darkwood": {
+    "baseColor": "assets/wood-albedo.jpg",
+    "normal": "assets/wood-normal.png",
+    "roughness": "assets/wood-roughness.jpg",
+    "metallic": 0,
+    "normalConvention": "OpenGL +Y",
+    "sRGB": [
+      "baseColor"
+    ]
+  },
+  "stone": {
+    "baseColor": "assets/stone-albedo.jpg",
+    "normal": "assets/stone-normal.png",
+    "roughness": "assets/stone-roughness.jpg",
+    "metallic": 0,
+    "normalConvention": "OpenGL +Y",
+    "sRGB": [
+      "baseColor"
+    ]
+  },
+  "roof": {
+    "baseColor": "assets/roof-albedo.jpg",
+    "normal": "assets/roof-normal.png",
+    "roughness": "assets/roof-roughness.jpg",
+    "metallic": 0,
+    "normalConvention": "OpenGL +Y",
+    "sRGB": [
+      "baseColor"
+    ]
+  },
+  "thatch": {
+    "baseColor": "assets/thatch-albedo.jpg",
+    "normal": "assets/thatch-normal.png",
+    "roughness": "assets/thatch-roughness.jpg",
+    "metallic": 0,
+    "normalConvention": "OpenGL +Y",
+    "sRGB": [
+      "baseColor"
+    ]
+  },
+  "bark": {
+    "baseColor": "assets/bark-albedo.jpg",
+    "normal": "assets/bark-normal.png",
+    "roughness": "assets/bark-roughness.jpg",
+    "metallic": 0,
+    "normalConvention": "OpenGL +Y",
+    "sRGB": [
+      "baseColor"
+    ]
+  },
+  "soil": {
+    "baseColor": "assets/pbr/Ground048-Color.jpg",
+    "normal": "assets/pbr/Ground048-NormalGL.jpg",
+    "roughness": "assets/pbr/Ground048-Roughness.jpg",
+    "metallic": 0,
+    "normalConvention": "OpenGL +Y",
+    "sRGB": [
+      "baseColor"
+    ],
+    "terrainTileMetres": 6.666666666666667
+  },
+  "leaf": {
+    "baseColor": "assets/cedar-spray.png",
+    "doubleSided": true,
+    "alphaMode": "MASK",
+    "alphaCutoff": 0.13,
+    "roughness": 1,
+    "wind": "reimplement per engine"
+  },
+  "broadleaf": {
+    "baseColor": "assets/broadleaf.png",
+    "doubleSided": true,
+    "alphaMode": "MASK",
+    "alphaCutoff": 0.13,
+    "roughness": 1,
+    "wind": "reimplement per engine"
+  },
+  "moss": {
+    "baseColor": "assets/pbr/Moss002-Color.jpg",
+    "normal": "assets/pbr/Moss002-NormalGL.jpg",
+    "roughness": "assets/pbr/Moss002-Roughness.jpg",
+    "terrainTileMetres": 6.666666666666667,
+    "normalConvention": "OpenGL +Y",
+    "sRGB": [
+      "baseColor"
+    ]
+  },
+  "paper": {
+    "color": "#beb49c",
+    "roughness": 0.92
+  },
+  "vermilion": {
+    "color": "#993e2c",
+    "roughness": 0.83
+  },
+  "metal": {
+    "color": "#727e7d",
+    "roughness": 0.65,
+    "metallic": 0.25
+  },
+  "water": {
+    "normal": "assets/water-normal.png",
+    "roughness": 0.18,
+    "opacity": 0.66,
+    "clearcoat": 0.35,
+    "envMapIntensity": 0.25,
+    "reimplement": "normal-scroll + environment reflections"
+  }
+}

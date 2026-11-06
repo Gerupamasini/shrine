@@ -1,0 +1,344 @@
+[
+  {
+    "file": "assets/audio/stream-synth.wav",
+    "bytes": 2337344,
+    "sha256": "86f2c863ae926785d0b682f3ca9440d070d3fd6ba51042fa36aa3ecd16bdf735",
+    "origin": "original"
+  },
+  {
+    "file": "assets/audio/summer-insects-synth.wav",
+    "bytes": 2337344,
+    "sha256": "ecd1214cfcf05f95178d8da1ea4c89b742e1c47bb55d67d4d3243eb619b06b40",
+    "origin": "original"
+  },
+  {
+    "file": "assets/audio/wind-synth.wav",
+    "bytes": 2337344,
+    "sha256": "da1844c93811d3f0f7c09d6c9b40e3d3ae7fb8bc1591844060fcee1ef5805abb",
+    "origin": "original"
+  },
+  {
+    "file": "assets/bark-albedo.jpg",
+    "bytes": 82743,
+    "sha256": "e80d613b086c58d053b76ab1a527b7e2aa021fe1e70e481cc6e1f7e3cc412de4",
+    "origin": "original"
+  },
+  {
+    "file": "assets/bark-normal.png",
+    "bytes": 619117,
+    "sha256": "c722030e9fd1230251227a1960e25fcecdf99dca6f2b56e327cdb378679ae393",
+    "origin": "original"
+  },
+  {
+    "file": "assets/bark-roughness.jpg",
+    "bytes": 15595,
+    "sha256": "e1f57939fccb723f457fa60f9fa5fa9b630390caf118b3706b4ad035ac02bce1",
+    "origin": "original"
+  },
+  {
+    "file": "assets/broadleaf.png",
+    "bytes": 3538,
+    "sha256": "b3bffc496ac6fd908f2987c8c8b4a1c76a42f932730fd270ea4a7791351bc8fc",
+    "origin": "original"
+  },
+  {
+    "file": "assets/cedar-spray.png",
+    "bytes": 72469,
+    "sha256": "41e9d3e279785c4a7a3cd97581eb25f8c532d314ba56dba3ca564b3c95f0a640",
+    "origin": "original"
+  },
+  {
+    "file": "assets/licenses/GrassSystemThreeJS-MIT.txt",
+    "bytes": 1077,
+    "sha256": "fa655f413edefb7d5416d743714e4cdd7899134b2fb4003732b2ef9eecac4fd4",
+    "origin": "license evidence"
+  },
+  {
+    "file": "assets/licenses/PolyHaven-asset-license.json",
+    "bytes": 2216,
+    "sha256": "a9d88b758d1751dd41713381115ed309ea659e219c1654157b709dce7757e779",
+    "origin": "license evidence"
+  },
+  {
+    "file": "assets/models/broadleaf-far.glb",
+    "bytes": 18368,
+    "sha256": "d797002d6fab5cc13ec45159fb7d7e6811fdd66eb4c88f512edbc8ef081755ef",
+    "origin": "original"
+  },
+  {
+    "file": "assets/models/broadleaf-low.glb",
+    "bytes": 51020,
+    "sha256": "7733553da9234db42eacb11b8dc20a1d288d9e5bc3dbe0811a051a6ca67b05ca",
+    "origin": "original"
+  },
+  {
+    "file": "assets/models/broadleaf.glb",
+    "bytes": 785308,
+    "sha256": "019ac57f5056f4a7cfe475ab049bc8ee752f46e0ca301329949ddda90cf287d2",
+    "origin": "original"
+  },
+  {
+    "file": "assets/models/cedar-far.glb",
+    "bytes": 18356,
+    "sha256": "c8e0fd84d0a255d4745048c077f92b874b99a6712ad75a4cc2ed124e9a4015d2",
+    "origin": "original"
+  },
+  {
+    "file": "assets/models/cedar-low.glb",
+    "bytes": 51004,
+    "sha256": "35890d72a05b8d744c351b5da0270b733d151ec325608f9b46e5c3902ad0d733",
+    "origin": "original"
+  },
+  {
+    "file": "assets/models/cedar0.glb",
+    "bytes": 994176,
+    "sha256": "1e94a70ba5e4046ee665fa7265f6bda9a07daa77dfe0d57cd93a911b6e0ce8b8",
+    "origin": "original"
+  },
+  {
+    "file": "assets/models/cedar1.glb",
+    "bytes": 994176,
+    "sha256": "d5026cdee8bdd9359e4760d21c6e44ff252fbd095aef421e2e61359d50662e11",
+    "origin": "original"
+  },
+  {
+    "file": "assets/models/cedar2.glb",
+    "bytes": 961924,
+    "sha256": "06df244ccbc3e6ef53b07ad332ecd74213627598f2adfe73d8f6973f6fa43a0f",
+    "origin": "original"
+  },
+  {
+    "file": "assets/models/ema.glb",
+    "bytes": 144132,
+    "sha256": "ea26ee8597ea9602ab49379a29c4bafbe300eff9616f56fc5435415db1ac9a67",
+    "origin": "original"
+  },
+  {
+    "file": "assets/models/house.glb",
+    "bytes": 569604,
+    "sha256": "fd446ae8036bad4559a086cf69f9be5e913026e4d81ec75b5d905521c72b74e7",
+    "origin": "original"
+  },
+  {
+    "file": "assets/models/komainu.glb",
+    "bytes": 56868,
+    "sha256": "5e81e6ebb79d582e9a32dd699c8045b4894956982db89262672a2ccc982c4f46",
+    "origin": "original"
+  },
+  {
+    "file": "assets/models/lantern.glb",
+    "bytes": 17424,
+    "sha256": "838bf8988342ee11fd76fe231d726689c8202f4c07db93db86e95a684a21af39",
+    "origin": "original"
+  },
+  {
+    "file": "assets/models/metal-house.glb",
+    "bytes": 419988,
+    "sha256": "61fa899b7a2b47adb81d371be79d299d784b30d65aa002b7e0573f24efb0c6d1",
+    "origin": "original"
+  },
+  {
+    "file": "assets/models/office.glb",
+    "bytes": 569604,
+    "sha256": "8e469c2e8628e70ab423bfae83b366fe246399a8d835d47b3888ba5a6ccc20db",
+    "origin": "original"
+  },
+  {
+    "file": "assets/models/pole.glb",
+    "bytes": 19564,
+    "sha256": "864b02d52ca1e8208a6fd9fe30e468fe5db1e17a2ab12ba0b9f77448ff5b4366",
+    "origin": "original"
+  },
+  {
+    "file": "assets/models/rock.glb",
+    "bytes": 18608,
+    "sha256": "a97dc4f30006e7b10eb3fcb7680484ee075a2eab8d69bdd45339d2a0f7b5692e",
+    "origin": "original"
+  },
+  {
+    "file": "assets/models/shed.glb",
+    "bytes": 419980,
+    "sha256": "441bb3f28da070f592a1027cb5848950c254db75e054a7795e68a20edf85bdb6",
+    "origin": "original"
+  },
+  {
+    "file": "assets/models/shrine.glb",
+    "bytes": 1599936,
+    "sha256": "42e3c35874e695757e28e59d9237491c3b07d34030d4c85d6051ca0eae9f0c39",
+    "origin": "original"
+  },
+  {
+    "file": "assets/models/temizuya.glb",
+    "bytes": 200308,
+    "sha256": "e46ba85d3cdec8ea5f7535ce5ab57a3b84e7cd852d04b020937d8c2a2e874380",
+    "origin": "original"
+  },
+  {
+    "file": "assets/models/thatch-house.glb",
+    "bytes": 629652,
+    "sha256": "71afacd83d352bb46c1b22f82317801d0904d1e47d3c638e6436378b1b663cd0",
+    "origin": "original"
+  },
+  {
+    "file": "assets/models/torii.glb",
+    "bytes": 35688,
+    "sha256": "614408a1ebe1f663a993b8b2264d6132df860bf80f4a3d1ef353f0c9987e5dab",
+    "origin": "original"
+  },
+  {
+    "file": "assets/pbr/Ground048-Color.jpg",
+    "bytes": 675668,
+    "sha256": "e9a3ce073531e90bdcc3a82e3f318cf4f7872f372358c0f6655a5b52ae602fb7",
+    "origin": "achrefelouafi/GrassSystemThreeJS"
+  },
+  {
+    "file": "assets/pbr/Ground048-NormalGL.jpg",
+    "bytes": 712768,
+    "sha256": "bc4adece86ad8fe4d45e0e1ec33666d6f8c637f8bd07ef15cf5aff92f0166d76",
+    "origin": "achrefelouafi/GrassSystemThreeJS"
+  },
+  {
+    "file": "assets/pbr/Ground048-Roughness.jpg",
+    "bytes": 356200,
+    "sha256": "797dcaa32d3483e050323614a1864f258ee4dce4319c2bc05de67ba12bd682a0",
+    "origin": "achrefelouafi/GrassSystemThreeJS"
+  },
+  {
+    "file": "assets/pbr/Ground103-Color.jpg",
+    "bytes": 459660,
+    "sha256": "189a737e7ece673a4586a618ad9c589fcfd102301ff90554ff75742da8e4601a",
+    "origin": "achrefelouafi/GrassSystemThreeJS"
+  },
+  {
+    "file": "assets/pbr/Ground103-NormalGL.jpg",
+    "bytes": 563336,
+    "sha256": "0bd423cc18c3b118a24b48165bd9b657e1d12abb5078d7a3ebae0e14e872fcc8",
+    "origin": "achrefelouafi/GrassSystemThreeJS"
+  },
+  {
+    "file": "assets/pbr/Ground103-Roughness.jpg",
+    "bytes": 568825,
+    "sha256": "9e55f65ed51ce2eb432ab01b053224c27c4e970eab096d7b6b79fc1f0f096f06",
+    "origin": "achrefelouafi/GrassSystemThreeJS"
+  },
+  {
+    "file": "assets/pbr/Moss002-Color.jpg",
+    "bytes": 583077,
+    "sha256": "f48e5eddaec080191273b8133d8ccd356f86da7ac71458f78df642ec92b8163e",
+    "origin": "achrefelouafi/GrassSystemThreeJS"
+  },
+  {
+    "file": "assets/pbr/Moss002-NormalGL.jpg",
+    "bytes": 704304,
+    "sha256": "a1cbe350127812509a8bfa898ad2a823cf42f7bd8713a5965f5a094d546fc8f0",
+    "origin": "achrefelouafi/GrassSystemThreeJS"
+  },
+  {
+    "file": "assets/pbr/Moss002-Roughness.jpg",
+    "bytes": 428148,
+    "sha256": "02e48854d9302512a387a7ecc0baa7dd1968f8447e4c216497f69d87cd845980",
+    "origin": "achrefelouafi/GrassSystemThreeJS"
+  },
+  {
+    "file": "assets/roof-albedo.jpg",
+    "bytes": 102598,
+    "sha256": "f6e3a943ffafc393b80fab7d6647beb967c803baf761c3a6d44d61d186a6f491",
+    "origin": "original"
+  },
+  {
+    "file": "assets/roof-normal.png",
+    "bytes": 689464,
+    "sha256": "672c0611e57dcf5c0c37f724a68ece00d321f36339751b34385f5f0e7e36dc54",
+    "origin": "original"
+  },
+  {
+    "file": "assets/roof-roughness.jpg",
+    "bytes": 21293,
+    "sha256": "f39709838f57085487dd6986345ede053f7f9cfc3d119c4d62613c970e470461",
+    "origin": "original"
+  },
+  {
+    "file": "assets/soil-albedo.jpg",
+    "bytes": 102714,
+    "sha256": "2f989fc9201830526bde0a49f889d83e6d0c69b8f19c5a4ff909b0118f68f3fd",
+    "origin": "original"
+  },
+  {
+    "file": "assets/soil-normal.png",
+    "bytes": 689616,
+    "sha256": "fdb0beac74af275bead6046f5e2925c83954dcecdbe75cf25dc4734ec3c06bab",
+    "origin": "original"
+  },
+  {
+    "file": "assets/soil-roughness.jpg",
+    "bytes": 21281,
+    "sha256": "a52e04d64c7c0ae075167d6e3c7bcaf839ae670e5fcb2573e2bc305a0d30d727",
+    "origin": "original"
+  },
+  {
+    "file": "assets/stone-albedo.jpg",
+    "bytes": 102671,
+    "sha256": "1c6d137215d29e1d048d216acee1305b59aeffd955883a8c9565d1923b58b6a8",
+    "origin": "original"
+  },
+  {
+    "file": "assets/stone-normal.png",
+    "bytes": 689676,
+    "sha256": "aa714b52444d442ffd7b208e14c2fd2b73ff7f836c60a3e11add6e67618140a3",
+    "origin": "original"
+  },
+  {
+    "file": "assets/stone-roughness.jpg",
+    "bytes": 21353,
+    "sha256": "515db376f47aaedd47cb3281ff6aea9aa7794e557b93b520d3b7a6c2a287511f",
+    "origin": "original"
+  },
+  {
+    "file": "assets/thatch-albedo.jpg",
+    "bytes": 102895,
+    "sha256": "40ae18c12a5c425e7da43b000f88a18b9ae5d7676cf67498224247a97c8ee34b",
+    "origin": "original"
+  },
+  {
+    "file": "assets/thatch-normal.png",
+    "bytes": 677340,
+    "sha256": "da0e271d46021258fd39116f183e5ae6ddb4c12233bf220678f7c4cf2b781c2a",
+    "origin": "original"
+  },
+  {
+    "file": "assets/thatch-roughness.jpg",
+    "bytes": 27706,
+    "sha256": "00e270b27e0ae46847625ea639052d3c12a9210443f049ff57f730ccf8480cd1",
+    "origin": "original"
+  },
+  {
+    "file": "assets/venice_sunset_1k.hdr",
+    "bytes": 1397783,
+    "sha256": "0e72ed46b5316cb5fb67fc81ff85b024a09146fd89ef3811a8d2299647ada118",
+    "origin": "pmndrs/drei-assets / Poly Haven"
+  },
+  {
+    "file": "assets/water-normal.png",
+    "bytes": 262803,
+    "sha256": "d2ea5b109f4d2f392887c6c1fdca0edbe6ce545a5766d16309054c45a16f031f",
+    "origin": "original"
+  },
+  {
+    "file": "assets/wood-albedo.jpg",
+    "bytes": 82217,
+    "sha256": "0e1e34aa0c74acc34eeab86e5a7f0067ead3de83dd4b4b2a4e1d02fc82ee4132",
+    "origin": "original"
+  },
+  {
+    "file": "assets/wood-normal.png",
+    "bytes": 618283,
+    "sha256": "e2ed90f64bd5a535f43dfa316061a81f5faa0c42a6f9be8c4a89f11fa90f330d",
+    "origin": "original"
+  },
+  {
+    "file": "assets/wood-roughness.jpg",
+    "bytes": 15274,
+    "sha256": "17ca8b1c1b36ab4512f089f702bc566f9e67d95359c4fac946dc4f3e57af5351",
+    "origin": "original"
+  }
+]

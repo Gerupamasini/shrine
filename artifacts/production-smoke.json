@@ -1,0 +1,74 @@
+{
+  "baseURL": "production preview :4173",
+  "inputBefore": {
+    "position": [
+      -4.546228353774495e-7,
+      1.8170221421212773,
+      11.999972216741526
+    ],
+    "grounded": true,
+    "free": false,
+    "triangles": 605230,
+    "calls": 77,
+    "fps": 0,
+    "audio": "合成環境音",
+    "steps": 200
+  },
+  "inputAfter": {
+    "position": [
+      -0.00011962907797169464,
+      1.8139163886196912,
+      11.719621360301971
+    ],
+    "grounded": true,
+    "free": false,
+    "triangles": 605230,
+    "calls": 77,
+    "fps": 0,
+    "audio": "合成環境音",
+    "steps": 200
+  },
+  "village": {
+    "position": [
+      -15.75,
+      2,
+      75
+    ],
+    "grounded": true,
+    "free": false,
+    "triangles": 605230,
+    "calls": 77,
+    "fps": 1,
+    "audio": "合成環境音",
+    "steps": 200
+  },
+  "freeCamera": {
+    "position": [
+      -15.75,
+      5.189765739440918,
+      75.25570678710938
+    ],
+    "grounded": true,
+    "free": true,
+    "triangles": 604622,
+    "calls": 95,
+    "fps": 0,
+    "audio": "合成環境音",
+    "steps": 200
+  },
+  "restored": {
+    "position": [
+      -15.75,
+      2,
+      75
+    ],
+    "grounded": true,
+    "free": false,
+    "triangles": 604622,
+    "calls": 95,
+    "fps": 0,
+    "audio": "合成環境音",
+    "steps": 200
+  },
+  "errors": []
+}

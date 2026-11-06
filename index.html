@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="theme-color" content="#263b31" />
+    <link rel="icon" href="/favicon.svg" />
+    <title>夏陰 — 山里の夕暮れ</title>
+  </head>
+  <body>
+    <main id="app">
+      <canvas id="world" aria-label="日本の山村と神社の三次元探索空間"></canvas>
+      <div id="vignette"></div>
+      <header>
+        <div class="title">
+          <span class="seal">夏</span>
+          <div>
+            <h1>夏陰</h1>
+            <p>NATSUKAGE <span>夏の終わり、山里にて。</span></p>
+          </div>
+        </div>
+        <button id="settings-button" aria-label="設定を開く">
+          設定 <span>☷</span>
+        </button>
+      </header>
+      <section id="welcome">
+        <div class="eyebrow">一九九四年 ・ 晩夏</div>
+        <h2>あの石段の、その先へ。</h2>
+        <p>
+          杉の木陰を抜けて、夕暮れの村を見渡す。<br />行き先も、時間も、あなたの歩幅で。
+        </p>
+        <button id="enter">山里を歩く <span>↗</span></button
+        ><small>WASD 移動　・　マウス 視点　・　Shift 走る</small>
+        <div id="loading">地形と風景を読み込んでいます…</div>
+      </section>
+      <div id="crosshair" hidden></div>
+      <div id="resume" hidden>クリックして散策を続ける</div>
+      <aside id="settings" hidden>
+        <div class="panel-top">
+          <h2>散策のしおり</h2>
+          <button id="close-settings" aria-label="設定を閉じる">×</button>
+        </div>
+        <label
+          >夕暮れの時刻 <output id="time-value">18:00</output
+          ><input
+            id="time"
+            type="range"
+            min="1020"
+            max="1140"
+            value="1080"
+            step="1" /></label
+        ><label
+          >描画品質<select id="quality">
+            <option value="low">軽量</option>
+            <option value="standard" selected>標準</option>
+            <option value="high">高品質</option>
+          </select></label
+        >
+        <div class="setting-row">
+          <span>環境音</span><button id="audio">オフ</button>
+        </div>
+        <label class="check"
+          ><input id="free" type="checkbox" />撮影用フリーカメラ
+          <span>F</span></label
+        >
+        <p class="micro">
+          フリーカメラ：WASD移動・Q/E上下<br />標準画質の目標：1080p / 60fps
+        </p>
+        <h3>場所へ移動</h3>
+        <div class="destinations">
+          <button data-place="foot">麓の鳥居</button
+          ><button data-place="shrine">神社の境内</button
+          ><button data-place="lookout">村を望む場所</button
+          ><button data-place="village">村の道</button
+          ><button data-place="river">小川のほとり</button>
+        </div>
+        <label class="check"
+          ><input id="diagnostics" type="checkbox" />描画情報を表示</label
+        >
+        <p class="micro">
+          素材・音源の制作状況はREADMEとクレジットをご覧ください。
+        </p>
+      </aside>
+      <footer>
+        <div class="place">
+          <span class="place-dot"></span>
+          <div>
+            <strong id="place-name">麓の鳥居</strong
+            ><span id="place-caption">山へと続く、二百段。</span>
+          </div>
+        </div>
+        <div class="footer-right">
+          <span id="clock">18:00</span><span class="separator"></span
+          ><span id="hint"
+            >音のある散策
+            <button id="sound-short" aria-label="環境音を切り替え">
+              ♪ オフ
+            </button></span
+          ><span class="control-hint">Esc 休憩　/　F 撮影　/　H 表示</span>
+        </div>
+      </footer>
+      <output id="stats" hidden></output>
+      <div id="error" role="alert" hidden></div>
+    </main>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
