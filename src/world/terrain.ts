@@ -7,7 +7,7 @@ import type { Heightfield, WorldData } from "./data";
 /** Terrain layers in splat order (splat0 RGBA, splat1 RGBA) and their tile size in metres. */
 export const TERRAIN_LAYERS = [
   { id: "leafy_grass", size: 3.2, tint: [0.62, 0.78, 0.5] },
-  { id: "forest_leaves_02", size: 3.0, tint: [0.66, 0.62, 0.55] },
+  { id: "forest_leaves_02", size: 3.0, tint: [0.52, 0.56, 0.42] },
   { id: "stony_dirt_path", size: 2.6, tint: [0.95, 0.92, 0.88] },
   { id: "mossy_rock", size: 4.5, tint: [0.9, 0.92, 0.86] },
   { id: "brown_mud_leaves_01", size: 2.4, tint: [0.8, 0.78, 0.72] },
@@ -202,7 +202,7 @@ export class Terrain {
           {
             // beyond the shadow-casting tree LODs the canopy still shades the forest floor
             float canopy = texture2D(tVeg, vTW.xz / uExtent + 0.5).r;
-            float far = smoothstep(70.0, 160.0, length(vTW - cameraPosition));
+            float far = smoothstep(25.0, 90.0, length(vTW - cameraPosition));
             reflectedLight.directDiffuse *= 1.0 - canopy * 0.85 * far;
             reflectedLight.indirectDiffuse *= 1.0 - canopy * 0.35 * far;
           }`,

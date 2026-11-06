@@ -43,7 +43,7 @@ export function installAtmosphere() {
 \t{
 \t\tfloat back = saturate( dot( -geometryNormal, directLight.direction ) );
 \t\tfloat fwd = pow( saturate( dot( -geometryViewDir, directLight.direction ) ), 4.0 );
-\t\treflectedLight.directDiffuse += directLight.color * material.diffuseColor * vec3( 1.0, 1.08, 0.55 ) * ( back * 0.25 + fwd * 1.1 ) * RECIPROCAL_PI;
+\t\treflectedLight.directDiffuse += directLight.color * material.diffuseColor * vec3( 0.72, 1.0, 0.42 ) * ( back * 0.25 + fwd * 1.1 ) * RECIPROCAL_PI;
 \t}
 #endif`,
     );

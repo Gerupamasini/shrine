@@ -75,26 +75,26 @@
   "roof_kawara": {
    "tex": "grey_roof_tiles",
    "size": 1.6,
-   "color": "#8f98a2",
+   "color": "#6f7a86",
    "normalScale": 1.2,
-   "gain": 1.1
+   "gain": 1.0
   },
   "roof_kawara_ridge": {
    "tex": "grey_roof_tiles",
    "size": 0.8,
-   "color": "#5f666e"
+   "color": "#4c535b"
   },
   "roof_thatch": {
    "tex": "thatch_roof_angled",
    "size": 2.2,
-   "color": "#b7a68c",
+   "color": "#9a9286",
    "normalScale": 1.4
   },
   "roof_tin": {
    "tex": "rusty_corrugated_iron",
    "size": 1.4,
-   "color": "#b38a74",
-   "metalness": 0.35
+   "color": "#9a5040",
+   "metalness": 0.25
   },
   "roof_copper": {
    "tex": "white_plaster_rough_01",
@@ -223,6 +223,31 @@
   "sign_blue": {
    "color": "#2e5a99",
    "roughness": 0.5
+  },
+  "concrete_dark": {
+   "tex": "white_plaster_rough_01",
+   "size": 2.0,
+   "color": "#4f4c45",
+   "roughness": 1
+  },
+  "concrete_old": {
+   "tex": "concrete_block_wall",
+   "size": 1.6,
+   "color": "#8e8b82",
+   "roughness": 1,
+   "normalScale": 0.6
+  },
+  "roof_tin_blue": {
+   "tex": "rusty_corrugated_iron",
+   "size": 1.4,
+   "color": "#506a80",
+   "metalness": 0.25
+  },
+  "roof_tin_green": {
+   "tex": "rusty_corrugated_iron",
+   "size": 1.4,
+   "color": "#5d7356",
+   "metalness": 0.25
   }
  },
  "terrainLayers": [

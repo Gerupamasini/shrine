@@ -82,6 +82,7 @@ export class Architecture implements System {
       for (const f of files) inst.push({ file: f, matrix: base });
     });
     inst.push({ file: "architecture/stairs", matrix: new T.Matrix4() });
+    inst.push({ file: "architecture/road-ditch", matrix: new T.Matrix4() });
     const byFile = new Map<string, T.Matrix4[]>();
     for (const it of inst) {
       if (!byFile.has(it.file)) byFile.set(it.file, []);
@@ -105,7 +106,7 @@ export class Architecture implements System {
           mesh.computeBoundingSphere();
           o.geometry.computeBoundingSphere();
           const r = o.geometry.boundingSphere!.radius;
-          this.meshes.push({ mesh, matrices, centers: matrices.map((m) => new T.Vector3().setFromMatrixPosition(m)), far: file.includes("props") ? 120 : file.includes("stairs") ? 1e9 : 400 + r * 40 });
+          this.meshes.push({ mesh, matrices, centers: matrices.map((m) => new T.Vector3().setFromMatrixPosition(m)), far: file.includes("props") ? 120 : file.includes("stairs") || file.includes("road-ditch") ? 1e9 : 400 + r * 40 });
           this.land.scene.add(mesh);
         });
         progress(++done / byFile.size);

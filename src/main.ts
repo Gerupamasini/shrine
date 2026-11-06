@@ -112,6 +112,7 @@ addEventListener("keydown", (e) => {
   keys.add(e.code);
   if (e.repeat) return;
   if (e.code === "KeyF" && ready) setFree(!walker.free);
+  if (e.code === "Space" && ready && started && !walker.free && !settingsOpen) walker.jump();
   if (e.code === "KeyH") document.body.classList.toggle("hide-ui");
   if (e.code === "Escape") {
     keys.clear();
@@ -156,6 +157,7 @@ document.querySelectorAll<HTMLButtonElement>("[data-place]").forEach((b) => (b.o
 function updateCamera(dt: number) {
   camera.position.copy(walker.position);
   if (!walker.free && walker.grounded && walker.speed > 0.2) camera.position.y += Math.sin(walker.bob * Math.PI * 2) * 0.018 * Math.min(1, walker.speed / 1.5);
+  if (!walker.free) camera.position.y -= Math.sin(Math.min(1, walker.landing) * Math.PI) * 0.12;
   camera.rotation.set(pitch, yaw, 0);
   void dt;
 }
@@ -315,6 +317,19 @@ async function boot() {
       return walker.position.toArray();
     },
     place: (x: number, y: number, z: number) => walker.teleport([x, y, z]),
+    jumpWalk: (x: number, z: number, n: number, run = true) => {
+      const d = new T.Vector3(x, 0, z);
+      if (d.lengthSq()) d.normalize();
+      let peak = -1e9;
+      const y0 = walker.position.y;
+      walker.jump();
+      for (let i = 0; i < n; i++) {
+        walker.move(d, 1 / 60, run);
+        peak = Math.max(peak, walker.position.y - y0);
+      }
+      updateCamera(0);
+      return { position: walker.position.toArray(), peak, grounded: walker.grounded };
+    },
     setFree: (v: boolean) => setFree(v),
     setTime,
     setQuality,

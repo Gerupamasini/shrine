@@ -34,6 +34,8 @@ def origin(rel: str):
     if rel.startswith("assets/models/props/"):
         mid = p[3].removesuffix(".glb")
         return {**ph(mid), "processing": "alpha merged, decimated, textures resized (tools/assets/process_models.mjs)"}
+    if rel.startswith("assets/foliage/grass-clump"):
+        return {**ph("grass_medium_01"), "processing": "3 tall clumps extracted, decimated, alpha merged (tools/assets/process_grass.mjs)"}
     if rel.startswith("assets/foliage/") and ("needle" in rel or "pine" in rel or "leaf-" in rel or rel.endswith("atlases.json")) and "bamboo" not in rel:
         return {"origin": "baked in this repo from Poly Haven CC0 models fir_sapling, pine_sapling_small, tree_small_02",
                 "pages": [f"https://polyhaven.com/a/{i}" for i in ["fir_sapling", "pine_sapling_small", "tree_small_02"]],
@@ -73,8 +75,7 @@ for m in SRC["polyhaven"]["models"]:
     if (ROOT / f"public/assets/models/props/{m['id']}.glb").exists():
         rows.append(("3Dモデル", m["id"], ", ".join(authors.get(m["id"], [])), m["use"]))
 for m in SRC["polyhaven"]["foliageSources"]:
-    if m["id"] != "grass_medium_01":
-        rows.append(("葉カードの原本", m["id"], ", ".join(authors.get(m["id"], [])), m["use"]))
+    rows.append(("葉カード・草株の原本" if m["id"] != "grass_medium_01" else "草株（近景の草）", m["id"], ", ".join(authors.get(m["id"], [])), m["use"]))
 h = SRC["polyhaven"]["hdri"][0]
 rows.append(("HDRI", h["id"], ", ".join(authors.get(h["id"], [])), h["use"]))
 a = SRC["commons"]["audio"][0]

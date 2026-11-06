@@ -107,6 +107,9 @@ export class Vegetation implements System {
         side: T.DoubleSide,
         alphaToCoverage: true,
       });
+      // glTF UV convention (v down): the atlas must not be flipped
+      if (mm.map) mm.map.flipY = false;
+      if (mm.normalMap) mm.normalMap.flipY = false;
       mm.normalScale.set(0.6, 0.6);
       (mm as unknown as { defines: Record<string, string> }).defines = { FOLIAGE: "" };
       m = lib.finish(mm);

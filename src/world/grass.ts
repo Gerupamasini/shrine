@@ -118,9 +118,9 @@ function bladeGeometry(blades: number, segs: number, rice: boolean) {
   const rand = (() => { let s = rice ? 7 : 3; return () => ((s = (s * 16807) % 2147483647) / 2147483647); })();
   for (let b = 0; b < blades; b++) {
     const ang = (b / blades) * Math.PI * 2 + rand() * 0.8;
-    const lean = rice ? 0.28 + rand() * 0.35 : 0.15 + rand() * 0.45;
+    const lean = rice ? 0.12 + rand() * 0.3 : 0.15 + rand() * 0.45;
     const hgt = rice ? 0.85 + rand() * 0.3 : 0.45 + rand() * 0.55;
-    const w = rice ? 0.0065 + rand() * 0.003 : 0.006 + rand() * 0.006;
+    const w = rice ? 0.0045 + rand() * 0.002 : 0.006 + rand() * 0.006;
     const dir = [Math.cos(ang), Math.sin(ang)];
     const base = pos.length / 3;
     for (let s = 0; s <= segs; s++) {
@@ -178,7 +178,7 @@ export class GrassField implements System {
   constructor(
     public land: Landscape,
     wt: WorldTextures,
-    public opts: { rice: boolean; spacing: number; radius: number; blades: number },
+    public opts: { rice: boolean; spacing: number; radius: number; blades: number; inner?: number; clump?: { geometry: T.BufferGeometry; map: T.Texture; height: number; scale: number }; seed?: number },
   ) {
     const { spacing, radius } = opts;
     const n = Math.ceil((radius * 2) / spacing);
@@ -188,7 +188,14 @@ export class GrassField implements System {
       offsets[k++] = (i - n / 2) * spacing;
       offsets[k++] = (j - n / 2) * spacing;
     }
-    const g = bladeGeometry(opts.blades, opts.rice ? 4 : 3, opts.rice);
+    let g: T.InstancedBufferGeometry;
+    if (opts.clump) {
+      // photographic clump (Poly Haven grass_medium_01): copy its attributes into an instanced geometry
+      g = new T.InstancedBufferGeometry();
+      const src = opts.clump.geometry;
+      for (const k of ["position", "normal", "uv"]) g.setAttribute(k, src.getAttribute(k));
+      g.setIndex(src.getIndex());
+    } else g = bladeGeometry(opts.blades, opts.rice ? 6 : 3, opts.rice);
     g.setAttribute("aOffset", new T.InstancedBufferAttribute(offsets, 2));
     g.instanceCount = n * n;
     this.uniforms = {
@@ -197,12 +204,21 @@ export class GrassField implements System {
       uSpacing: { value: spacing },
       uRadius: { value: radius },
       uDensity: { value: 1 },
+      uYNorm: { value: opts.clump ? 1 / opts.clump.height : 1 },
+      uBaseScale: { value: opts.clump ? opts.clump.scale : 1 },
+      uInner: { value: opts.inner ?? 0 },
+      uSeed: { value: opts.seed ?? 0 },
     };
     const mat = new T.MeshStandardMaterial({ roughness: 0.92, side: T.DoubleSide, color: 0xffffff, envMapIntensity: 0.45 });
-    (mat as unknown as { defines: Record<string, string> }).defines = { FOLIAGE: "", ...(opts.rice ? { RICE: "" } : {}) };
+    if (opts.clump) {
+      mat.map = opts.clump.map;
+      mat.alphaTest = 0.45;
+      mat.alphaToCoverage = true;
+    }
+    (mat as unknown as { defines: Record<string, string> }).defines = { FOLIAGE: "", ...(opts.rice ? { RICE: "" } : {}), ...(opts.clump ? { PHOTO_CLUMP: "" } : {}) };
     this.land.lib.finish(mat);
     const u = this.uniforms;
-    addHook(mat, opts.rice ? "rice-field" : "grass-field", (s) => {
+    addHook(mat, opts.rice ? "rice-field" : opts.clump ? "grass-clumps" : "grass-field", (s) => {
       Object.assign(s.uniforms, u, windUniforms);
       s.vertexShader = s.vertexShader
         .replace(
@@ -210,7 +226,7 @@ export class GrassField implements System {
           `#include <common>
           ${SAMPLE_GLSL}
           attribute vec2 aOffset;
-          uniform vec2 uCam; uniform float uSpacing, uRadius, uDensity, uWindTime, uWindStrength; uniform vec2 uWindDir;
+          uniform vec2 uCam; uniform float uSpacing, uRadius, uDensity, uWindTime, uWindStrength, uYNorm, uBaseScale, uInner, uSeed; uniform vec2 uWindDir;
           varying vec3 vGrassCol; varying float vGrassT;`,
         )
         .replace(
@@ -218,13 +234,13 @@ export class GrassField implements System {
           /* glsl */ `
           vec2 snapC = floor(uCam / uSpacing) * uSpacing;
           vec2 cell = snapC + aOffset;
-          float hsh = hash21(cell * 0.731), hsh2 = hash21(cell.yx * 1.37 + 3.1);
+          float hsh = hash21(cell * 0.731 + uSeed), hsh2 = hash21(cell.yx * 1.37 + 3.1 + uSeed);
           vec2 wxz = cell + (vec2(hsh, hsh2) - 0.5) * uSpacing * 0.9;
           vec2 wuv = worldUv(wxz);
           vec4 veg = texture2D(tVeg, wuv);
           vec4 s0 = texture2D(tSplat0, wuv), s1 = texture2D(tSplat1, wuv);
           float dist = length(wxz - uCam);
-          float fade = 1.0 - smoothstep(uRadius * 0.65, uRadius, dist);
+          float fade = (1.0 - smoothstep(uRadius * 0.65, uRadius, dist)) * smoothstep(uInner * 0.8, uInner, dist);
           #ifdef RICE
             float dens = step(0.5, veg.b) * smoothstep(0.3, 0.6, s1.r);
             float groundY = fetchH(tPaddy, wxz) + 0.03;
@@ -235,26 +251,30 @@ export class GrassField implements System {
             dens *= step(hsh * 0.85, dens * uDensity);
             float groundY = fetchH(tHeight, wxz);
             float tall = 0.55 + 0.9 * smoothstep(0.35, 0.95, veg.a) + 0.5 * step(0.93, hsh2);
-            float scl = tall * dens * fade * (0.6 + hsh * 0.6);
+            float scl = tall * dens * fade * (0.6 + hsh * 0.6) * uBaseScale;
           #endif
           float yaw = hsh * 6.2831;
           mat2 rot = mat2(cos(yaw), -sin(yaw), sin(yaw), cos(yaw));
           vec3 transformed = vec3(position);
           transformed.xz = rot * transformed.xz;
           transformed *= scl;
-          float tY = position.y;
+          float tY = position.y * uYNorm;
           float gust = sin(uWindTime * 1.3 + dot(wxz, uWindDir) * 0.35) * 0.5 + 0.5;
           float sway = tY * tY * uWindStrength * (0.12 + 0.22 * gust);
           transformed.xz += uWindDir * sway * scl + vec2(sin(uWindTime * 3.1 + hsh * 20.0), cos(uWindTime * 2.7 + hsh2 * 20.0)) * 0.02 * tY;
           transformed += vec3(wxz.x, groundY, wxz.y);
-          vGrassT = uv.y;
+          vGrassT = tY;
           #ifdef RICE
-            vec3 baseC = vec3(0.035, 0.07, 0.015), tipC = vec3(0.12, 0.2, 0.035), ear = vec3(0.3, 0.27, 0.1);
+            vec3 baseC = vec3(0.018, 0.05, 0.01), tipC = vec3(0.04, 0.13, 0.02), ear = vec3(0.14, 0.15, 0.05);
             vGrassCol = mix(baseC, tipC, clamp(uv.y, 0.0, 1.0)) * (0.88 + veg.g * 0.25);
             if (uv.y > 1.2) vGrassCol = ear;
           #else
             vec3 baseC = vec3(0.04, 0.065, 0.015), tipC = mix(vec3(0.14, 0.2, 0.045), vec3(0.3, 0.26, 0.1), step(0.85, hsh2));
             vGrassCol = mix(baseC, tipC, uv.y) * (0.8 + hsh * 0.35);
+            #ifdef PHOTO_CLUMP
+              // tint of the photographed grass: lush late-summer green, a few dry clumps
+              vGrassCol = mix(vec3(0.78, 0.95, 0.62), vec3(1.15, 1.0, 0.68), step(0.86, hsh2)) * (0.8 + hsh * 0.3);
+            #endif
           #endif`,
         )
         .replace("#include <project_vertex>", "vec4 mvPosition = viewMatrix * vec4(transformed, 1.0); gl_Position = projectionMatrix * mvPosition;")
@@ -262,7 +282,7 @@ export class GrassField implements System {
         .replace("#include <fog_vertex>", "#ifdef USE_FOG\n vFogWorld = transformed;\n #endif");
       s.fragmentShader = s.fragmentShader
         .replace("#include <common>", "#include <common>\n varying vec3 vGrassCol; varying float vGrassT;")
-        .replace("#include <map_fragment>", "diffuseColor.rgb = vGrassCol;")
+        .replace("#include <map_fragment>", "#ifdef PHOTO_CLUMP\n #include <map_fragment>\n diffuseColor.rgb *= vGrassCol;\n #else\n diffuseColor.rgb = vGrassCol;\n #endif")
         .replace("#include <aomap_fragment>", "reflectedLight.indirectDiffuse *= mix(0.35, 1.0, clamp(vGrassT, 0.0, 1.0));");
     });
     this.mesh = new T.Mesh(g, mat);
@@ -301,7 +321,7 @@ export class RiceCanopy implements System {
     const g = new T.PlaneGeometry(nx * step, nz * step, nx, nz);
     g.rotateX(-Math.PI / 2);
     g.translate((x0 + x1) / 2, 0, (z0 + z1) / 2);
-    this.uniforms = { ...wt.uniforms(), uNearFade: { value: new T.Vector2(14, 26) } };
+    this.uniforms = { ...wt.uniforms(), uNearFade: { value: new T.Vector2(11, 19) } };
     const u = this.uniforms;
     const mat = new T.MeshStandardMaterial({ roughness: 0.95, color: 0xffffff, envMapIntensity: 0.5 });
     (mat as unknown as { defines: Record<string, string> }).defines = { FOLIAGE: "" };
@@ -336,13 +356,17 @@ export class RiceCanopy implements System {
           float camD = length(vRxz - cameraPosition.xz);
           float dither = rh(gl_FragCoord.xy);
           if (smoothstep(uNearFade.x, uNearFade.y, camD) < dither) discard;
-          // rows, clumps and the travelling bright bands of wind over the ears
-          float rows = 0.5 + 0.5 * sin(dot(vRxz, vec2(0.0, 1.0)) * 20.9);
-          float clump = rn(vRxz * 4.0) * 0.6 + rn(vRxz * 0.9) * 0.4;
-          float wave = sin(dot(vRxz, uWindDir) * 0.18 - uWindTime * 1.6 + rn(vRxz * 0.05) * 6.0);
-          vec3 col = mix(vec3(0.045, 0.085, 0.018), vec3(0.11, 0.17, 0.035), clump);
-          col = mix(col, vec3(0.2, 0.22, 0.08), smoothstep(0.55, 1.0, wave) * 0.4 * uWindStrength);
-          col *= mix(0.82, 1.0, rows) * (0.88 + veg.g * 0.25);
+          // rows (per-field direction), soft clumping and the travelling bright bands of wind over the ears
+          float ang = veg.g * 6.2831;
+          float rowCoord = dot(vRxz, vec2(cos(ang), sin(ang))) * 20.9;
+          float rowFade = 1.0 - smoothstep(18.0, 40.0, camD);
+          float rows = mix(1.0, 0.5 + 0.5 * sin(rowCoord), rowFade);
+          vec2 rq = mat2(0.8, -0.6, 0.6, 0.8) * vRxz;
+          float clump = (rn(vRxz * 0.7) + rn(rq * 0.53 + 7.1)) * 0.25 + rn(vRxz * 0.17) * 0.5;
+          float wave = sin(dot(vRxz, uWindDir) * 0.16 - uWindTime * 1.4 + rn(vRxz * 0.04) * 6.0);
+          vec3 col = mix(vec3(0.05, 0.1, 0.018), vec3(0.085, 0.15, 0.03), clump);
+          col = mix(col, vec3(0.14, 0.18, 0.05), smoothstep(0.6, 1.0, wave) * 0.35 * uWindStrength);
+          col *= mix(0.86, 1.0, rows) * (0.9 + veg.g * 0.2);
           diffuseColor.rgb = col;`,
         )
         .replace(

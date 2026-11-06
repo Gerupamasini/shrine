@@ -1,6 +1,6 @@
 # 使用素材と出典
 
-このファイルは `python3 tools/assets/catalog.py` が生成します。全ファイルのパス・サイズ・SHA-256・出典は [`docs/asset-manifest.json`](docs/asset-manifest.json)（195ファイル、計73.4MB）にあります。
+このファイルは `python3 tools/assets/catalog.py` が生成します。全ファイルのパス・サイズ・SHA-256・出典は [`docs/asset-manifest.json`](docs/asset-manifest.json)（198ファイル、計76.2MB）にあります。
 
 ## 外部素材
 
@@ -64,9 +64,10 @@
 | 3Dモデル | [wicker_basket_01](https://polyhaven.com/a/wicker_basket_01) | Kuutti Siitonen | village prop |
 | 3Dモデル | [wooden_ladder](https://polyhaven.com/a/wooden_ladder) | Miroslav Turura | village prop |
 | 3Dモデル | [wooden_broom](https://polyhaven.com/a/wooden_broom) | Balen | shrine prop |
-| 葉カードの原本 | [fir_sapling](https://polyhaven.com/a/fir_sapling) | Rico Cilliers, Rob Tuytel | baked into conifer spray cards (sugi/hinoki tint) |
-| 葉カードの原本 | [pine_sapling_small](https://polyhaven.com/a/pine_sapling_small) | Rico Cilliers, Rob Tuytel | baked into pine needle cards (akamatsu) |
-| 葉カードの原本 | [tree_small_02](https://polyhaven.com/a/tree_small_02) | Rico Cilliers | baked into broadleaf leaf cluster cards |
+| 葉カード・草株の原本 | [fir_sapling](https://polyhaven.com/a/fir_sapling) | Rico Cilliers, Rob Tuytel | baked into conifer spray cards (sugi/hinoki tint) |
+| 葉カード・草株の原本 | [pine_sapling_small](https://polyhaven.com/a/pine_sapling_small) | Rico Cilliers, Rob Tuytel | baked into pine needle cards (akamatsu) |
+| 葉カード・草株の原本 | [tree_small_02](https://polyhaven.com/a/tree_small_02) | Rico Cilliers | baked into broadleaf leaf cluster cards |
+| 草株（近景の草） | [grass_medium_01](https://polyhaven.com/a/grass_medium_01) | Rico Cilliers, Rob Tuytel | photographic grass clumps for the near grass field (tools/assets/process_grass.mjs) |
 | HDRI | [evening_road_01_puresky](https://polyhaven.com/a/evening_road_01_puresky) | Jarod Guest, Sergej Majboroda | sky dome backdrop (clouds) and image based light |
 
 Poly Havenの植物モデル（`fir_sapling`、`pine_sapling_small`、`tree_small_02`）は、そのままではWebで扱えない重さ（数十〜数百MB）です。そのため、写真の葉のジオメトリを正射影で撮影して葉カード（`public/assets/foliage/*-albedo.png` / `*-normal.png`）に焼き、樹木は本リポジトリの生成器で作っています。生成した樹木は「Poly Havenの樹木スキャン」ではありません。

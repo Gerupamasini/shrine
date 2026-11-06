@@ -274,7 +274,7 @@
       },
       {
         "id": "grass_medium_01",
-        "use": "baked into grass clump cards"
+        "use": "photographic grass clumps for the near grass field (tools/assets/process_grass.mjs)"
       }
     ]
   },

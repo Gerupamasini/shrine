@@ -433,7 +433,7 @@ function minka(type, v) {
   const bays = Math.round(W / 1.82);
   const bayW = W / bays;
   const wallH = type === "minka-kayabuki" ? 2.35 : 2.7;
-  const upper = type === "minka-kayabuki" ? "plaster_clay" : "plaster_white";
+  const upper = type === "minka-kayabuki" && v % 2 === 0 ? "plaster_clay" : "plaster_white";
   for (let i = 0; i <= bays; i++) for (const z of [-D / 2, D / 2]) m.box("wood_old", 0.14, wallH, 0.14, -W / 2 + i * bayW, F + wallH / 2, z);
   for (const s of [-1, 1]) for (let i = 0; i <= 4; i++) m.box("wood_old", 0.14, wallH, 0.14, s * W / 2, F + wallH / 2, -D / 2 + (D / 4) * i);
   // back and side walls
@@ -487,9 +487,48 @@ function minka(type, v) {
     // ridge cover sticks (gushi)
     for (let k = -6; k <= 6; k++) m.box("wood_old", 0.08, 0.9, 0.08, k * (ret.xg / 6.5), F + wallH + 0.15 + (D / 2 + 1.15) * 1.25 + 0.25, 0, { rx: Math.PI / 2 });
   } else if (type === "minka-totan") {
-    hipRoof(m, "roof_tin", { W, D, over: 0.9, eaveY: F + wallH + 0.1, ridgeY: F + wallH + 0.1 + (D / 2 + 0.9) * 1.05, sori: 0, thick: 0.12, gable: 0.78, uv: 1, ridgeMat: "roof_tin", gableMat: "wood_siding", ridgeH: 0.2, sag: 0.02 });
+    const tin = ["roof_tin", "roof_tin_blue", "roof_tin", "roof_tin_green"][v];
+    hipRoof(m, tin, { W, D, over: 0.9, eaveY: F + wallH + 0.1, ridgeY: F + wallH + 0.1 + (D / 2 + 0.9) * 1.05, sori: 0, thick: 0.12, gable: 0.78, uv: 1, ridgeMat: tin, gableMat: "wood_siding", ridgeH: 0.2, sag: 0.02 });
   } else {
     hipRoof(m, "roof_kawara", { W, D, over: 1.0, eaveY: F + wallH + 0.15, ridgeY: F + wallH + 0.15 + (D / 2 + 1.0) * 0.62, sori: 0.15, thick: 0.22, gable: r() < 0.5 ? 0.6 : 1, ridgeMat: "roof_kawara_ridge", gableMat: "plaster_white", ridgeH: 0.45 });
+  }
+  // rain gutters + downpipes on tiled/tin roofs (kayabuki has none)
+  if (type !== "minka-kayabuki") {
+    const over = type === "minka-totan" ? 0.9 : 1.0;
+    const eY = F + wallH + 0.1;
+    for (const zs of [1, -1]) {
+      const g = new THREE.CylinderGeometry(0.06, 0.06, W + over * 2, 8, 1, true, 0, Math.PI);
+      g.rotateZ(Math.PI / 2);
+      g.rotateX(Math.PI);
+      g.translate(0, eY - 0.06, zs * (D / 2 + over + 0.02));
+      m.add("metal_grey", g);
+      m.cyl("metal_grey", 0.035, 0.035, eY - 0.06, (W / 2 + over - 0.3) * (zs > 0 ? 1 : -1), 0, zs * (D / 2 + over * 0.15), 6);
+    }
+  }
+  // 1990s TV antenna (Yagi) on a mast at the ridge end
+  if (r() < 0.8) {
+    const ridgeY = type === "minka-kayabuki" ? F + wallH + 0.15 + (D / 2 + 1.15) * 1.25 : type === "minka-totan" ? F + wallH + 0.1 + (D / 2 + 0.9) * 1.05 : F + wallH + 0.15 + (D / 2 + 1.0) * 0.62;
+    const ax = (r() < 0.5 ? -1 : 1) * (W / 2 - 1.6);
+    const mastH = 3.2 + r() * 1.5;
+    const yaw = r() * Math.PI;
+    m.cyl("metal_grey", 0.025, 0.025, mastH, ax, ridgeY - 1.2, 0, 6);
+    for (const k of [0, 1]) {
+      const by = ridgeY - 1.2 + mastH - 0.25 - k * 0.9;
+      m.box("metal_grey", 1.7 - k * 0.4, 0.025, 0.025, ax, by, 0, { ry: yaw });
+      for (let e = 0; e < 7 - k * 2; e++) {
+        const t = -0.75 + e * 0.24;
+        m.box("metal_grey", 0.018, 0.018, 0.55 - e * 0.04, ax + Math.cos(yaw) * t, by, -Math.sin(yaw) * t, { ry: yaw });
+      }
+    }
+    // guy wires
+    for (const a of [0.6, 2.7, 4.8]) {
+      const len = Math.hypot(1.8, mastH - 0.6);
+      const g = new THREE.CylinderGeometry(0.006, 0.006, len, 3);
+      g.translate(0, len / 2, 0);
+      g.applyMatrix4(new THREE.Matrix4().makeRotationAxis(new THREE.Vector3(Math.sin(a), 0, -Math.cos(a)), Math.atan2(1.8, mastH - 0.6)));
+      g.translate(ax + Math.cos(a) * 1.8, ridgeY - 1.2 + 0.6, Math.sin(a) * 1.8 * 0.6);
+      m.add("metal_dark", g);
+    }
   }
   // lean-to (geya) on the side for some houses
   if (r() < 0.6) {
@@ -677,7 +716,31 @@ function stairs() {
   return m;
 }
 
+// ---------------------------------------------------------------- road side ditches (world coordinates)
+function ditches() {
+  const m = new Model("road-ditch");
+  const pts = scene.roads[0].points, dd = scene.ditch;
+  const r = rng(77);
+  for (let i = 0; i < pts.length - 1; i++) {
+    const [ax, ay, az] = pts[i], [bx, by, bz] = pts[i + 1];
+    if (az < dd.zRange[0] || bz > dd.zRange[1]) continue;
+    const len = Math.hypot(bx - ax, bz - az), dirx = (bx - ax) / len, dirz = (bz - az) / len;
+    const nx = -dirz, nz = dirx, yaw = Math.atan2(dirx, dirz);
+    for (const side of [-1, 1]) {
+      const cx = (ax + bx) / 2 + nx * side * dd.offset, cz = (az + bz) / 2 + nz * side * dd.offset;
+      const y = (ay + by) / 2 - 0.07;
+      const L = len + 0.03, w = dd.width, wall = 0.1, dep = dd.depth;
+      // two walls, floor (inner faces stained), and a concrete lid on some segments
+      for (const ws of [-1, 1]) m.box("concrete_old", L, dep + 0.35, wall, cx + nx * ws * (w / 2 + wall / 2), y - (dep + 0.35) / 2 + 0.03, cz + nz * ws * (w / 2 + wall / 2), { ry: yaw + Math.PI / 2 });
+      m.box("concrete_dark", L, 0.06, w, cx, y - dep, cz, { ry: yaw + Math.PI / 2 });
+      if (r() < 0.22) m.box("concrete_old", L * 0.96, 0.08, w + 0.16, cx, y + 0.01, cz, { ry: yaw + Math.PI / 2 });
+    }
+  }
+  return m;
+}
+
 // ---------------------------------------------------------------- build all
+await save("road-ditch", ditches());
 await save("torii-stone", torii("stone"));
 await save("torii-wood", torii("wood"));
 for (let v = 0; v < 2; v++) await save(v ? `toro_${v}` : "toro", toro(v));

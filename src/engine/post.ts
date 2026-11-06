@@ -5,6 +5,7 @@ import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js"
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
 import { ShaderPass } from "three/addons/postprocessing/ShaderPass.js";
 import type { Quality } from "./lighting";
+import { SSAOPass } from "./ssao";
 
 /** Gentle film finish: vignette, slight warm/cool split, fine grain. Applied after tone mapping. */
 const FinishShader = {
@@ -19,7 +20,12 @@ const FinishShader = {
       float v = 1.0 - uVignette * smoothstep(0.25, 0.85, length(d * vec2(1.25, 1.0)));
       vec3 col = c.rgb * v;
       float l = dot(col, vec3(0.299, 0.587, 0.114));
-      col = mix(col, col * vec3(0.97, 1.0, 1.04), 1.0 - smoothstep(0.05, 0.45, l)); // cool shadows
+      // photographic grade: a little more saturation, warm highlights, slightly cool shadows, gentle S-curve
+      col = mix(vec3(l), col, 1.14);
+      col = mix(col, col * vec3(0.96, 1.0, 1.05), 1.0 - smoothstep(0.05, 0.4, l));
+      col = mix(col, col * vec3(1.03, 1.0, 0.97), smoothstep(0.45, 0.9, l));
+      col = clamp(col, 0.0, 1.0);
+      col = col + (col * col * (3.0 - 2.0 * col) - col) * 0.25;
       col += (h(gl_FragCoord.xy + fract(uTime) * 91.7) - 0.5) * uGrain;
       gl_FragColor = vec4(col, c.a);
     }`,
@@ -53,6 +59,7 @@ const RaysShader = {
 
 export class Post {
   rays: ShaderPass;
+  ssao: SSAOPass;
   composer: EffectComposer;
   bloom: UnrealBloomPass;
   finish: ShaderPass;
@@ -68,7 +75,12 @@ export class Post {
     this.bloom = new UnrealBloomPass(new T.Vector2(1, 1), 0.14, 0.6, 1.6);
     this.finish = new ShaderPass(FinishShader);
     this.rays = new ShaderPass(RaysShader);
+    // RenderPass draws into composer.readBuffer (renderTarget2): give it a depth texture for SSAO
+    const depth = new T.DepthTexture(1, 1, T.UnsignedIntType);
+    (this.composer.renderTarget2 as T.WebGLRenderTarget).depthTexture = depth;
+    this.ssao = new SSAOPass(camera as T.PerspectiveCamera, depth);
     this.composer.addPass(this.render);
+    this.composer.addPass(this.ssao);
     this.composer.addPass(this.rays);
     this.composer.addPass(this.bloom);
     this.composer.addPass(new OutputPass());
@@ -76,6 +88,7 @@ export class Post {
   }
   setQuality(q: Quality) {
     this.bloom.enabled = q !== "low";
+    this.ssao.enabled = q !== "low";
     (this.composer.renderTarget1 as T.WebGLRenderTarget).samples = q === "low" ? 0 : 4;
     (this.composer.renderTarget2 as T.WebGLRenderTarget).samples = q === "low" ? 0 : 4;
   }

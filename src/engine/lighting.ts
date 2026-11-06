@@ -42,6 +42,11 @@ export class Lighting {
     // Remove the sun from the environment: the directional light provides it.
     const d = hdr.image.data as Float32Array;
     for (let i = 0; i < d.length; i += 4) {
+      // same humid-evening grade as the sky dome: paler blue, warmer overall
+      const l0 = 0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2];
+      d[i] = (l0 + (d[i] - l0) * 0.6) * 1.08;
+      d[i + 1] = (l0 + (d[i + 1] - l0) * 0.6) * 1.0;
+      d[i + 2] = (l0 + (d[i + 2] - l0) * 0.6) * 0.9;
       const l = 0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2];
       if (l > 6) {
         const s = 6 / l;
@@ -114,14 +119,14 @@ export class Lighting {
       l.intensity = this.sunIntensity;
     }
     // Ambient: environment intensity follows the sky brightness.
-    this.scene.environmentIntensity = T.MathUtils.lerp(0.12, 0.5, day);
+    this.scene.environmentIntensity = T.MathUtils.lerp(0.12, 0.55, day);
     // three equirect u = (compassAz + 90)/360; align the env with the sky dome rotation
     this.scene.environmentRotation.set(0, T.MathUtils.degToRad(this.srcAz - p.azimuth - 90), 0);
     this.hemi.intensity = 0.0;
     // Atmosphere colours
     const u = atmosphereUniforms;
     u.uSunDir.value.copy(this.sunDir);
-    const amb = new T.Color(0.26, 0.34, 0.46).lerp(new T.Color(0.2, 0.22, 0.32), 1 - day);
+    const amb = new T.Color(0.34, 0.37, 0.44).lerp(new T.Color(0.2, 0.22, 0.32), 1 - day);
     u.uFogAmbient.value.copy(amb).multiplyScalar(T.MathUtils.lerp(0.18, 1.0, day));
     u.uFogSun.value.copy(this.sunColor).multiplyScalar(1.25 * s.intensity + 0.04);
     u.uFogDensity.value = 0.00036;
@@ -133,7 +138,7 @@ export class Lighting {
     su.uHorizonTint.value.setRGB(1, 1, 1);
     su.uSunColor.value.copy(this.sunColor);
     su.uSunIntensity.value = s.intensity;
-    this.renderer.toneMappingExposure = T.MathUtils.lerp(2.2, 1.05, day);
+    this.renderer.toneMappingExposure = T.MathUtils.lerp(2.4, 1.3, day);
   }
   update() {
     this.camera.updateMatrixWorld();
