@@ -1,0 +1,242 @@
+{
+ "sugi_0": {
+  "species": "sugi",
+  "variant": 0,
+  "height": 29.61,
+  "dbh": 0.537,
+  "triangles": [
+   5600,
+   1462
+  ]
+ },
+ "sugi_1": {
+  "species": "sugi",
+  "variant": 1,
+  "height": 24.53,
+  "dbh": 0.488,
+  "triangles": [
+   4772,
+   1176
+  ]
+ },
+ "sugi_2": {
+  "species": "sugi",
+  "variant": 2,
+  "height": 24.15,
+  "dbh": 0.519,
+  "triangles": [
+   4998,
+   1222
+  ]
+ },
+ "sugi_3": {
+  "species": "sugi",
+  "variant": 3,
+  "height": 25.06,
+  "dbh": 0.47,
+  "triangles": [
+   4864,
+   1220
+  ]
+ },
+ "hinoki_0": {
+  "species": "hinoki",
+  "variant": 0,
+  "height": 22.99,
+  "dbh": 0.365,
+  "triangles": [
+   4558,
+   1202
+  ]
+ },
+ "hinoki_1": {
+  "species": "hinoki",
+  "variant": 1,
+  "height": 23.76,
+  "dbh": 0.467,
+  "triangles": [
+   4104,
+   1232
+  ]
+ },
+ "hinoki_2": {
+  "species": "hinoki",
+  "variant": 2,
+  "height": 21.69,
+  "dbh": 0.372,
+  "triangles": [
+   4130,
+   1144
+  ]
+ },
+ "hinoki_3": {
+  "species": "hinoki",
+  "variant": 3,
+  "height": 19.09,
+  "dbh": 0.411,
+  "triangles": [
+   4074,
+   1146
+  ]
+ },
+ "akamatsu_0": {
+  "species": "akamatsu",
+  "variant": 0,
+  "height": 19.39,
+  "dbh": 0.342,
+  "triangles": [
+   1932,
+   520
+  ]
+ },
+ "akamatsu_1": {
+  "species": "akamatsu",
+  "variant": 1,
+  "height": 19.75,
+  "dbh": 0.456,
+  "triangles": [
+   2356,
+   632
+  ]
+ },
+ "akamatsu_2": {
+  "species": "akamatsu",
+  "variant": 2,
+  "height": 17.27,
+  "dbh": 0.347,
+  "triangles": [
+   1678,
+   506
+  ]
+ },
+ "akamatsu_3": {
+  "species": "akamatsu",
+  "variant": 3,
+  "height": 18.19,
+  "dbh": 0.464,
+  "triangles": [
+   1832,
+   424
+  ]
+ },
+ "broadleaf_0": {
+  "species": "broadleaf",
+  "variant": 0,
+  "height": 13.97,
+  "dbh": 0.378,
+  "triangles": [
+   3216,
+   420
+  ]
+ },
+ "broadleaf_1": {
+  "species": "broadleaf",
+  "variant": 1,
+  "height": 14.74,
+  "dbh": 0.338,
+  "triangles": [
+   2674,
+   342
+  ]
+ },
+ "broadleaf_2": {
+  "species": "broadleaf",
+  "variant": 2,
+  "height": 12.21,
+  "dbh": 0.383,
+  "triangles": [
+   2488,
+   360
+  ]
+ },
+ "broadleaf_3": {
+  "species": "broadleaf",
+  "variant": 3,
+  "height": 12.98,
+  "dbh": 0.342,
+  "triangles": [
+   2968,
+   420
+  ]
+ },
+ "keyaki_0": {
+  "species": "keyaki",
+  "variant": 0,
+  "height": 19.17,
+  "dbh": 0.672,
+  "triangles": [
+   2674,
+   360
+  ]
+ },
+ "keyaki_1": {
+  "species": "keyaki",
+  "variant": 1,
+  "height": 19.94,
+  "dbh": 0.617,
+  "triangles": [
+   2290,
+   342
+  ]
+ },
+ "keyaki_2": {
+  "species": "keyaki",
+  "variant": 2,
+  "height": 17.88,
+  "dbh": 0.682,
+  "triangles": [
+   3302,
+   420
+  ]
+ },
+ "keyaki_3": {
+  "species": "keyaki",
+  "variant": 3,
+  "height": 18.64,
+  "dbh": 0.628,
+  "triangles": [
+   2674,
+   360
+  ]
+ },
+ "bamboo_0": {
+  "species": "bamboo",
+  "variant": 0,
+  "height": 11.82,
+  "dbh": 0.129,
+  "triangles": [
+   764,
+   108
+  ]
+ },
+ "bamboo_1": {
+  "species": "bamboo",
+  "variant": 1,
+  "height": 12.8,
+  "dbh": 0.119,
+  "triangles": [
+   764,
+   108
+  ]
+ },
+ "bamboo_2": {
+  "species": "bamboo",
+  "variant": 2,
+  "height": 11.15,
+  "dbh": 0.092,
+  "triangles": [
+   764,
+   108
+  ]
+ },
+ "bamboo_3": {
+  "species": "bamboo",
+  "variant": 3,
+  "height": 11.77,
+  "dbh": 0.121,
+  "triangles": [
+   764,
+   108
+  ]
+ }
+}

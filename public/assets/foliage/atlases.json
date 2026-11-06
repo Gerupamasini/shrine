@@ -1,0 +1,73 @@
+{
+ "cellsPerRow": 4,
+ "needle": {
+  "sugi": [
+   0,
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7
+  ],
+  "hinoki": [
+   8,
+   9,
+   10,
+   11
+  ],
+  "sapling": [
+   12,
+   13,
+   14,
+   15
+  ],
+  "pivot": "cell centre (sugi), left-centre (hinoki fans)"
+ },
+ "pine": {
+  "tuft": [
+   0,
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8,
+   9,
+   10,
+   11
+  ],
+  "sapling": [
+   12,
+   13,
+   14,
+   15
+  ],
+  "pivot": "cell centre"
+ },
+ "leaf": {
+  "cluster": [
+   0,
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8,
+   9,
+   10,
+   11,
+   12,
+   13,
+   14,
+   15
+  ],
+  "pivot": "cell centre"
+ },
+ "source": "Baked from Poly Haven CC0 models fir_sapling, pine_sapling_small, tree_small_02 (tools/bake/bake-cards.mjs)"
+}

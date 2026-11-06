@@ -1,12 +1,14 @@
 {
   "config": {
     "argv": [
-      "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
-      "/workspace/shrine/node_modules/.bin/playwright",
-      "test"
+      "/opt/node22/bin/node",
+      "/home/user/shrine/node_modules/.bin/playwright",
+      "test",
+      "--trace",
+      "off"
     ],
-    "configFile": "/workspace/shrine/playwright.config.ts",
-    "rootDir": "/workspace/shrine/tests",
+    "configFile": "/home/user/shrine/playwright.config.ts",
+    "rootDir": "/home/user/shrine/tests",
     "failOnFlakyTests": false,
     "forbidOnly": false,
     "fullyParallel": false,
@@ -22,7 +24,7 @@
     "preserveOutput": "always",
     "projects": [
       {
-        "outputDir": "/workspace/shrine/test-results",
+        "outputDir": "/home/user/shrine/test-results",
         "repeatEach": 1,
         "retries": 0,
         "metadata": {
@@ -30,30 +32,30 @@
         },
         "id": "",
         "name": "",
-        "testDir": "/workspace/shrine/tests",
+        "testDir": "/home/user/shrine/tests",
         "testIgnore": [],
         "testMatch": [
           "*.spec.ts"
         ],
-        "timeout": 180000
+        "timeout": 1800000
       }
     ],
     "filteredProjects": [
       {
         "grep": {},
         "grepInvert": null,
-        "outputDir": "/workspace/shrine/test-results",
+        "outputDir": "/home/user/shrine/test-results",
         "repeatEach": 1,
         "retries": 0,
         "metadata": {
           "actualWorkers": 1
         },
         "name": "",
-        "testDir": "/workspace/shrine/tests",
-        "snapshotDir": "/workspace/shrine/tests",
+        "testDir": "/home/user/shrine/tests",
+        "snapshotDir": "/home/user/shrine/tests",
         "testIgnore": [],
         "testMatch": "*.spec.ts",
-        "timeout": 180000,
+        "timeout": 1800000,
         "use": {
           "baseURL": "http://127.0.0.1:5173",
           "viewport": {
@@ -61,14 +63,16 @@
             "height": 600
           },
           "launchOptions": {
-            "executablePath": "/usr/bin/chromium",
+            "executablePath": "/opt/pw-browsers/chromium",
             "args": [
               "--no-sandbox",
+              "--ignore-gpu-blocklist",
               "--enable-unsafe-swiftshader",
               "--use-angle=swiftshader",
               "--disable-dev-shm-usage"
             ]
-          }
+          },
+          "trace": "off"
         },
         "dependencies": [],
         "ignoreSnapshots": false,
@@ -112,12 +116,12 @@
       "line": 0,
       "specs": [
         {
-          "title": "arrival → 200-step climb → shrine → lookout → village; settings and collisions",
+          "title": "foot torii → 200-step climb → precinct → lookout; collisions, settings, no errors",
           "ok": true,
           "tags": [],
           "tests": [
             {
-              "timeout": 180000,
+              "timeout": 1800000,
               "annotations": [],
               "expectedStatus": "passed",
               "projectId": "",
@@ -127,16 +131,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 127629,
+                  "duration": 85658,
                   "errors": [],
-                  "stdout": [
-                    {
-                      "text": "Verified states: {\"arrival\":{\"position\":[0.000020379811530801817,2.0030562405343515,11.99949702601225],\"groundHeight\":0.3286360956120402,\"grounded\":true,\"free\":false,\"triangles\":1277978,\"calls\":102,\"fps\":0,\"audio\":\"合成環境音\",\"steps\":200},\"top\":[0.009615910865250044,39.67579358876246,-127.15526988357306],\"blocked\":[-0.00356867590744514,39.67580238201917,-132.1750612774049],\"panorama\":{\"position\":[21.000000014886858,39.67580099032493,-106.99999996016604],\"groundHeight\":38.00070191500725,\"grounded\":true,\"free\":false,\"triangles\":1150810,\"calls\":157,\"fps\":2,\"audio\":\"合成環境音\",\"steps\":200},\"bottom\":[0.05367886962267221,4.872192806859675,34.67536150785418]}\n"
-                    }
-                  ],
+                  "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-11-06T05:59:50.604Z",
+                  "startTime": "2026-11-06T09:28:19.046Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -144,9 +144,9 @@
               "status": "expected"
             }
           ],
-          "id": "b9b4b397a1d4a5f1d1d3-3678eea8ed0c4ec2a930",
+          "id": "b9b4b397a1d4a5f1d1d3-04066e4937f3c731064d",
           "file": "exploration.spec.ts",
-          "line": 2,
+          "line": 4,
           "column": 1
         }
       ]
@@ -154,8 +154,8 @@
   ],
   "errors": [],
   "stats": {
-    "startTime": "2026-11-06T05:59:50.247Z",
-    "duration": 130030.8,
+    "startTime": "2026-11-06T09:28:18.570Z",
+    "duration": 86701.816,
     "expected": 1,
     "skipped": 0,
     "unexpected": 0,

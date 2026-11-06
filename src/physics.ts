@@ -1,6 +1,15 @@
 import RAPIER from "@dimforge/rapier3d-compat";
 import * as T from "three";
-import type { Terrain, WorldData } from "./world";
+import type { World } from "./world/data";
+
+const EYE = 1.62;
+const HALF = 0.55, RADIUS = 0.3; // capsule: total 1.7 m
+
+/**
+ * First-person walker: kinematic capsule against the 16-bit heightfield, a
+ * continuous ramp collider under each stair flight (so 200 risers never snag the
+ * capsule), building/torii/lantern boxes and tree trunk cylinders.
+ */
 export class Walker {
   world: RAPIER.World;
   body: RAPIER.RigidBody;
@@ -11,178 +20,124 @@ export class Walker {
   grounded = false;
   free = false;
   speed = 0;
-  distance = 0;
-  collisions = 0;
-  static async create(data: WorldData, terrain: Terrain) {
+  bob = 0;
+  static async create(w: World) {
     await RAPIER.init();
-    return new Walker(data, terrain);
+    return new Walker(w);
   }
-  constructor(
-    public data: WorldData,
-    public terrain: Terrain,
-  ) {
+  constructor(public w: World) {
+    const { data, height } = w;
     this.world = new RAPIER.World({ x: 0, y: -9.81, z: 0 });
-    const ground = terrain.geometry();
-    const v = new Float32Array(ground.attributes.position.array);
-    const idx = ground.index!.array;
-    this.world.createCollider(
-      RAPIER.ColliderDesc.trimesh(v, new Uint32Array(idx)).setFriction(0.7),
-    );
-    ground.dispose();
-    const box = (
-      x: number,
-      y: number,
-      z: number,
-      hx: number,
-      hy: number,
-      hz: number,
-    ) =>
+    const n = height.n;
+    const hf = new Float32Array(n * n);
+    for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) hf[i * n + j] = height.data[j * n + i];
+    this.world.createCollider(RAPIER.ColliderDesc.heightfield(n - 1, n - 1, hf, { x: data.extent, y: 1, z: data.extent }).setFriction(0.8));
+    const box = (x: number, y: number, z: number, hx: number, hy: number, hz: number, yaw = 0) =>
       this.world.createCollider(
-        RAPIER.ColliderDesc.cuboid(hx, hy, hz).setTranslation(x, y, z),
+        RAPIER.ColliderDesc.cuboid(hx, hy, hz).setTranslation(x, y, z).setRotation({ x: 0, y: Math.sin(yaw / 2), z: 0, w: Math.cos(yaw / 2) }),
       );
-    // Continuous invisible ramps below tread tops avoid capsule catches on 200 risers.
-    for (let flight = 0; flight < 4; flight++) {
-      const z = -flight * 27,
-        y = flight * 9.5;
-      const vertices = new Float32Array([
-        -2.7,
-        y,
-        z,
-        2.7,
-        y,
-        z,
-        -2.7,
-        y + 9.5,
-        z - 24,
-        2.7,
-        y + 9.5,
-        z - 24,
-      ]);
-      this.world.createCollider(
-        RAPIER.ColliderDesc.trimesh(
-          vertices,
-          new Uint32Array([0, 1, 2, 1, 3, 2]),
-        ),
-      );
-      if (flight < 3) box(0, y + 9.5 - 0.15, z - 25.5, 2.7, 0.15, 1.5);
-    }
-    box(0, -0.15, 2.5, 2.7, 0.15, 2.5);
-    box(0, 37.85, -129, 24, 0.15, 24);
-    const bridgeX = 83 + 9 * Math.sin(115 * 0.025),
-      bridgeY = terrain.sample(bridgeX + 6, 115) + 0.15;
-    box(bridgeX, bridgeY, 115, 5, 0.15, 1.5);
-    // Physical rail at the lookout edge, without sealing the view.
-    box(21, 38.55, -106, 3.5, 0.55, 0.1);
-    for (const p of data.objects) {
-      if (!p.collider) continue;
-      const [x, y, z] = p.position,
-        s = p.scale[0];
-      if (p.collider.type === "cylinder") {
+    // Stair ramps: plane through the step nosings of each flight + flat landings.
+    const st = data.stair;
+    const per = st.flight * st.tread + st.landing;
+    for (let f = 0; f < 4; f++) {
+      const x0 = st.x0 + f * per, x1 = x0 + st.flight * st.tread;
+      const y0 = st.footY + f * st.flight * st.rise, y1 = y0 + st.flight * st.rise;
+      const hw = st.width / 2;
+      const v = new Float32Array([x0, y0 + 0.02, st.z - hw, x0, y0 + 0.02, st.z + hw, x1, y1 + 0.02, st.z - hw, x1, y1 + 0.02, st.z + hw]);
+      this.world.createCollider(RAPIER.ColliderDesc.trimesh(v, new Uint32Array([0, 1, 2, 1, 3, 2])));
+      if (f < 3) box(x1 + st.landing / 2, y1 - 0.2, st.z, st.landing / 2 + 0.05, 0.2, hw);
+      // side curbs keep walkers on the stair
+      for (const s of [-1, 1]) {
+        const len = Math.hypot(x1 - x0, y1 - y0) / 2;
+        const ang = Math.atan2(y1 - y0, x1 - x0);
         this.world.createCollider(
-          RAPIER.ColliderDesc.cylinder(
-            8 * s,
-            (p.collider.radius ?? 0.4) * s,
-          ).setTranslation(x, y + 8 * s, z),
+          RAPIER.ColliderDesc.cuboid(len, 0.35, 0.18)
+            .setTranslation((x0 + x1) / 2, (y0 + y1) / 2 + 0.3, st.z + s * (hw + 0.2))
+            .setRotation({ x: 0, y: 0, z: Math.sin(ang / 2), w: Math.cos(ang / 2) }),
         );
-      } else {
-        const h = p.collider.halfExtents ?? [4, 3, 3];
-        const c = box(x, y + h[1] * s, z, h[0] * s, h[1] * s, h[2] * s);
-        c.setRotation({
-          x: 0,
-          y: Math.sin(p.rotation[1] / 2),
-          z: 0,
-          w: Math.cos(p.rotation[1] / 2),
-        });
       }
     }
-    // Torii pillars; lantern bases and shrine water basin.
-    for (const p of data.objects.filter((o) => o.asset === "torii"))
-      for (const side of [-1, 1])
-        box(
-          p.position[0] + side * 3.1 * p.scale[0],
-          p.position[1] + 2.7,
-          p.position[2],
-          0.31,
-          2.7,
-          0.31,
-        );
-    for (const p of data.objects.filter(
-      (o) =>
-        o.asset === "lantern" ||
-        o.asset === "komainu" ||
-        o.asset === "temizuya",
-    ))
-      box(
-        p.position[0],
-        p.position[1] + 1,
-        p.position[2],
-        p.asset === "temizuya" ? 1.4 : 0.45,
-        1,
-        p.asset === "temizuya" ? 0.8 : 0.45,
-      );
-    this.body = this.world.createRigidBody(
-      RAPIER.RigidBodyDesc.kinematicPositionBased().setTranslation(0, 1, 12),
-    );
-    this.collider = this.world.createCollider(
-      RAPIER.ColliderDesc.capsule(0.55, 0.3).setFriction(0),
-      this.body,
-    );
-    this.controller = this.world.createCharacterController(0.025);
-    this.controller.enableAutostep(0.32, 0.25, true);
-    this.controller.enableSnapToGround(0.55);
-    this.controller.setMaxSlopeClimbAngle(Math.PI / 3);
-    this.controller.setMinSlopeSlideAngle(Math.PI / 2.5);
+    // Precinct floor & stone forecourt.
+    const p = data.precinct;
+    box((p.x0 + p.x1) / 2, p.y - 0.25, (p.z0 + p.z1) / 2, (p.x1 - p.x0) / 2, 0.25, (p.z1 - p.z0) / 2);
+    box((96 + st.x0) / 2, st.footY - 0.21, st.z, (st.x0 - 96) / 2, 0.25, 4.5);
+    for (const o of data.objects) {
+      const c = o.collider;
+      if (!c) continue;
+      const [x, y, z] = o.position, s = o.scale[0], yaw = o.rotation[1];
+      if (c.type === "cylinder") {
+        const hh = (c.height ?? 8) / 2;
+        this.world.createCollider(RAPIER.ColliderDesc.cylinder(hh * s, (c.radius ?? 0.3) * s).setTranslation(x, y + hh * s, z));
+      } else {
+        const h = c.halfExtents ?? [1, 1, 1];
+        box(x, y + h[1] * s, z, h[0] * s, h[1] * s, h[2] * s, yaw);
+      }
+      if (o.asset.startsWith("torii"))
+        for (const side of [-1, 1]) {
+          const off = 2.55 * s * side;
+          box(x + Math.sin(yaw + Math.PI / 2) * off, y + 2.5, z + Math.cos(yaw + Math.PI / 2) * off, 0.32 * s, 2.5, 0.32 * s);
+        }
+    }
+    // Lookout fence (low rail, the view stays open).
+    const lk = data.landmarks.lookout;
+    box(lk[0] - 4, p.y + 0.5, lk[2] + 4.5, 7, 0.5, 0.08, Math.PI / 4);
+    // Tree trunks near the walkable core.
+    for (const [kind, rows] of Object.entries(w.trees)) {
+      const r = kind === "bamboo" ? 0.06 : kind === "sugi" ? 0.32 : 0.25;
+      for (const t of rows) {
+        const [x, y, z, sc] = t;
+        if (Math.hypot(x - 170, z + 40) > 260 && Math.hypot(x - 20, z - 60) > 380) continue;
+        this.world.createCollider(RAPIER.ColliderDesc.cylinder(3, r * sc).setTranslation(x, y + 3, z));
+      }
+    }
+    this.body = this.world.createRigidBody(RAPIER.RigidBodyDesc.kinematicPositionBased().setTranslation(0, 10, 0));
+    this.collider = this.world.createCollider(RAPIER.ColliderDesc.capsule(HALF, RADIUS).setFriction(0), this.body);
+    this.controller = this.world.createCharacterController(0.03);
+    this.controller.enableAutostep(0.35, 0.2, true);
+    this.controller.enableSnapToGround(0.5);
+    this.controller.setMaxSlopeClimbAngle(T.MathUtils.degToRad(48));
+    this.controller.setMinSlopeSlideAngle(T.MathUtils.degToRad(55));
+    this.controller.setApplyImpulsesToDynamicBodies(false);
     this.teleport(data.landmarks.foot);
     this.world.step();
   }
+  /** p = [x, eyeY, z, ...] */
   teleport(p: number[]) {
-    this.body.setTranslation({ x: p[0], y: p[1] - 0.8, z: p[2] }, true);
-    this.body.setNextKinematicTranslation({ x: p[0], y: p[1] - 0.8, z: p[2] });
-    this.position.set(p[0], p[1], p[2]);
+    const ground = this.w.height.sample(p[0], p[2]);
+    const y = Math.max(p[1] - EYE, ground) + HALF + RADIUS + 0.02;
+    this.body.setTranslation({ x: p[0], y, z: p[2] }, true);
+    this.body.setNextKinematicTranslation({ x: p[0], y, z: p[2] });
+    this.position.set(p[0], y - HALF - RADIUS + EYE, p[2]);
     this.vertical = 0;
+    this.world.step();
   }
-  move(direction: T.Vector3, dt: number, running: boolean) {
-    const before = this.body.translation();
+  move(dir: T.Vector3, dt: number, run: boolean) {
+    const b = this.body.translation();
     if (this.free) {
-      const p = {
-        x: before.x + direction.x * dt * 16,
-        y: before.y + direction.y * dt * 16,
-        z: before.z + direction.z * dt * 16,
-      };
+      const v = run ? 40 : 12;
+      const p = { x: b.x + dir.x * v * dt, y: b.y + dir.y * v * dt, z: b.z + dir.z * v * dt };
       this.body.setTranslation(p, true);
       this.body.setNextKinematicTranslation(p);
-      this.position.set(p.x, p.y + 0.8, p.z);
+      this.position.set(p.x, p.y - HALF - RADIUS + EYE, p.z);
       return;
     }
-    const speed = running ? 5.4 : 2.8;
-    this.vertical = Math.max(this.vertical - 19 * dt, -22);
-    const movement = {
-      x: direction.x * speed * dt,
-      y: this.vertical * dt,
-      z: direction.z * speed * dt,
-    };
-    this.controller.computeColliderMovement(
-      this.collider,
-      movement,
-      undefined,
-      undefined,
-      (c) => c.handle !== this.collider.handle,
-    );
+    const speed = run ? 5.2 : 1.45;
+    this.vertical = this.grounded ? -0.5 : Math.max(this.vertical - 9.81 * dt, -30);
+    const desired = { x: dir.x * speed * dt, y: this.vertical * dt, z: dir.z * speed * dt };
+    this.controller.computeColliderMovement(this.collider, desired, undefined, undefined, (c) => c.handle !== this.collider.handle);
     const m = this.controller.computedMovement();
     this.grounded = this.controller.computedGrounded();
-    if (this.grounded) this.vertical = 0;
-    this.collisions = this.controller.numComputedCollisions();
-    const p = {
-      x: T.MathUtils.clamp(before.x + m.x, -590, 590),
-      y: before.y + m.y,
-      z: T.MathUtils.clamp(before.z + m.z, -590, 590),
-    };
+    const half = this.w.data.extent / 2 - 2;
+    const p = { x: T.MathUtils.clamp(b.x + m.x, -half, half), y: b.y + m.y, z: T.MathUtils.clamp(b.z + m.z, -half, half) };
+    // never sink below the heightfield (fast falls, teleports)
+    const g = this.w.height.sample(p.x, p.z) + HALF + RADIUS;
+    if (p.y < g - 0.6) p.y = g;
     this.body.setNextKinematicTranslation(p);
     this.world.timestep = dt;
     this.world.step();
-    this.position.set(p.x, p.y + 0.8, p.z);
-    this.distance += Math.hypot(m.x, m.z);
-    this.speed = Math.hypot(m.x, m.z) / dt;
-    if (p.y < -12) this.teleport(this.data.landmarks.foot);
+    const horiz = Math.hypot(m.x, m.z) / dt;
+    this.speed = horiz;
+    this.bob += horiz * dt * 1.9;
+    this.position.set(p.x, p.y - HALF - RADIUS + EYE, p.z);
   }
 }

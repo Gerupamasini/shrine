@@ -1,88 +1,127 @@
 # 夏陰 — NATSUKAGE
 
-日本の山里を、麓の鳥居から200段の石段・神社・見晴らしの庭へ歩く、Three.js + TypeScript + Viteのデスクトップ向け3D探索プロジェクト。
+1994年8月、東北の山あいの集落。麓の鳥居から200段の石段を登って山上の神社へ向かい、境内の外れから夕暮れの村・田んぼ・小川・重なる山並みを見下ろす。Three.js + TypeScript + Vite で作った、一人称で歩けるブラウザ向けの3Dマップです。
 
-**現在は操作・地形・データ移行を備えた探索可能な制作版です。依頼の「実写風の最終完成」には未到達です。** 写真地表PBRとHDRIは導入済みですが、建築は独自制作、樹木はMITのEZ Treeを調整したプロシージャルGLBで、フォトスキャンではありません。実録ヒグラシは取得できず、明記した合成環境音を同梱しています。低品質な代用品を最終完成品として扱っていません。
+**現状**：探索・地形・建築・植生・水・光・音・Unity用データまで、すべて実際に動く制作版です。写実性は大きく上がりましたが、AAAタイトルの最終品質には届いていません。届いていない点は「既知の限界」に書いています。素材の出典とライセンスは [ASSET_CREDITS.md](ASSET_CREDITS.md) にあります。
 
 ## 起動
 
-Node.js 22.12以上（検証：24.22.1）、npm、WebGL2が必要です。
+Node.js 22以上、WebGL2対応のブラウザ（デスクトップのGPUを推奨）が必要です。
 
 ```sh
-cd /workspace/shrine
 npm ci
 npm run dev
 ```
 
-依存関係を再インストールした場合は、既存のViteプロセスを再起動してください。
-
-Viteが表示するアドレスをローカルのブラウザで開き、「山里を歩く」を押します。素材はすべてローカル同梱で、起動後に外部の素材サーバーへ接続しません。
+表示されたアドレスを開き、「山里を歩く」を押します。素材はすべて同梱されており、起動後に外部サーバーへは接続しません。
 
 ```sh
-npm run build       # TypeScriptチェック + distへ本番ビルド
-npm run preview     # 本番ビルドのローカル確認
-npm test            # 地形・段数・GLB・配置・画像・音源データ検証
-npm run test:browser # Playwrightによる探索・衝突・設定・画面の検証
+npm run build          # 型チェック + 本番ビルド（dist/）
+npm run preview        # 本番ビルドの確認
+npm test               # 地形・石段・川・水田・配置・材質・音源ライセンスのデータ検証
+npm run test:browser   # Playwright：石段の登坂・衝突・設定・画面（GPUなしでも可、遅い）
 ```
 
-ブラウザテストはLinuxの`/usr/bin/chromium`を標準使用します。別環境では`CHROMIUM_PATH`に実行ファイルのパスを指定してください。テストの`--use-angle=swiftshader`はGPUなしのCI向けであり、一般の閲覧者にソフトウェア描画を要求しません。
+URLパラメータは次のとおりです。
+
+- `?quality=low|standard|high`：描画品質
+- `?time=17.5`：時刻
+- `?place=lookout`：開始地点
+
+開始地点には `foot`、`stairs`、`shrine`、`lookout`、`village`、`paddies`、`river` を指定できます。
 
 ## 操作
 
 | 操作 | キー |
 |---|---|
-| 前後左右 | WASD |
-| 視点 | マウス。開始後クリックでPointer Lock。非対応時はドラッグ |
+| 移動 | WASD |
+| 視点 | マウス（クリックでポインタロック。使えない環境ではドラッグ） |
 | 走る | Shift |
 | マウス解除 | Esc |
-| 撮影用フリーカメラ | F、Q/Eで上下 |
-| UIを隠す・戻す | H |
-| 場所・時刻・画質・音・診断 | 右上の「設定」 |
+| フリーカメラ（撮影用、衝突なし） | F、Q/Eで上下 |
+| UIの表示切替 | H |
+| 時刻（17:00〜19:00）・画質・移動先・音・診断表示 | 右上の「設定」 |
 
-Escで解除してから設定をクリックします。音は開始操作でブラウザのAudioContextを起動し、右下または設定から切り替えられます。BGMはありません。フリーカメラでは意図的に衝突を無効にします。通常歩行にはRapierのカプセルと地形・幹・建物の簡略化コライダーを使用。
+歩行はRapierのキャラクターコントローラーで判定します。
 
-## マップ
+- 地形は16-bitの高さ場コライダー
+- 石段は各フライトに踏面の段鼻を結ぶ連続スロープを置き、蹴上げに引っかからない
+- 建物・鳥居・灯籠・狛犬は箱、幹は円柱のコライダー
 
-- 1.2km四方、513²の16-bit地形。集落・川の周辺は原本間隔2.34375m、外周は4.6875mの接続した格子で描画・衝突判定。
-- 高低差38m、200段（蹴上げ19cm、踏面48cm、幅5.4m）。50段×4、3mの踊り場×3。
-- 本殿・拝殿、鳥居、灯籠、手水舎、狛犬、社務所、絵馬掛け、賽銭箱。
-- 18軒の家屋、納屋、電柱・電線、56区画の水田、小川、橋、護岸。
-- 748件の固定シード配置。枝分岐・葉の透過画像を持つ樹木GLBの3段階LOD、遠景のベイク樹冠11,000本（別JSON）、インスタンスの草・稲。
-- 17〜19時の空・太陽・環境光・露出、距離減衰する3D音響、場所への移動。
+## 世界の構成（1単位 = 1m、+Y上、北 = −Z）
 
-遠野のような盆地を参考に、川の下刻、水田の水平面、自然堤防上の宅地、周辺山地を独自設計。測量地形の複製ではありません。神社や塩竈神社、特定作品の背景・地図をコピーしたものではありません。地形・村・建築は独自設計。時刻は美術上の補間であり、実際の天文データを再現したシミュレーションではありません。
+| 要素 | 内容 |
+|---|---|
+| 地形 | 1.2km四方、1025²の16-bit高さ場（約1.17m間隔）。南北に延びる谷、四方の山、遠景（14km四方の低解像度の山並み）。西北西には夕日が谷へ差し込む鞍部がある |
+| 石段 | 200段（蹴上げ17.5cm・踏面34cm・幅5.2m）。50段×4フライト、3.5mの踊り場×3。麓（7.0m）から境内（42.0m）まで35m登る。花崗岩ブロックを1段に2〜3枚、摩耗・苔・側石付き |
+| 神社 | 入母屋造の拝殿（向拝・注連縄・鈴）、流造の本殿と玉垣、石と朱塗りの鳥居、春日灯籠、阿吽の狛犬、手水舎、社務所、絵馬掛け、賽銭箱、注連縄の御神木、石垣と見晴らしの柵 |
+| 村 | 4つの小集落に29軒。茅葺き・瓦屋根・トタン被せの民家と土蔵、納屋、石垣、ブロック塀、電柱と電線、地蔵、バス停、軽トラック、生活小物 |
+| 田畑 | 谷の等高線に沿う不整形な162区画（稲140、畑16、休耕6）。畦・法面（最大35°）付き |
+| 川 | 幅4〜6m。水面は一方向に下る。河床の石、岸、橋 |
+| 植生 | 杉・檜・赤松・広葉樹・欅・竹を約4.1万本。シダ・低木・雑草・苔むした岩・切り株・倒木。草と稲は実行時に生成 |
+
+すべての配置は固定シードで再現できます。
+
+## 光と空気
+
+- **太陽**：NOAAの近似式による天文計算（1994年8月8日、北緯38.32°・東経141.02°、JST）。18:00で方位285.6°・高度6.7°、19:00で日没後（−4.5°）
+- **直射光**：大気減衰の近似で色温度を変える（18:00で約3200K）
+- **空**：雲のある写真（Poly HavenのCC0 HDRI）を太陽方位に合わせて回転。太陽円盤は解析的に描画
+- **環境光**：同じHDRIから太陽を除いてIBLとして使用
+- **影**：カスケードシャドウ3段（品質に応じて1024〜4096）
+- **大気遠近法**：高さで減衰する霞を全マテリアル共通で適用。太陽側に暖色の前方散乱を加える
+- **ポストエフェクト**：ACESトーンマッピング、弱いブルーム、周辺減光・粒子
+- **植物**：葉の透過光（逆光で葉が光る）。風で樹木・草・稲が揺れ、田には風の明暗の波が渡る
+
+## 音（BGMなし）
+
+- **ヒグラシ**：Wikimedia Commonsの実録（Σ64、CC BY 4.0）
+  - 森の中の5点に固定したHRTF立体音源で、それぞれ再生位置と速度を変え、96秒の素材が単調に繰り返して聞こえないようにしている
+  - 遠景の合唱として、同じ素材のステレオ版も重ねている
+  - 時刻とともに盛衰する
+- **川・風・葉擦れ**：実録ではなく、Web Audioでノイズから合成している
+  - 川は流路上の3点から鳴り、近づくと大きくなる
+  - 風は高台ほど強い
 
 ## データと再生成
 
-`public/assets/models`にGLB、`public/assets`に画像・HDRI・PCM音源、`public/world`に高さマップ・マスク・配置・材質定義を保存。Three.jsのシーン生成コードと分離しています。
+| 出力 | 原本・生成ツール |
+|---|---|
+| `public/world/heightmap.r16` / `.png`（16-bit）、`splat0/1.png`、`vegetation-mask.png`、`paddy-level.png`、`far-heightmap.png` | `tools/world/generate_world.py` |
+| `public/world/scene.json`（石段・建物・川・道・電線・水田・目印）、`vegetation.json`、`clutter.json` | 同上 |
+| `public/world/materials.json`（材質名 → 写真PBRの対応表。ランタイムとUnityで共用） | 手動で管理 |
+| `public/assets/models/architecture/*.glb` | `tools/architecture/build.mjs` |
+| `public/assets/models/trees/*.glb`（LOD0/LOD1、風の重みは頂点カラー） | `tools/trees/build-trees.mjs` |
+| `public/assets/foliage/*`（写真の葉カード） | `tools/bake/bake-cards.mjs` → `compose_atlases.py` |
+| `public/assets/textures/*`、`sky/*`、`models/props/*`、`audio/*` | `tools/assets/fetch.py` → `process_*.{py,mjs,sh}` |
 
 ```sh
-# モデルや地形の設計を変更した場合のみ。通常起動には不要。
-python -m venv /workspace/shrine-assets-venv
-/workspace/shrine-assets-venv/bin/pip install -r requirements-assets.txt
-# 上記venvをactivateしてから
-npm run assets
+pip install -r requirements-assets.txt
+python3 tools/assets/fetch.py                 # Poly Haven / Commons から .cache/ へ取得
+python3 tools/assets/process_textures.py
+node tools/assets/process_models.mjs
+tools/assets/process_audio.sh
+python3 tools/world/generate_world.py
+node tools/trees/build-trees.mjs
+node tools/architecture/build.mjs
+node tools/bake/bake-cards.mjs && python3 tools/bake/compose_atlases.py
+python3 tools/assets/catalog.py               # docs/asset-manifest.json と ASSET_CREDITS.md
 ```
 
-`tools/generate_world.py`が地形・PBR原本・配置、`generate_foliage.py`が葉のアルファ画像、`generate_audio.py`が合成PCM、`build-models.mjs`が建築・小物GLB、`build-trees.mjs`が樹木GLBを生成。固定シード19940821。遠景樹冠11,000本は`world/canopy.json`へ別途書き出します。Blender原本を作成したという意味ではなく、編集可能な生成ソースを原本として納品しています。遠景の樹木PNGを更新する場合はdevサーバーの起動中に`node tools/bake-forest.mjs`を実行し、続いて`python tools/catalog-assets.py`でハッシュを更新します。外部PBRとHDRIは`npm run assets`で削除・上書きしません。欠損時は`python tools/fetch-assets.py`で固定コミットから再取得し、SHA-256を照合できます。
+確認用のツールもあります。
 
-[Unity移行](UNITY_MIGRATION.md) / [使用素材とライセンス](ASSET_CREDITS.md) / [負荷予算](docs/PERFORMANCE_BUDGET.md) / [アセットハッシュ](docs/asset-manifest.json) / [検証結果](docs/VALIDATION.md)
+- `node tools/shot.mjs <出力先> name:place:方位:俯角[:時刻]`：任意視点の撮影
+- `node tools/walk-test.mjs`：登坂テスト
+- `python3 tools/world/preview.py`：地図の俯瞰
 
-## 残る制作作業
+[Unity移植](UNITY_MIGRATION.md) ／ [地形と配置の設計](docs/TERRAIN_DESIGN.md) ／ [負荷予算と計測](docs/PERFORMANCE_BUDGET.md)
 
-- 写実的な杉・ヒノキ・松・竹・シダ等の追加。現行は写真の葉と樹皮を使用したEZ Treeの分岐モデルで、スギ・ヒノキの樹種精度やフォトスキャン品質は未達。
-- 石材・樹皮・古木・瓦・茅の高品質な写真PBRと、風化した建築ディテールの追加。
-- ライセンス確認済みの実録ヒグラシ・鳥・川音への差し替え。現行の音は合成で、実際の生物音を正確に再現していない。
-- 村の生活小物、用水路や石垣の増設、植生の種類と遷移の調整。
-- 標準的なデスクトップGPUで1080p・60fpsの実測。ソフトウェアWebGLの結果を性能保証としない。
-- 建築にも近景・遠景LODを追加済み。KTX2テクスチャ圧縮と影のカスケードは未実装。
+## 既知の限界（完成品と偽らないために）
 
-素材サイトへの直接通信は現在のクラウド実行環境で403となりました。必要なドメインは環境設定ドラフトへ保存済みです。公開済みGitHubで取得できた素材以外の調達は、環境設定への反映後に再開できます。旧版はmainからGitHub Pagesへ公開済みです。この再構築は別ブランチで検証しています。
-
-## GitHub Pages
-
-リポジトリの **Settings → Pages → Build and deployment → Source** を **GitHub Actions** に設定します。PRをmainへマージすると`.github/workflows/pages.yml`が検証・ビルド・公開します。PRではビルドのみ実行し、公開内容は変更しません。
-
-公開先は `https://gerupamasini.github.io/shrine/`。`npm run build:pages`が`/shrine/`用の静的ファイルを生成し、地形・モデル・画像・音声もこのサブパスから読み込みます。リポジトリ名を変更する場合は`build:pages`の`--base`も変更してください。独自ドメインを使う場合は`/`へ変更します。
-
-ローカルでは`npm run build:pages`の後に`npm run preview -- --base=/shrine/`を実行し、`/shrine/`を開いて確認できます。WebGL2対応PCブラウザ向けです。音声とマウス操作は開始ボタンを押すまで有効になりません。
+- **建築**：手続き的に作ったモデルです。柱・軒の反り・屋根の厚み・格子・注連縄までは作っていますが、組物（斗栱）や彫刻、瓦1枚ずつの形状はテクスチャで表現しています。写真測量した建築には及びません。狛犬はメタボールで作った摩耗した石像で、細部の彫りはありません。
+- **樹木**：Poly Havenの実写の葉を焼いたカードと独自の枝の生成で作っています。スギとヒノキの葉の形は、モミの若木の葉を元にした近似です。遠景はビルボードです。
+- **音**：実録はヒグラシのみです。川の音・風・他のセミ・鳥は、実録素材を取得できなかったため、合成音にしているか、入れていません。
+- **性能**：この開発環境にはGPUがなく、SwiftShaderで描画を確認しました。実GPUでの1080p・60fpsは未計測です。品質「標準」の負荷の内訳は [docs/PERFORMANCE_BUDGET.md](docs/PERFORMANCE_BUDGET.md) にあります。
+- **未実装**：God Rays（光芒）、テクスチャ圧縮（KTX2）、樹木LODのクロスフェード。
+- **Sketchfabの建築モデル**：ログインが必要なため取得していません。
+- **参照先**：塩竈神社と『ひぐらしのなく頃に』は雰囲気の参考に留めています。建物・地図・配置は独自設計です。
