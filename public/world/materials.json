@@ -1,26 +1,30 @@
 {
- "_doc": "Material name (as written into GLBs) -> photographic PBR texture set in public/assets/textures/<tex>/{albedo,normal,arm}.jpg. size = metres per texture repeat (GLB UVs are in metres). arm = R ambient occlusion, G roughness, B metalness (glTF ORM). Normal maps use the OpenGL (+Y) convention. colour multiplies the albedo (sRGB hex).",
+ "_doc": "Material name (as written into GLBs) -> photographic PBR texture set in public/assets/textures/<tex>/{albedo,normal,arm}.jpg. size = metres per texture repeat (GLB UVs are in metres). arm = R ambient occlusion, G roughness, B metalness (glTF ORM). Normal maps use the OpenGL (+Y) convention. colour multiplies the albedo (sRGB hex). gain = extra multiplier on the albedo (linear) to reach measured-looking reflectance.",
  "architecture": {
   "stone_granite": {
    "tex": "rock_surface",
    "size": 1.2,
-   "color": "#c4bfb4"
+   "color": "#c4bfb4",
+   "gain": 1.45
   },
   "stone_step": {
    "tex": "rock_surface",
    "size": 0.9,
    "color": "#b5aea1",
-   "normalScale": 1.3
+   "normalScale": 1.3,
+   "gain": 1.55
   },
   "stone_moss": {
    "tex": "mossy_stone_wall",
    "size": 1.4,
-   "color": "#c8c8b8"
+   "color": "#c8c8b8",
+   "gain": 1.15
   },
   "stone_old": {
    "tex": "mossy_rock",
    "size": 0.9,
-   "color": "#b9b6aa"
+   "color": "#b9b6aa",
+   "gain": 1.25
   },
   "stone_dark": {
    "color": "#211e1b",
@@ -29,12 +33,14 @@
   "ishigaki": {
    "tex": "japanese_stone_wall",
    "size": 3,
-   "color": "#c0bab0"
+   "color": "#c0bab0",
+   "gain": 1.2
   },
   "wood_old": {
    "tex": "hinoki_planks",
    "size": 2,
-   "color": "#9a8b7a"
+   "color": "#9a8b7a",
+   "gain": 1.05
   },
   "wood_planks": {
    "tex": "hinoki_planks",
@@ -69,13 +75,14 @@
   "roof_kawara": {
    "tex": "grey_roof_tiles",
    "size": 1.6,
-   "color": "#a5a7a8",
-   "normalScale": 1.2
+   "color": "#8f98a2",
+   "normalScale": 1.2,
+   "gain": 1.1
   },
   "roof_kawara_ridge": {
    "tex": "grey_roof_tiles",
    "size": 0.8,
-   "color": "#6c6e70"
+   "color": "#5f666e"
   },
   "roof_thatch": {
    "tex": "thatch_roof_angled",
@@ -104,27 +111,32 @@
   "plaster_white": {
    "tex": "white_plaster_rough_01",
    "size": 3,
-   "color": "#ece6da"
+   "color": "#ece6da",
+   "gain": 1.6
   },
   "plaster_clay": {
    "tex": "clay_plaster",
    "size": 3,
-   "color": "#d6c4a8"
+   "color": "#d6c4a8",
+   "gain": 1.15
   },
   "concrete": {
    "tex": "white_plaster_rough_01",
    "size": 3,
-   "color": "#a9a6a0"
+   "color": "#a9a6a0",
+   "gain": 1.45
   },
   "concrete_block": {
    "tex": "concrete_block_wall",
    "size": 2,
-   "color": "#c9c5bd"
+   "color": "#c9c5bd",
+   "gain": 1.2
   },
   "concrete_pole": {
    "tex": "white_plaster_rough_01",
    "size": 2,
-   "color": "#b4b1aa"
+   "color": "#b4b1aa",
+   "gain": 1.4
   },
   "glass": {
    "color": "#0c1214",

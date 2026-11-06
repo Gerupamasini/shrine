@@ -15,6 +15,8 @@ export type PbrDef = {
   alphaTest?: number;
   map?: string;
   envIntensity?: number;
+  /** linear multiplier on the albedo colour */
+  gain?: number;
 };
 
 /**
@@ -83,6 +85,7 @@ export class Library {
       m.roughnessMap = arm;
       m.metalnessMap = def.metalness ? arm : null;
     }
+    if (def.gain) m.color.multiplyScalar(def.gain);
     if (def.alphaTest) m.alphaTest = def.alphaTest;
     if (def.envIntensity !== undefined) m.envMapIntensity = def.envIntensity;
     return this.finish(m);

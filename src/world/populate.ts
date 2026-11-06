@@ -23,7 +23,7 @@ export async function populate(land: Landscape, progress: (p: number, label: str
   land.add(veg);
   land.add(arch);
   land.add(clutter);
-  land.add(new GrassField(land, wt, { rice: false, spacing: 0.34, radius: 40, blades: 4 }));
+  land.add(new GrassField(land, wt, { rice: false, spacing: 0.36, radius: 40, blades: 6 }));
   land.add(new GrassField(land, wt, { rice: true, spacing: 0.3, radius: 22, blades: 7 }));
   land.add(new RiceCanopy(land, wt));
   land.add(new River(land));

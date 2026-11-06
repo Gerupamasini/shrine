@@ -1,6 +1,6 @@
 # 使用素材と出典
 
-このファイルは `python3 tools/assets/catalog.py` が生成します。全ファイルのパス・サイズ・SHA-256・出典は [`docs/asset-manifest.json`](docs/asset-manifest.json)（195ファイル、計73.3MB）にあります。
+このファイルは `python3 tools/assets/catalog.py` が生成します。全ファイルのパス・サイズ・SHA-256・出典は [`docs/asset-manifest.json`](docs/asset-manifest.json)（195ファイル、計73.4MB）にあります。
 
 ## 外部素材
 

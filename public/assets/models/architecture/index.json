@@ -562,6 +562,7 @@
     "interior_dark",
     "glass",
     "aluminium",
+    "interior_lit",
     "wood_planks",
     "roof_kawara",
     "roof_kawara_ridge",
@@ -623,6 +624,7 @@
     "interior_dark",
     "glass",
     "aluminium",
+    "interior_lit",
     "wood_planks",
     "roof_kawara",
     "roof_kawara_ridge",
@@ -684,6 +686,7 @@
     "interior_dark",
     "glass",
     "aluminium",
+    "interior_lit",
     "wood_planks",
     "roof_tin",
     "bamboo_green"
@@ -743,6 +746,7 @@
     "interior_dark",
     "glass",
     "aluminium",
+    "interior_lit",
     "wood_planks",
     "roof_tin",
     "bamboo_green"

@@ -212,6 +212,7 @@ function broadleaf(b, r, o, lod) {
     }
     if (!lod || depth < 2) b.tube(barkMat, pts, Math.max(4, sides - depth * 3), [0.8, 1]);
     const end = pts.at(-1).p;
+    if (depth >= 1 && !lod) leaves.push({ p: pts[segs >> 1].p, d, depth: 3 });
     if (depth >= (lod ? 1 : 2)) { leaves.push({ p: end, d, depth }); if (depth >= 2) leaves.push({ p: pts[segs >> 1].p, d, depth }); return; }
     const kids = 2 + Math.floor(r() * 2);
     for (let k = 0; k < kids; k++) {

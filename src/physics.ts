@@ -60,7 +60,7 @@ export class Walker {
     // Precinct floor & stone forecourt.
     const p = data.precinct;
     box((p.x0 + p.x1) / 2, p.y - 0.25, (p.z0 + p.z1) / 2, (p.x1 - p.x0) / 2, 0.25, (p.z1 - p.z0) / 2);
-    box((96 + st.x0) / 2, st.footY - 0.25, st.z, (st.x0 - 96) / 2, 0.25, 4.5);
+    box((96 + st.x0) / 2, st.footY - 0.21, st.z, (st.x0 - 96) / 2, 0.25, 4.5);
     for (const o of data.objects) {
       const c = o.collider;
       if (!c) continue;

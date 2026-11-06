@@ -537,6 +537,10 @@ for z in np.arange(-500, 560, 9):
 # ---- Ground clutter (near the walkable core only) -------------------------------
 clutter = {k: [] for k in ["fern", "shrub", "weed", "rock_moss", "boulder", "river_stone", "stump", "log", "susuki"]}
 def add_clutter(kind, x, z, scale, variant=0, sink=0.0):
+    # keep the stair treads, landings and the forecourt clear
+    reach = {"rock_moss": 1.1, "boulder": 1.4, "log": 2.5, "stump": 0.6}.get(kind, 0.35) * scale
+    if STAIR_X0 - 30 < x < STAIR_X1 + 3 and abs(z - STAIR_Z) < STAIR_W / 2 + 0.5 + reach:
+        return
     clutter[kind].append([round(x, 2), round(sample(x, z) - sink, 3), round(z, 2), round(scale, 3), round(float(rv.random() * math.tau), 3), int(variant)])
 
 core = lambda x, z: (60 < x < 300 and -120 < z < 40) or (-220 < x < 140 and -200 < z < 420)
@@ -567,7 +571,7 @@ for i in range(700):
     z = STAIR_Z + side * rv.uniform(STAIR_W / 2 + 0.9, STAIR_W / 2 + 8)
     r = rv.random()
     if r < 0.62: add_clutter("fern", x, z, rv.uniform(0.7, 1.6))
-    elif r < 0.8: add_clutter("rock_moss", x, z, rv.uniform(0.4, 1.0), int(rv.integers(0, 2)), sink=0.2)
+    elif r < 0.8: add_clutter("rock_moss", x, z, rv.uniform(0.3, 0.7), int(rv.integers(0, 2)), sink=0.2)
     elif r < 0.92: add_clutter("shrub", x, z, rv.uniform(0.6, 1.1), int(rv.integers(0, 3)))
     else: add_clutter("weed", x, z, rv.uniform(0.5, 1.0), int(rv.integers(0, 2)))
 # River stones and boulders.

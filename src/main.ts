@@ -210,6 +210,7 @@ function frame(dt: number, wall: number) {
   updateCamera(dt);
   land.update(dt, elapsed);
   audio.update(camera, land.world, timeOfDay);
+  post.updateRays(camera, land.lighting.sunDir, land.lighting.elevation, quality);
   renderer.info.reset();
   post.draw(dt);
   measure += wall;
@@ -321,6 +322,7 @@ async function boot() {
       for (let i = 0; i < n; i++) {
         updateCamera(0);
         land.update(1 / 60, (elapsed += 1 / 60));
+        post.updateRays(camera, land.lighting.sunDir, land.lighting.elevation, quality);
         renderer.info.reset();
         post.draw(1 / 60);
       }

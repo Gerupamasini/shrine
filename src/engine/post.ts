@@ -25,7 +25,34 @@ const FinishShader = {
     }`,
 };
 
+/** Subtle crepuscular rays: radial scattering of the bright sky around the sun (HDR, pre tone-mapping). */
+const RaysShader = {
+  uniforms: { tDiffuse: { value: null }, uSun: { value: new T.Vector2(0.5, 0.5) }, uStrength: { value: 0 }, uAspect: { value: 1 } },
+  vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix*modelViewMatrix*vec4(position,1.); }`,
+  fragmentShader: /* glsl */ `
+    uniform sampler2D tDiffuse; uniform vec2 uSun; uniform float uStrength, uAspect; varying vec2 vUv;
+    void main(){
+      vec4 base = texture2D(tDiffuse, vUv);
+      if (uStrength <= 0.0) { gl_FragColor = base; return; }
+      vec2 d = (uSun - vUv) / 48.0;
+      vec2 uv = vUv;
+      vec3 acc = vec3(0.0);
+      float w = 1.0;
+      for (int i = 0; i < 48; i++) {
+        uv += d;
+        vec3 c = texture2D(tDiffuse, clamp(uv, 0.0, 1.0)).rgb;
+        float l = dot(c, vec3(0.2126, 0.7152, 0.0722));
+        acc += c * smoothstep(2.2, 6.0, l) * w;
+        w *= 0.955;
+      }
+      vec2 off = (vUv - uSun) * vec2(uAspect, 1.0);
+      float fall = exp(-length(off) * 1.6);
+      gl_FragColor = vec4(base.rgb + acc / 48.0 * uStrength * fall, base.a);
+    }`,
+};
+
 export class Post {
+  rays: ShaderPass;
   composer: EffectComposer;
   bloom: UnrealBloomPass;
   finish: ShaderPass;
@@ -40,7 +67,9 @@ export class Post {
     this.render = new RenderPass(scene, camera);
     this.bloom = new UnrealBloomPass(new T.Vector2(1, 1), 0.14, 0.6, 1.6);
     this.finish = new ShaderPass(FinishShader);
+    this.rays = new ShaderPass(RaysShader);
     this.composer.addPass(this.render);
+    this.composer.addPass(this.rays);
     this.composer.addPass(this.bloom);
     this.composer.addPass(new OutputPass());
     this.composer.addPass(this.finish);
@@ -53,6 +82,17 @@ export class Post {
   setSize(w: number, h: number, ratio: number) {
     this.composer.setPixelRatio(ratio);
     this.composer.setSize(w, h);
+  }
+  /** sunDir: world direction to the sun; strength fades with the sun leaving the view or setting */
+  updateRays(camera: T.PerspectiveCamera, sunDir: T.Vector3, elevation: number, q: Quality) {
+    const p = sunDir.clone().multiplyScalar(4000).add(camera.position).project(camera);
+    const fwd = new T.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
+    const facing = T.MathUtils.smoothstep(fwd.dot(sunDir), 0.2, 0.75);
+    const u = this.rays.uniforms;
+    u.uSun.value.set(p.x * 0.5 + 0.5, p.y * 0.5 + 0.5);
+    u.uAspect.value = camera.aspect;
+    u.uStrength.value = q === "low" ? 0 : 0.55 * facing * T.MathUtils.smoothstep(elevation, -1, 3);
+    this.rays.enabled = u.uStrength.value > 0.001;
   }
   draw(dt: number) {
     this.finish.uniforms.uTime.value += dt;

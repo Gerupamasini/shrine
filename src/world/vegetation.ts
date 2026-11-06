@@ -79,7 +79,7 @@ export class Vegetation implements System {
       bark_sugi: ["japanese_cedar_bark", "#d8cfc4"],
       bark_hinoki: ["metasequoia_bark", "#d9c2b0"],
       bark_pine: ["pine_bark", "#e6c3a4"],
-      bark_broadleaf: ["japanese_zelkova_bark", "#9b968b"],
+      bark_broadleaf: ["japanese_zelkova_bark", "#7b766c"],
       bark_keyaki: ["japanese_zelkova_bark", "#a8a296"],
     };
     if (bark[name]) {

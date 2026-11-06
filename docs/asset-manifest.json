@@ -274,8 +274,8 @@
  },
  {
   "path": "assets/models/architecture/index.json",
-  "bytes": 12654,
-  "sha256": "df678f38ddfbc8ee61915204f0473063c9c0b1f9ab7480182edf3d94a19567e5",
+  "bytes": 12734,
+  "sha256": "c377c1ef0a3a68471d99cf81d91309f72e646f0f4384983f6f99b8ac07284b1b",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/architecture/build.mjs"
@@ -330,8 +330,8 @@
  },
  {
   "path": "assets/models/architecture/minka-kawara_1.glb",
-  "bytes": 143392,
-  "sha256": "530cef1a80d6e81ea9f9dc1a6841698834a19d319acf7539391a2e4efa4771b3",
+  "bytes": 145032,
+  "sha256": "5343b1206dcfb3d2b071be4deb22805b505623577eab378408c4032cb08dd071",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/architecture/build.mjs"
@@ -346,8 +346,8 @@
  },
  {
   "path": "assets/models/architecture/minka-kawara_3.glb",
-  "bytes": 150856,
-  "sha256": "5f7b43a97b17ea42af0b99244c79b60b53fdf3ef3861fef988400a07e221724e",
+  "bytes": 151256,
+  "sha256": "ebdae96ccb33220b4a4b75136501cfa966005d82d4118b17062bc300248a14ce",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/architecture/build.mjs"
@@ -426,8 +426,8 @@
  },
  {
   "path": "assets/models/architecture/minka-totan_1.glb",
-  "bytes": 145972,
-  "sha256": "bc3285a44076a3603b9bd5d5f80cc56c6cd4f0479a3cb13de459ccfb8551611c",
+  "bytes": 147876,
+  "sha256": "ce19d8567575fdf0d3bf981ced14f3410a630b893d7523f813254c8a334d7a85",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/architecture/build.mjs"
@@ -442,8 +442,8 @@
  },
  {
   "path": "assets/models/architecture/minka-totan_3.glb",
-  "bytes": 136936,
-  "sha256": "28c4f9db5406f664abfca7ec27f840d190578f0c81bb17b27120188475652981",
+  "bytes": 138840,
+  "sha256": "c7827cca5b0b1242d9ac7cf1f7bb1313c6120281fd1eb29276fc8874e82a75f1",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/architecture/build.mjs"
@@ -499,7 +499,7 @@
  {
   "path": "assets/models/architecture/stairs.glb",
   "bytes": 1840708,
-  "sha256": "00394d405fc9120070c7cd31d50c1b59c733116bb134352081de6fd41e86d690",
+  "sha256": "fbac1dfc51e69799b3cfbc2902a403213d6fde160d139f60e368f4cbcac55c93",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/architecture/build.mjs"
@@ -842,32 +842,32 @@
  },
  {
   "path": "assets/models/trees/broadleaf_0.glb",
-  "bytes": 179816,
-  "sha256": "1ecb315f8058f5181f84dcf7ee9a8aa969e7b56676773f250ac1b831131d3288",
+  "bytes": 186584,
+  "sha256": "aceacf2cb2375bc1bd65dc64e3e86145ca16f548f6e5a0b2d636abbc5b5d01d2",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/trees/build-trees.mjs"
  },
  {
   "path": "assets/models/trees/broadleaf_1.glb",
-  "bytes": 152108,
-  "sha256": "c878d8225301c5cde2f1b0cb1f18f79d348a2e45dc44069f68961a920af98a29",
+  "bytes": 157560,
+  "sha256": "4657107ce34fccd8195adcc92f02f45a6dd7c438b5d04beb3511a34a21854f6f",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/trees/build-trees.mjs"
  },
  {
   "path": "assets/models/trees/broadleaf_2.glb",
-  "bytes": 144188,
-  "sha256": "d9ed5ebe67baa8dfbe75d124487db7f3dc4b313dd47953ba53c27e3282a269db",
+  "bytes": 149080,
+  "sha256": "f6fcc46f0f581ad85e528b7875d6fbb60b9b0240747da3613e597960bfbb9239",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/trees/build-trees.mjs"
  },
  {
   "path": "assets/models/trees/broadleaf_3.glb",
-  "bytes": 167996,
-  "sha256": "064c416a7fe33f7bb84dd363f50679f46d46d7caa330f00c293157e736a9b33d",
+  "bytes": 174008,
+  "sha256": "9098a0fafc847960758cc44b6e575abb9064d4152bbc10f4b015e0bc86cd60ae",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/trees/build-trees.mjs"
@@ -906,32 +906,32 @@
  },
  {
   "path": "assets/models/trees/keyaki_0.glb",
-  "bytes": 153040,
-  "sha256": "f715971ca18b0fa4329cbeee692827b1d483b9fd931ddbb8b4f98367934473a3",
+  "bytes": 158492,
+  "sha256": "98cdf1d91e1a2073f26df4c1f27f456b3fa0bcaea9db089ff9c31528222bc76a",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/trees/build-trees.mjs"
  },
  {
   "path": "assets/models/trees/keyaki_1.glb",
-  "bytes": 134676,
-  "sha256": "8d72d01642fe4132b8ffffbb4240b0783b89bb9f73db0e19efba759d1b89132e",
+  "bytes": 139004,
+  "sha256": "0d738f7899dde9c24ff23323dbe9fac1612587b47a21d2c0109e2030f9689dea",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/trees/build-trees.mjs"
  },
  {
   "path": "assets/models/trees/keyaki_2.glb",
-  "bytes": 182108,
-  "sha256": "cc451a024427800888aec987ac73f9bd6b07d41b9b76a6e8125e75652a508289",
+  "bytes": 189060,
+  "sha256": "7e2c7ca077c487bd7ed144ada9142bce9f7e61a2cda220b40a21305861313313",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/trees/build-trees.mjs"
  },
  {
   "path": "assets/models/trees/keyaki_3.glb",
-  "bytes": 153036,
-  "sha256": "12253dc714f6919441c2c66beb4327c94f2b5d69f5d3897139570a6e719ffcb1",
+  "bytes": 158484,
+  "sha256": "da4eaefa949c69e7ac2b0d01518364a904f6dbf593e340c9c9d5182f8126d2ea",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/trees/build-trees.mjs"
@@ -971,7 +971,7 @@
  {
   "path": "assets/models/trees/trees.json",
   "bytes": 3148,
-  "sha256": "20edda6cfed762844c7f023392bdd839d2bc64baa621f72a5b8a0430221ef6ac",
+  "sha256": "2f9f641117f15155a53de96e0971c9daea682df7c74e5c1589f79e2424a8e5a1",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/trees/build-trees.mjs"
@@ -1962,8 +1962,8 @@
  },
  {
   "path": "world/clutter.json",
-  "bytes": 113896,
-  "sha256": "dab9866aae4ee9bd0bc9d1a04f4cdce6820a7bb2b02de6f226293086e7f66c96",
+  "bytes": 113434,
+  "sha256": "b2937ffaf50b8d5b524a0cf8e63e55e319289d6c73e9f22e447889d6a17ff684",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/world/generate_world.py"
@@ -2002,8 +2002,8 @@
  },
  {
   "path": "world/materials.json",
-  "bytes": 6598,
-  "sha256": "ca90b942413aca05328f7e1edc41125d374388e262c4768582a9dd710fa74d6d",
+  "bytes": 6883,
+  "sha256": "c985ec585445e605030da01659580770ed26aee0ef32e4de09552720eefc5ffb",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/world/generate_world.py"

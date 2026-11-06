@@ -464,7 +464,7 @@ function minka(type, v) {
     const cx = -W / 2 + (i + 0.5) * bayW;
     const open = r() < 0.25;
     if (glassy) {
-      m.box("interior_dark", bayW - 0.1, 1.8, 0.05, cx, F + 0.95, front - 0.25);
+      m.box(v % 2 === 1 && i === bays - 1 ? "interior_lit" : "interior_dark", bayW - 0.1, 1.8, 0.05, cx, F + 0.95, front - 0.25);
       m.box("glass", bayW - 0.1, 1.75, 0.02, cx, F + 0.95, front + 0.02);
       for (const dx of [-bayW / 2 + 0.05, 0, bayW / 2 - 0.05]) m.box("aluminium", 0.04, 1.8, 0.05, cx + dx, F + 0.95, front + 0.03);
       for (const y of [F + 0.07, F + 1.82, F + 0.9]) m.box("aluminium", bayW - 0.05, 0.04, 0.05, cx, y, front + 0.03);
@@ -641,7 +641,7 @@ function stairs() {
       let z = z0;
       while (z < z1 - 0.05) {
         const wid = Math.min(z1 - z, 0.6 + r() * 0.7);
-        m.box(r() < 0.25 ? "stone_moss" : "stone_step", len - 0.02, 0.2, wid - 0.02, x + len / 2, y - 0.1 + (r() - 0.5) * 0.012, z + wid / 2);
+        m.box(r() < 0.25 ? "stone_moss" : "stone_step", len - 0.02, 0.24, wid - 0.02, x + len / 2, y - 0.08 + (r() - 0.5) * 0.012, z + wid / 2);
         z += wid;
       }
       x += len;
@@ -668,7 +668,7 @@ function stairs() {
       for (let k = 0; k < pp.count; k++) if (pp.getZ(k) > 0) pp.setZ(k, pp.getZ(k) - (2.3 - pp.getY(k)) * 0.16);
       g.computeVertexNormals();
       g.rotateY(-Math.atan2(bz - az, bx - ax));
-      g.translate(x, p.y - 2.36, z);
+      g.translate(x, p.y - 2.75, z);
       m.add("ishigaki", g, { uvScale: 0.6 });
     }
   };

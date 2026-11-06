@@ -45,7 +45,7 @@ export class River implements System {
     g.setAttribute("normal", new T.Float32BufferAttribute(new Float32Array(pos.length).map((_, i) => (i % 3 === 1 ? 1 : 0)), 3));
     g.setIndex(idx);
     g.computeBoundingSphere();
-    const m = new T.MeshStandardMaterial({ color: 0x0f1a17, roughness: 0.05, metalness: 0.0, transparent: true, depthWrite: false, envMapIntensity: 1.25 });
+    const m = new T.MeshStandardMaterial({ color: 0x0f1a17, roughness: 0.12, metalness: 0.0, transparent: true, depthWrite: false, envMapIntensity: 1.25 });
     land.lib.finish(m);
     const u = this.uniforms;
     addHook(m, "river", (s) => {
@@ -60,7 +60,7 @@ export class River implements System {
           uniform float uTimeW; varying float vDepth; varying vec2 vFlow;
           float wh(vec2 p){ p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }
           float wn(vec2 p){ vec2 i=floor(p), f=fract(p); f=f*f*(3.-2.*f); return mix(mix(wh(i),wh(i+vec2(1,0)),f.x),mix(wh(i+vec2(0,1)),wh(i+vec2(1,1)),f.x),f.y); }
-          float waves(vec2 p){ return wn(p * 1.3 + vec2(0.0, -uTimeW * 1.1)) * 0.6 + wn(p * 3.7 + vec2(uTimeW * 0.2, -uTimeW * 2.3)) * 0.3 + wn(p * 9.0 + vec2(0.0, -uTimeW * 3.5)) * 0.1; }`,
+          float waves(vec2 p){ return wn(p * 0.9 + vec2(0.0, -uTimeW * 0.9)) * 0.55 + wn(p * 2.3 + vec2(uTimeW * 0.15, -uTimeW * 1.7)) * 0.3 + wn(p * 5.1 + vec2(0.0, -uTimeW * 2.6)) * 0.15; }`,
         )
         .replace(
           "#include <map_fragment>",

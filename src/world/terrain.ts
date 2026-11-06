@@ -7,12 +7,12 @@ import type { Heightfield, WorldData } from "./data";
 /** Terrain layers in splat order (splat0 RGBA, splat1 RGBA) and their tile size in metres. */
 export const TERRAIN_LAYERS = [
   { id: "leafy_grass", size: 3.2, tint: [0.62, 0.78, 0.5] },
-  { id: "forest_leaves_02", size: 3.0, tint: [0.82, 0.8, 0.72] },
+  { id: "forest_leaves_02", size: 3.0, tint: [0.66, 0.62, 0.55] },
   { id: "stony_dirt_path", size: 2.6, tint: [0.95, 0.92, 0.88] },
   { id: "mossy_rock", size: 4.5, tint: [0.9, 0.92, 0.86] },
   { id: "brown_mud_leaves_01", size: 2.4, tint: [0.8, 0.78, 0.72] },
   { id: "river_small_rocks", size: 2.2, tint: [0.9, 0.9, 0.88] },
-  { id: "gravel_floor_02", size: 1.6, tint: [0.7, 0.68, 0.64] },
+  { id: "gravel_floor_02", size: 1.6, tint: [0.56, 0.54, 0.5] },
   { id: "worn_asphalt", size: 3.5, tint: [0.9, 0.9, 0.9] },
 ];
 
@@ -181,7 +181,7 @@ export class Terrain {
           }`,
         )
         .replace("#include <map_fragment>", "terrainSample();\n diffuseColor.rgb *= tAlb;")
-        .replace("#include <roughnessmap_fragment>", "float roughnessFactor = roughness * tArmV.g;")
+        .replace("#include <roughnessmap_fragment>", "float roughnessFactor = roughness * mix(0.78, 1.0, tArmV.g);")
         .replace("#include <metalnessmap_fragment>", "float metalnessFactor = 0.0;")
         .replace(
           "#include <normal_fragment_begin>",
@@ -196,6 +196,17 @@ export class Terrain {
           }`,
         )
         .replace("#include <normal_fragment_maps>", "")
+        .replace(
+          "#include <lights_fragment_end>",
+          `#include <lights_fragment_end>
+          {
+            // beyond the shadow-casting tree LODs the canopy still shades the forest floor
+            float canopy = texture2D(tVeg, vTW.xz / uExtent + 0.5).r;
+            float far = smoothstep(70.0, 160.0, length(vTW - cameraPosition));
+            reflectedLight.directDiffuse *= 1.0 - canopy * 0.85 * far;
+            reflectedLight.indirectDiffuse *= 1.0 - canopy * 0.35 * far;
+          }`,
+        )
         .replace(
           "#include <aomap_fragment>",
           /* glsl */ `{
