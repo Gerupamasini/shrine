@@ -11,7 +11,7 @@ const browser = await chromium.launch({
 const page = await browser.newPage({ viewport: { width: W, height: H } });
 const errors = [];
 page.on("pageerror", (e) => errors.push(e.message));
-page.on("console", (m) => { if (m.type() === "error" || m.type() === "warning") errors.push(m.text().slice(0, 300)); });
+page.on("console", (m) => { if (m.type() === "error" || m.type() === "warning") errors.push(m.text().slice(0, 4000)); });
 const q = process.env.Q || "standard";
 await page.goto(`http://127.0.0.1:${process.env.PORT || 5173}/?quality=${q}&capture`);
 await page.waitForFunction(() => window.__satoyama?.ready || document.getElementById("error")?.hidden === false, null, { timeout: 600000 });

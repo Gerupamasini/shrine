@@ -220,7 +220,7 @@ function broadleaf(b, r, o, lod) {
       let nd = rotAxis(d, axis, (0.45 + r() * 0.5));
       nd = rotAxis(nd, d, k * 6.28 / kids + r());
       nd = norm(add(nd, [0, o.upward, 0]));
-      limb(end, nd, L * (0.55 + r() * 0.2), rad * 0.6, depth + 1);
+      limb(end, nd, L * (0.55 + r() * 0.2), rad * 0.52, depth + 1);
     }
   }
   const nLimbs = 3 + Math.floor(r() * 2);
@@ -228,7 +228,7 @@ function broadleaf(b, r, o, lod) {
   for (let k = 0; k < nLimbs; k++) {
     const a = k * 6.28 / nLimbs + r() * 0.8;
     const tilt = o.limbTilt + r() * 0.3;
-    limb(top, norm([Math.cos(a) * Math.sin(tilt), Math.cos(tilt), Math.sin(a) * Math.sin(tilt)]), (H - forkH) * 0.55, dbh * 0.32, 0);
+    limb(top, norm([Math.cos(a) * Math.sin(tilt), Math.cos(tilt), Math.sin(a) * Math.sin(tilt)]), (H - forkH) * 0.55, dbh * 0.27, 0);
   }
   // leaf clusters: around terminal points + fill the crown shell
   const shell = lod ? 48 : 150;

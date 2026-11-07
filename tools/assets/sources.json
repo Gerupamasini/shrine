@@ -160,6 +160,12 @@
         "res": "1k",
         "out": 1024,
         "use": "broadleaf trunks"
+      },
+      {
+        "id": "farm_furrows",
+        "res": "2k",
+        "out": 1024,
+        "use": "terrain: vegetable field ridges (hatake)"
       }
     ],
     "models": [
@@ -196,22 +202,17 @@
       {
         "id": "rock_moss_set_01",
         "use": "mossy rocks",
-        "targetTris": 2200
+        "targetTris": 9000
       },
       {
         "id": "rock_moss_set_02",
         "use": "mossy rocks",
-        "targetTris": 2200
+        "targetTris": 9000
       },
       {
         "id": "rock_07",
         "use": "river boulder",
         "targetTris": 1400
-      },
-      {
-        "id": "rock_09",
-        "use": "river boulder",
-        "targetTris": 1200
       },
       {
         "id": "stone_01",
@@ -252,11 +253,6 @@
         "id": "wooden_ladder",
         "use": "village prop",
         "targetTris": 4000
-      },
-      {
-        "id": "wooden_broom",
-        "use": "shrine prop",
-        "targetTris": 4000
       }
     ],
     "foliageSources": [
@@ -274,7 +270,7 @@
       },
       {
         "id": "grass_medium_01",
-        "use": "baked into grass clump cards"
+        "use": "photographic grass clumps for the near grass field (tools/assets/process_grass.mjs)"
       }
     ]
   },

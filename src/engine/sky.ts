@@ -67,15 +67,26 @@ export class SkyDome {
           float srcAz = az - uSunAz + uSrcAz;
           float w = clamp(1.0 - max(el, 0.0) / 50.0, 0.0, 1.0);
           float srcEl = el + (uSrcEl - uSunEl) * w * w;
-          float u = fract(srcAz / 360.0);
+          // seam-free wrap: take derivatives from whichever of two offset u's is continuous here
+          float ua = fract(srcAz / 360.0), ub = fract(srcAz / 360.0 + 0.5) - 0.5;
           float v = (90.0 - srcEl) / (90.0 - uBottom);
-          vec3 sky = srgbToLinear(texture2D(uBackdrop, vec2(u, clamp(v, 0.001, 0.999))).rgb);
+          vec2 dxa = vec2(dFdx(ua), dFdx(v)), dya = vec2(dFdy(ua), dFdy(v));
+          vec2 dxb = vec2(dFdx(ub), dFdx(v)), dyb = vec2(dFdy(ub), dFdy(v));
+          bool useB = abs(dxb.x) + abs(dyb.x) < abs(dxa.x) + abs(dya.x);
+          vec3 sky = srgbToLinear(textureGrad(uBackdrop, vec2(ua, clamp(v, 0.001, 0.999)), useB ? dxb : dxa, useB ? dyb : dya).rgb);
           // undo the soft shoulder used when encoding (approximate)
           sky = sky + max(sky - 0.85, 0.0) * 1.6 * sky;
           sky *= uScale * uExposure * uTint;
-          // late-summer humidity: slightly desaturated, milky sky; warm anti-solar band (Belt of Venus)
+          // late-summer evening grade of the (afternoon) photographic sky:
+          //  * clouds (low-saturation texels) take warm light on the sun side, lavender away from it
+          //  * the blue is paled by humidity, the whole dome warms towards the low sun
           float lum = dot(sky, vec3(0.2126, 0.7152, 0.0722));
-          sky = mix(vec3(lum), sky, 0.82) + vec3(0.02, 0.025, 0.03) * uExposure;
+          float sat = (max(sky.r, max(sky.g, sky.b)) - min(sky.r, min(sky.g, sky.b))) / max(max(sky.r, max(sky.g, sky.b)), 1e-4);
+          float cloud = 1.0 - smoothstep(0.12, 0.42, sat);
+          float sunward = pow(dot(normalize(vec3(d.x, 0.0, d.z) + 1e-5), normalize(vec3(uSunDir.x, 0.0, uSunDir.z))) * 0.5 + 0.5, 2.0);
+          vec3 warm = mix(vec3(0.82, 0.78, 0.86), vec3(1.25, 0.95, 0.7), sunward);
+          sky = mix(mix(vec3(lum), sky, 0.62) * vec3(1.02, 1.0, 0.95), vec3(lum) * warm, cloud * 0.85);
+          sky = sky * (1.0 + 0.35 * sunward * smoothstep(40.0, 0.0, el)) + vec3(0.035, 0.032, 0.03) * uExposure;
           float anti = pow(max(-dot(d, vec3(uSunDir.x, 0.0, uSunDir.z)), 0.0), 2.0) * exp(-max(el - 2.0, 0.0) / 10.0);
           sky += vec3(0.32, 0.2, 0.22) * anti * 0.35 * uExposure;
           // horizon haze consistent with the aerial perspective of the terrain

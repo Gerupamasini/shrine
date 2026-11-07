@@ -1,0 +1,27 @@
+{
+  "_doc": "House footprints shared by tools/world/generate_world.py (placement, colliders, clearances) and tools/architecture/build.mjs (models). W along local X (ridge), D along local Z (front = +Z). storeys: 1 or 2. wing: L-shaped magariya stable wing [centre x, centre z, width x, depth z] in local metres.",
+  "minka-kayabuki": [
+    { "W": 13.5, "D": 9.0, "storeys": 1 },
+    { "W": 12.0, "D": 8.5, "storeys": 1 },
+    { "W": 14.5, "D": 9.5, "storeys": 1, "wing": [-4.4, 7.3, 5.6, 5.6] },
+    { "W": 11.5, "D": 8.0, "storeys": 1 }
+  ],
+  "minka-kawara": [
+    { "W": 12.0, "D": 8.5, "storeys": 1 },
+    { "W": 10.8, "D": 8.0, "storeys": 2 },
+    { "W": 13.5, "D": 9.0, "storeys": 1 },
+    { "W": 11.4, "D": 9.5, "storeys": 2 }
+  ],
+  "minka-totan": [
+    { "W": 11.5, "D": 8.0, "storeys": 1 },
+    { "W": 12.8, "D": 8.6, "storeys": 1, "wing": [4.6, 6.8, 5.2, 5.2] },
+    { "W": 10.6, "D": 7.6, "storeys": 1 },
+    { "W": 13.2, "D": 9.2, "storeys": 1 }
+  ],
+  "minka-kura": [
+    { "W": 6.5, "D": 5.0, "storeys": 1 },
+    { "W": 7.2, "D": 5.4, "storeys": 1 },
+    { "W": 6.0, "D": 4.6, "storeys": 1 },
+    { "W": 7.5, "D": 5.5, "storeys": 1 }
+  ]
+}

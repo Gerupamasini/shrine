@@ -11,6 +11,7 @@ export class WorldTextures {
   veg!: T.Texture;
   splat0!: T.Texture;
   splat1!: T.Texture;
+  splat2!: T.Texture;
   paddy!: T.DataTexture;
   constructor(public land: Landscape) {
     const h = land.world.height;
@@ -26,7 +27,7 @@ export class WorldTextures {
         i.onerror = rej;
         i.src = publicUrl(p);
       });
-    const [veg, s0, s1] = await Promise.all([img("world/vegetation-mask.png"), img("world/splat0.png"), img("world/splat1.png")]);
+    const [veg, s0, s1, s2] = await Promise.all([img("world/vegetation-mask.png"), img("world/splat0.png"), img("world/splat1.png"), img("world/splat2.png")]);
     const tex = (i: HTMLImageElement) => {
       const t = new T.Texture(i);
       t.flipY = false;
@@ -38,6 +39,7 @@ export class WorldTextures {
     this.veg = tex(veg);
     this.splat0 = tex(s0);
     this.splat1 = tex(s1);
+    this.splat2 = tex(s2);
     // 16-bit paddy level PNG -> float texture (browsers decode PNG16 to 8 bit, so read the raw file)
     const buf = await fetch(publicUrl("world/paddy-level.png")).then((r) => r.arrayBuffer());
     const levels = await decodePng16(buf, this.land.world.data.heightEncoding);
@@ -52,6 +54,7 @@ export class WorldTextures {
       tVeg: { value: this.veg },
       tSplat0: { value: this.splat0 },
       tSplat1: { value: this.splat1 },
+      tSplat2: { value: this.splat2 },
       tPaddy: { value: this.paddy },
       uExtent: { value: this.land.world.data.extent },
       uRes: { value: this.land.world.height.n },
@@ -100,7 +103,7 @@ export async function decodePng16(buf: ArrayBuffer, enc: { minHeight: number; ra
 }
 
 const SAMPLE_GLSL = /* glsl */ `
-  uniform sampler2D tHeight, tVeg, tSplat0, tSplat1, tPaddy;
+  uniform sampler2D tHeight, tVeg, tSplat0, tSplat1, tSplat2, tPaddy;
   uniform float uExtent, uRes;
   float fetchH(sampler2D t, vec2 xz) {
     vec2 f = clamp((xz / uExtent + 0.5) * (uRes - 1.0), vec2(0.0), vec2(uRes - 1.001));
@@ -110,6 +113,18 @@ const SAMPLE_GLSL = /* glsl */ `
     return mix(mix(h00, h10, a.x), mix(h01, h11, a.x), a.y);
   }
   vec2 worldUv(vec2 xz) { return xz / uExtent + 0.5; }
+  // paddy level: bilinear over rice texels only (non-rice texels hold minHeight), -100 if none
+  float fetchPaddy(vec2 xz) {
+    vec2 f = clamp((xz / uExtent + 0.5) * (uRes - 1.0), vec2(0.0), vec2(uRes - 1.001));
+    ivec2 i = ivec2(floor(f)); vec2 a = fract(f);
+    float h00 = texelFetch(tPaddy, i, 0).r, h10 = texelFetch(tPaddy, i + ivec2(1, 0), 0).r;
+    float h01 = texelFetch(tPaddy, i + ivec2(0, 1), 0).r, h11 = texelFetch(tPaddy, i + ivec2(1, 1), 0).r;
+    vec4 w = vec4((1.0 - a.x) * (1.0 - a.y), a.x * (1.0 - a.y), (1.0 - a.x) * a.y, a.x * a.y);
+    vec4 v = step(vec4(-15.0), vec4(h00, h10, h01, h11));
+    w *= v;
+    float ws = w.x + w.y + w.z + w.w;
+    return ws > 1e-4 ? dot(w, vec4(h00, h10, h01, h11)) / ws : -100.0;
+  }
   float hash21(vec2 p) { p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }
 `;
 
@@ -118,9 +133,9 @@ function bladeGeometry(blades: number, segs: number, rice: boolean) {
   const rand = (() => { let s = rice ? 7 : 3; return () => ((s = (s * 16807) % 2147483647) / 2147483647); })();
   for (let b = 0; b < blades; b++) {
     const ang = (b / blades) * Math.PI * 2 + rand() * 0.8;
-    const lean = rice ? 0.28 + rand() * 0.35 : 0.15 + rand() * 0.45;
+    const lean = rice ? 0.12 + rand() * 0.3 : 0.15 + rand() * 0.45;
     const hgt = rice ? 0.85 + rand() * 0.3 : 0.45 + rand() * 0.55;
-    const w = rice ? 0.0065 + rand() * 0.003 : 0.006 + rand() * 0.006;
+    const w = rice ? 0.0045 + rand() * 0.002 : 0.006 + rand() * 0.006;
     const dir = [Math.cos(ang), Math.sin(ang)];
     const base = pos.length / 3;
     for (let s = 0; s <= segs; s++) {
@@ -178,31 +193,52 @@ export class GrassField implements System {
   constructor(
     public land: Landscape,
     wt: WorldTextures,
-    public opts: { rice: boolean; spacing: number; radius: number; blades: number },
+    public opts: { rice: boolean; spacing: number; radius: number; blades: number; inner?: number; clump?: { geometry: T.BufferGeometry; map: T.Texture; height: number; scale: number }; seed?: number },
   ) {
     const { spacing, radius } = opts;
+    // instances sorted by distance from the centre: drawing the first N gives a disc of a smaller
+    // radius, so quality settings can shrink the field without rebuilding it
     const n = Math.ceil((radius * 2) / spacing);
-    const offsets = new Float32Array(n * n * 2);
-    let k = 0;
+    const cells: [number, number, number][] = [];
     for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) {
-      offsets[k++] = (i - n / 2) * spacing;
-      offsets[k++] = (j - n / 2) * spacing;
+      const x = (i - n / 2) * spacing, z = (j - n / 2) * spacing, d = Math.hypot(x, z);
+      if (d <= radius + spacing) cells.push([x, z, d]);
     }
-    const g = bladeGeometry(opts.blades, opts.rice ? 4 : 3, opts.rice);
+    cells.sort((a, b) => a[2] - b[2]);
+    this.radii = cells.map((c) => c[2]);
+    const offsets = new Float32Array(cells.length * 2);
+    cells.forEach((c, k) => ((offsets[k * 2] = c[0]), (offsets[k * 2 + 1] = c[1])));
+    let g: T.InstancedBufferGeometry;
+    if (opts.clump) {
+      // photographic clump (Poly Haven grass_medium_01): copy its attributes into an instanced geometry
+      g = new T.InstancedBufferGeometry();
+      const src = opts.clump.geometry;
+      for (const k of ["position", "normal", "uv"]) g.setAttribute(k, src.getAttribute(k));
+      g.setIndex(src.getIndex());
+    } else g = bladeGeometry(opts.blades, opts.rice ? 6 : 3, opts.rice);
     g.setAttribute("aOffset", new T.InstancedBufferAttribute(offsets, 2));
-    g.instanceCount = n * n;
+    g.instanceCount = cells.length;
     this.uniforms = {
       ...wt.uniforms(),
       uCam: { value: new T.Vector2() },
       uSpacing: { value: spacing },
       uRadius: { value: radius },
       uDensity: { value: 1 },
+      uYNorm: { value: opts.clump ? 1 / opts.clump.height : 1 },
+      uBaseScale: { value: opts.clump ? opts.clump.scale : 1 },
+      uInner: { value: opts.inner ?? 0 },
+      uSeed: { value: opts.seed ?? 0 },
     };
-    const mat = new T.MeshStandardMaterial({ roughness: 0.92, side: T.DoubleSide, color: 0xffffff, envMapIntensity: 0.45 });
-    (mat as unknown as { defines: Record<string, string> }).defines = { FOLIAGE: "", ...(opts.rice ? { RICE: "" } : {}) };
+    const mat = new T.MeshStandardMaterial({ roughness: 0.92, side: T.DoubleSide, color: 0xffffff, envMapIntensity: 0.95 });
+    if (opts.clump) {
+      mat.map = opts.clump.map;
+      mat.alphaTest = 0.45;
+      mat.alphaToCoverage = true;
+    }
+    (mat as unknown as { defines: Record<string, string> }).defines = { FOLIAGE: "", ...(opts.rice ? { RICE: "" } : {}), ...(opts.clump ? { PHOTO_CLUMP: "" } : {}) };
     this.land.lib.finish(mat);
     const u = this.uniforms;
-    addHook(mat, opts.rice ? "rice-field" : "grass-field", (s) => {
+    addHook(mat, opts.rice ? "rice-field" : opts.clump ? "grass-clumps" : "grass-field", (s) => {
       Object.assign(s.uniforms, u, windUniforms);
       s.vertexShader = s.vertexShader
         .replace(
@@ -210,51 +246,82 @@ export class GrassField implements System {
           `#include <common>
           ${SAMPLE_GLSL}
           attribute vec2 aOffset;
-          uniform vec2 uCam; uniform float uSpacing, uRadius, uDensity, uWindTime, uWindStrength; uniform vec2 uWindDir;
-          varying vec3 vGrassCol; varying float vGrassT;`,
+          uniform vec2 uCam; uniform float uSpacing, uRadius, uDensity, uWindTime, uWindStrength, uYNorm, uBaseScale, uInner, uSeed; uniform vec2 uWindDir;
+          varying vec3 vGrassCol; varying float vGrassT;
+          void grassCell(out vec2 wxz, out float hsh, out float hsh2) {
+            vec2 snapC = floor(uCam / uSpacing) * uSpacing;
+            vec2 cell = snapC + aOffset;
+            hsh = hash21(cell * 0.731 + uSeed); hsh2 = hash21(cell.yx * 1.37 + 3.1 + uSeed);
+            #ifdef RICE
+              wxz = cell + (vec2(hsh, hsh2) - 0.5) * uSpacing * 0.12;   // transplanted hills stand in rows
+            #else
+              wxz = cell + (vec2(hsh, hsh2) - 0.5) * uSpacing * 0.9;
+            #endif
+          }`,
+        )
+        .replace(
+          "#include <beginnormal_vertex>",
+          /* glsl */ `
+          vec3 objectNormal = vec3(normal);
+          {
+            vec2 nw; float nh, nh2;
+            grassCell(nw, nh, nh2);
+            float ny = nh * 6.2831;
+            objectNormal.xz = mat2(cos(ny), -sin(ny), sin(ny), cos(ny)) * objectNormal.xz;
+            // bend normals towards the sky: a clump is lit like a volume, not like flat cards
+            objectNormal = normalize(mix(objectNormal, vec3(0.0, 1.0, 0.0), 0.55));
+          }`,
         )
         .replace(
           "#include <begin_vertex>",
           /* glsl */ `
-          vec2 snapC = floor(uCam / uSpacing) * uSpacing;
-          vec2 cell = snapC + aOffset;
-          float hsh = hash21(cell * 0.731), hsh2 = hash21(cell.yx * 1.37 + 3.1);
-          vec2 wxz = cell + (vec2(hsh, hsh2) - 0.5) * uSpacing * 0.9;
+          vec2 wxz; float hsh, hsh2;
+          grassCell(wxz, hsh, hsh2);
           vec2 wuv = worldUv(wxz);
           vec4 veg = texture2D(tVeg, wuv);
-          vec4 s0 = texture2D(tSplat0, wuv), s1 = texture2D(tSplat1, wuv);
+          vec4 s0 = texture2D(tSplat0, wuv), s1 = texture2D(tSplat1, wuv), s2 = texture2D(tSplat2, wuv);
           float dist = length(wxz - uCam);
-          float fade = 1.0 - smoothstep(uRadius * 0.65, uRadius, dist);
+          float fade = (1.0 - smoothstep(uRadius * 0.65, uRadius, dist)) * smoothstep(uInner * 0.8, uInner, dist);
           #ifdef RICE
             float dens = step(0.5, veg.b) * smoothstep(0.3, 0.6, s1.r);
-            float groundY = fetchH(tPaddy, wxz) + 0.03;
-            float scl = (0.9 + hsh * 0.25) * dens * fade;
+            float groundY = fetchPaddy(wxz) + 0.03;
+            float scl = (0.9 + hsh * 0.25) * dens * fade * uBaseScale;
           #else
-            float bare = s0.b + s0.a + s1.r + s1.g + s1.b + s1.a;
+            float bare = s0.b + s0.a + s1.r + s1.g + s1.b + s1.a + s2.r;
             float dens = clamp(veg.a * 1.4, 0.0, 1.0) * (1.0 - smoothstep(0.25, 0.6, bare));
             dens *= step(hsh * 0.85, dens * uDensity);
             float groundY = fetchH(tHeight, wxz);
             float tall = 0.55 + 0.9 * smoothstep(0.35, 0.95, veg.a) + 0.5 * step(0.93, hsh2);
-            float scl = tall * dens * fade * (0.6 + hsh * 0.6);
+            float scl = tall * dens * fade * (0.6 + hsh * 0.6) * uBaseScale;
           #endif
           float yaw = hsh * 6.2831;
           mat2 rot = mat2(cos(yaw), -sin(yaw), sin(yaw), cos(yaw));
           vec3 transformed = vec3(position);
           transformed.xz = rot * transformed.xz;
           transformed *= scl;
-          float tY = position.y;
+          float tY = position.y * uYNorm;
           float gust = sin(uWindTime * 1.3 + dot(wxz, uWindDir) * 0.35) * 0.5 + 0.5;
           float sway = tY * tY * uWindStrength * (0.12 + 0.22 * gust);
           transformed.xz += uWindDir * sway * scl + vec2(sin(uWindTime * 3.1 + hsh * 20.0), cos(uWindTime * 2.7 + hsh2 * 20.0)) * 0.02 * tY;
           transformed += vec3(wxz.x, groundY, wxz.y);
-          vGrassT = uv.y;
+          vGrassT = tY;
           #ifdef RICE
-            vec3 baseC = vec3(0.035, 0.07, 0.015), tipC = vec3(0.12, 0.2, 0.035), ear = vec3(0.3, 0.27, 0.1);
-            vGrassCol = mix(baseC, tipC, clamp(uv.y, 0.0, 1.0)) * (0.88 + veg.g * 0.25);
+            vec3 baseC = vec3(0.018, 0.05, 0.01), tipC = vec3(0.04, 0.13, 0.02), ear = vec3(0.14, 0.15, 0.05);
+            // per-blade hue: older lower leaves darker and bluer, young leaves yellower
+            float bh = hash21(wxz * 3.17 + floor(position.x * 40.0 + position.z * 23.0));
+            vec3 tipVar = mix(tipC * vec3(0.85, 0.95, 1.1), tipC * vec3(1.18, 1.1, 0.8), bh);
+            vGrassCol = mix(baseC, tipVar, clamp(uv.y, 0.0, 1.0)) * (0.82 + veg.g * 0.25 + hsh * 0.12);
+            #ifdef PHOTO_CLUMP
+              vGrassCol = vec3(0.52, 0.8, 0.42) * (0.86 + veg.g * 0.22 + hsh * 0.12);
+            #endif
             if (uv.y > 1.2) vGrassCol = ear;
           #else
-            vec3 baseC = vec3(0.04, 0.065, 0.015), tipC = mix(vec3(0.14, 0.2, 0.045), vec3(0.3, 0.26, 0.1), step(0.85, hsh2));
+            vec3 baseC = vec3(0.07, 0.1, 0.03), tipC = mix(vec3(0.22, 0.29, 0.08), vec3(0.36, 0.32, 0.14), step(0.85, hsh2));
             vGrassCol = mix(baseC, tipC, uv.y) * (0.8 + hsh * 0.35);
+            #ifdef PHOTO_CLUMP
+              // tint of the photographed grass: lush late-summer green, a few dry clumps
+              vGrassCol = mix(vec3(0.78, 0.95, 0.62), vec3(1.15, 1.0, 0.68), step(0.86, hsh2)) * (0.8 + hsh * 0.3);
+            #endif
           #endif`,
         )
         .replace("#include <project_vertex>", "vec4 mvPosition = viewMatrix * vec4(transformed, 1.0); gl_Position = projectionMatrix * mvPosition;")
@@ -262,7 +329,7 @@ export class GrassField implements System {
         .replace("#include <fog_vertex>", "#ifdef USE_FOG\n vFogWorld = transformed;\n #endif");
       s.fragmentShader = s.fragmentShader
         .replace("#include <common>", "#include <common>\n varying vec3 vGrassCol; varying float vGrassT;")
-        .replace("#include <map_fragment>", "diffuseColor.rgb = vGrassCol;")
+        .replace("#include <map_fragment>", "#ifdef PHOTO_CLUMP\n #include <map_fragment>\n diffuseColor.rgb *= vGrassCol;\n #else\n diffuseColor.rgb = vGrassCol;\n #endif")
         .replace("#include <aomap_fragment>", "reflectedLight.indirectDiffuse *= mix(0.35, 1.0, clamp(vGrassT, 0.0, 1.0));");
     });
     this.mesh = new T.Mesh(g, mat);
@@ -271,8 +338,14 @@ export class GrassField implements System {
     this.mesh.castShadow = false;
     land.scene.add(this.mesh);
   }
+  radii: number[] = [];
   setQuality(q: Quality) {
     this.uniforms.uDensity.value = q === "low" ? 0.45 : q === "high" ? 1.0 : 0.8;
+    const r = this.opts.radius * (q === "low" ? 0.68 : q === "high" ? 1.0 : 0.88);
+    let count = this.radii.length;
+    while (count > 0 && this.radii[count - 1] > r) count--;
+    (this.mesh.geometry as T.InstancedBufferGeometry).instanceCount = count;
+    this.uniforms.uRadius.value = r;
   }
   update(_dt: number, _t: number, cam: T.PerspectiveCamera) {
     (this.uniforms.uCam.value as T.Vector2).set(cam.position.x, cam.position.z);
@@ -290,6 +363,7 @@ export class GrassField implements System {
 export class RiceCanopy implements System {
   update() {}
   mesh: T.Mesh;
+  shells: T.Mesh;
   uniforms: Record<string, T.IUniform>;
   constructor(land: Landscape, wt: WorldTextures) {
     const data = land.world.data;
@@ -297,63 +371,115 @@ export class RiceCanopy implements System {
     let x0 = 1e9, z0 = 1e9, x1 = -1e9, z1 = -1e9;
     for (const f of fields) (x0 = Math.min(x0, f.bounds[0])), (z0 = Math.min(z0, f.bounds[1])), (x1 = Math.max(x1, f.bounds[2])), (z1 = Math.max(z1, f.bounds[3]));
     const step = land.world.height.spacing;
-    const nx = Math.ceil((x1 - x0) / step) + 1, nz = Math.ceil((z1 - z0) / step) + 1;
-    const g = new T.PlaneGeometry(nx * step, nz * step, nx, nz);
-    g.rotateX(-Math.PI / 2);
-    g.translate((x0 + x1) / 2, 0, (z0 + z1) / 2);
-    this.uniforms = { ...wt.uniforms(), uNearFade: { value: new T.Vector2(14, 26) } };
-    const u = this.uniforms;
-    const mat = new T.MeshStandardMaterial({ roughness: 0.95, color: 0xffffff, envMapIntensity: 0.5 });
-    (mat as unknown as { defines: Record<string, string> }).defines = { FOLIAGE: "" };
-    land.lib.finish(mat);
-    addHook(mat, "rice-canopy", (s) => {
-      Object.assign(s.uniforms, u, windUniforms);
-      s.vertexShader = s.vertexShader
-        .replace("#include <common>", `#include <common>\n${SAMPLE_GLSL}\n varying vec2 vRxz; varying float vRice;`)
-        .replace(
-          "#include <begin_vertex>",
-          `vec3 transformed = vec3(position);
-          vec2 wuv = worldUv(position.xz);
-          float lvl = fetchH(tPaddy, position.xz);
-          float isRice = step(-15.0, lvl);
-          transformed.y = isRice > 0.5 ? lvl + 0.82 : fetchH(tHeight, position.xz) - 2.0;
-          vRxz = position.xz; vRice = isRice;`,
-        )
-        .replace("#include <beginnormal_vertex>", "vec3 objectNormal = vec3(0.0, 1.0, 0.0);");
-      s.fragmentShader = s.fragmentShader
-        .replace(
-          "#include <common>",
-          `#include <common>
-          uniform sampler2D tVeg; uniform float uExtent, uWindTime, uWindStrength; uniform vec2 uWindDir, uNearFade;
-          varying vec2 vRxz; varying float vRice;
-          float rh(vec2 p){ p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }
-          float rn(vec2 p){ vec2 i=floor(p), f=fract(p); f=f*f*(3.-2.*f); return mix(mix(rh(i),rh(i+vec2(1,0)),f.x),mix(rh(i+vec2(0,1)),rh(i+vec2(1,1)),f.x),f.y); }`,
-        )
-        .replace(
-          "#include <map_fragment>",
-          `vec4 veg = texture2D(tVeg, vRxz / uExtent + 0.5);
-          if (veg.b < 0.5 || vRice < 0.5) discard;
-          float camD = length(vRxz - cameraPosition.xz);
-          float dither = rh(gl_FragCoord.xy);
-          if (smoothstep(uNearFade.x, uNearFade.y, camD) < dither) discard;
-          // rows, clumps and the travelling bright bands of wind over the ears
-          float rows = 0.5 + 0.5 * sin(dot(vRxz, vec2(0.0, 1.0)) * 20.9);
-          float clump = rn(vRxz * 4.0) * 0.6 + rn(vRxz * 0.9) * 0.4;
-          float wave = sin(dot(vRxz, uWindDir) * 0.18 - uWindTime * 1.6 + rn(vRxz * 0.05) * 6.0);
-          vec3 col = mix(vec3(0.045, 0.085, 0.018), vec3(0.11, 0.17, 0.035), clump);
-          col = mix(col, vec3(0.2, 0.22, 0.08), smoothstep(0.55, 1.0, wave) * 0.4 * uWindStrength);
-          col *= mix(0.82, 1.0, rows) * (0.88 + veg.g * 0.25);
-          diffuseColor.rgb = col;`,
-        )
-        .replace(
-          "#include <normal_fragment_maps>",
-          `{ float e = 0.25; float h0 = rn(vRxz * 3.0); vec3 pn = normalize(vec3(h0 - rn(vRxz * 3.0 + vec2(e, 0.0)), 0.35, h0 - rn(vRxz * 3.0 + vec2(0.0, e))));
-            normal = normalize((viewMatrix * vec4(pn, 0.0)).xyz); }`,
-        );
-    });
-    this.mesh = new T.Mesh(g, mat);
+    const grid = (k: number) => {
+      const nx = Math.ceil((x1 - x0) / (step * k)) + 1, nz = Math.ceil((z1 - z0) / (step * k)) + 1;
+      const g = new T.PlaneGeometry(nx * step * k, nz * step * k, nx, nz);
+      g.rotateX(-Math.PI / 2);
+      g.translate((x0 + x1) / 2, 0, (z0 + z1) / 2);
+      return g;
+    };
+    this.uniforms = { ...wt.uniforms(), uNearFade: { value: new T.Vector2(1.5, 3.5) } };
+    const shellFade = { uNearFade: { value: new T.Vector2(9.5, 14.5) } };
+    const make = (shell: boolean) => {
+      const u = shell ? { ...this.uniforms, ...shellFade } : this.uniforms;
+      const mat = new T.MeshStandardMaterial({ roughness: 0.95, color: 0xffffff, envMapIntensity: 0.9, side: shell ? T.DoubleSide : T.FrontSide });
+      (mat as unknown as { defines: Record<string, string> }).defines = { FOLIAGE: "", ...(shell ? { SHELL: "" } : {}) };
+      land.lib.finish(mat);
+      addHook(mat, shell ? "rice-shells" : "rice-canopy", (s) => {
+        Object.assign(s.uniforms, u, windUniforms);
+        s.vertexShader = s.vertexShader
+          .replace("#include <common>", `#include <common>\n${SAMPLE_GLSL}\n varying vec2 vRxz; varying float vRice; varying float vShell;\n #ifdef SHELL\n attribute float aShell;\n #endif`)
+          .replace(
+            "#include <begin_vertex>",
+            `vec3 transformed = vec3(position);
+            float lvl = fetchPaddy(position.xz);
+            if (lvl < -15.0) {
+              // just outside a field: borrow the neighbouring field's level so the sheet stays flat
+              // across the edge and the per-fragment mask cuts it cleanly (no slanted walls)
+              for (int k = 0; k < 8; k++) {
+                vec2 o = vec2(cos(float(k) * 0.7854), sin(float(k) * 0.7854)) * 2.4;
+                lvl = max(lvl, fetchPaddy(position.xz + o));
+              }
+            }
+            float isRice = step(-15.0, lvl);
+            #ifdef SHELL
+              vShell = aShell;                       // 1..3: stacked layers of leaves and ears
+              float hgt = 0.82 * (0.45 + 0.55 * aShell / 3.0);
+            #else
+              vShell = 0.0;
+              float hgt = 0.36;                      // base layer: closed, dark lower canopy
+            #endif
+            transformed.y = isRice > 0.5 ? lvl + hgt : fetchH(tHeight, position.xz) - 2.0;
+            vRxz = position.xz; vRice = isRice;`,
+          )
+          .replace("#include <beginnormal_vertex>", "vec3 objectNormal = vec3(0.0, 1.0, 0.0);");
+        s.fragmentShader = s.fragmentShader
+          .replace(
+            "#include <common>",
+            `#include <common>
+            uniform sampler2D tVeg; uniform float uExtent, uWindTime, uWindStrength; uniform vec2 uWindDir, uNearFade;
+            varying vec2 vRxz; varying float vRice; varying float vShell;
+            float rh(vec2 p){ p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }
+            float rn(vec2 p){ vec2 i=floor(p), f=fract(p); f=f*f*(3.-2.*f); return mix(mix(rh(i),rh(i+vec2(1,0)),f.x),mix(rh(i+vec2(0,1)),rh(i+vec2(1,1)),f.x),f.y); }`,
+          )
+          .replace(
+            "#include <map_fragment>",
+            `vec4 veg = texture2D(tVeg, vRxz / uExtent + 0.5);
+            // no walls at the field edges: triangles that touch a non-rice vertex are dropped
+            if (veg.b < 0.5 || vRice < 0.999) discard;
+            float camD = length(vRxz - cameraPosition.xz);
+            float dither = rh(gl_FragCoord.xy);
+            if (smoothstep(uNearFade.x, uNearFade.y, camD) < dither) discard;
+            float ang = veg.g * 6.2831;
+            vec2 sway = uWindDir * sin(uWindTime * 1.3 + dot(vRxz, uWindDir) * 0.3) * 0.04 * vShell;
+            vec2 q = vRxz + sway;
+            #ifdef SHELL
+              // individual leaf tips: a fine noise thresholded harder towards the top layer
+              if (camD > 160.0) discard;
+              float leaves = rn(q * 17.0 + vShell * 3.7) * 0.65 + rn(q * 41.0 - vShell * 1.3) * 0.35;
+              if (leaves < 0.38 + vShell * 0.1) discard;
+            #endif
+            float rowCoord = dot(vRxz, vec2(cos(ang), sin(ang))) * 20.9;
+            float rowFade = 1.0 - smoothstep(18.0, 40.0, camD);
+            // fade the row stripes out before they approach pixel size (no moire at grazing angles)
+            float rowAA = 1.0 - smoothstep(0.25, 0.9, fwidth(rowCoord) / 6.2831);
+            float rows = mix(1.0, 0.5 + 0.5 * sin(rowCoord), rowFade * rowAA * (1.0 - vShell / 3.0));
+            vec2 rq = mat2(0.8, -0.6, 0.6, 0.8) * vRxz;
+            float clump = (rn(vRxz * 0.7) + rn(rq * 0.53 + 7.1)) * 0.25 + rn(vRxz * 0.17) * 0.5;
+            float wave = sin(dot(vRxz, uWindDir) * 0.16 - uWindTime * 1.4 + rn(vRxz * 0.04) * 6.0);
+            vec3 col = mix(vec3(0.035, 0.075, 0.014), vec3(0.075, 0.14, 0.026), clump);
+            col *= mix(0.55, 1.12, vShell / 3.0);    // self-shadowed depths, lit tips
+            col = mix(col, vec3(0.13, 0.17, 0.05), smoothstep(0.6, 1.0, wave) * 0.3 * uWindStrength * (vShell / 3.0));
+            col *= mix(0.86, 1.0, rows) * (0.9 + veg.g * 0.2);
+            diffuseColor.rgb = col;`,
+          )
+          .replace(
+            "#include <normal_fragment_maps>",
+            `{ // gentle canopy relief from two rotated octaves (no lattice pattern, small tilt)
+              vec2 p1 = vRxz * 2.3, p2 = mat2(0.8, -0.6, 0.6, 0.8) * vRxz * 5.1 + 3.7;
+              float e = 0.2;
+              float hx = (rn(p1 + vec2(e, 0.0)) - rn(p1 - vec2(e, 0.0))) + 0.5 * (rn(p2 + vec2(e, 0.0)) - rn(p2 - vec2(e, 0.0)));
+              float hz = (rn(p1 + vec2(0.0, e)) - rn(p1 - vec2(0.0, e))) + 0.5 * (rn(p2 + vec2(0.0, e)) - rn(p2 - vec2(0.0, e)));
+              vec3 pn = normalize(vec3(-hx, 3.2, -hz));
+              normal = normalize((viewMatrix * vec4(pn, 0.0)).xyz); }`,
+          );
+      });
+      return mat;
+    };
+    this.mesh = new T.Mesh(grid(1), make(false));
     this.mesh.receiveShadow = true;
     this.mesh.frustumCulled = false;
     land.scene.add(this.mesh);
+    // three upper shells on a coarser grid, as instances of one geometry
+    const base = grid(2);
+    const sg = new T.InstancedBufferGeometry();
+    for (const k of ["position", "normal", "uv"]) sg.setAttribute(k, base.getAttribute(k));
+    sg.setIndex(base.getIndex());
+    sg.setAttribute("aShell", new T.InstancedBufferAttribute(new Float32Array([1, 2, 3]), 1));
+    sg.instanceCount = 3;
+    this.shells = new T.Mesh(sg, make(true));
+    this.shells.receiveShadow = true;
+    this.shells.frustumCulled = false;
+    land.scene.add(this.shells);
   }
 }

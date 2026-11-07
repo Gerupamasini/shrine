@@ -103,7 +103,7 @@ test("every placed object resolves to a GLB and every material to a texture set"
       assert.ok(fs.existsSync(`public/assets/models/props/${props[o.asset]}.glb`), o.asset);
       continue;
     }
-    const name = o.asset.startsWith("minka-") ? `${o.asset}_${o.variant}` : o.asset === "naya" ? "naya_0" : o.asset === "komainu" ? `komainu-${o.variant}` : o.asset;
+    const name = o.asset.startsWith("minka-") || o.asset === "jihanki" ? `${o.asset}_${o.variant}` : o.asset === "naya" ? "naya_0" : o.asset === "komainu" ? `komainu-${o.variant}` : o.asset;
     assert.ok(index[name], `architecture/${name}`);
     const glb = fs.readFileSync(`public/assets/models/architecture/${name}.glb`);
     assert.equal(glb.readUInt32LE(0), 0x46546c67, "glTF magic");

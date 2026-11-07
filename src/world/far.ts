@@ -46,7 +46,7 @@ export class FarTerrain implements System {
     g.setIndex(idx);
     g.computeVertexNormals();
     g.computeBoundingSphere();
-    const m = new T.MeshStandardMaterial({ color: 0x2c3a22, roughness: 1 });
+    const m = new T.MeshStandardMaterial({ color: 0xffffff, roughness: 1, envMapIntensity: 0.8 });
     this.land.lib.finish(m);
     addHook(m, "far-terrain", (s) => {
       s.vertexShader = s.vertexShader
@@ -64,7 +64,7 @@ export class FarTerrain implements System {
           "#include <map_fragment>",
           `float canopy = fn(vFW.xz * 0.11) * 0.55 + fn(vFW.xz * 0.023) * 0.45;
           float conifer = smoothstep(0.45, 0.6, fn(vFW.xz * 0.004));
-          diffuseColor.rgb = mix(vec3(0.075, 0.11, 0.05), vec3(0.11, 0.15, 0.06), conifer) * (0.7 + canopy * 0.6);
+          diffuseColor.rgb = mix(vec3(0.05, 0.07, 0.04), vec3(0.065, 0.085, 0.045), conifer) * (0.6 + canopy * 0.8);
           diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.17, 0.17, 0.13), smoothstep(0.35, 0.6, 1.0 - vNormal.y) * 0.4);`,
         )
         .replace(

@@ -21,6 +21,17 @@ export class Walker {
   free = false;
   speed = 0;
   bob = 0;
+  /** horizontal velocity (m/s): kept through a jump so a running jump carries its momentum */
+  vel = new T.Vector2();
+  /** camera dip on landing, decays to 0 */
+  landing = 0;
+  private jumpBuffer = 0;
+  private airTime = 0;
+  private ascending = false;
+  /** request a jump; honoured on the ground, shortly after leaving an edge, or on landing */
+  jump() {
+    this.jumpBuffer = 0.15;
+  }
   static async create(w: World) {
     await RAPIER.init();
     return new Walker(w);
@@ -71,6 +82,12 @@ export class Walker {
       } else {
         const h = c.halfExtents ?? [1, 1, 1];
         box(x, y + h[1] * s, z, h[0] * s, h[1] * s, h[2] * s, yaw);
+        // L-shaped farmhouse wing (magariya): local offset rotated by the house yaw
+        const wing = o.wing as { offset: number[]; halfExtents: number[] } | undefined;
+        if (wing) {
+          const [ox, oz] = wing.offset, cs = Math.cos(yaw), sn = Math.sin(yaw);
+          box(x + ox * cs + oz * sn, y + wing.halfExtents[1], z - ox * sn + oz * cs, wing.halfExtents[0], wing.halfExtents[1], wing.halfExtents[2], yaw);
+        }
       }
       if (o.asset.startsWith("torii"))
         for (const side of [-1, 1]) {
@@ -109,6 +126,7 @@ export class Walker {
     this.body.setNextKinematicTranslation({ x: p[0], y, z: p[2] });
     this.position.set(p[0], y - HALF - RADIUS + EYE, p[2]);
     this.vertical = 0;
+    this.vel.set(0, 0);
     this.world.step();
   }
   move(dir: T.Vector3, dt: number, run: boolean) {
@@ -122,11 +140,39 @@ export class Walker {
       return;
     }
     const speed = run ? 5.2 : 1.45;
-    this.vertical = this.grounded ? -0.5 : Math.max(this.vertical - 9.81 * dt, -30);
-    const desired = { x: dir.x * speed * dt, y: this.vertical * dt, z: dir.z * speed * dt };
+    // ground: responsive acceleration; air: momentum with a little steering
+    const accel = this.grounded ? 12 : 1.6;
+    const k = Math.min(1, accel * dt);
+    this.vel.x += (dir.x * speed - this.vel.x) * k;
+    this.vel.y += (dir.z * speed - this.vel.y) * k;
+    this.jumpBuffer = Math.max(0, this.jumpBuffer - dt);
+    this.airTime = this.grounded ? 0 : this.airTime + dt;
+    if (this.jumpBuffer > 0 && (this.grounded || this.airTime < 0.12) && !this.ascending) {
+      // ~0.95 m apex; running jumps clear about 3.5 m
+      this.vertical = 4.3;
+      this.ascending = true;
+      this.grounded = false;
+      this.jumpBuffer = 0;
+      this.controller.disableSnapToGround();
+    }
+    if (this.grounded && !this.ascending) this.vertical = -0.5;
+    else this.vertical = Math.max(this.vertical - 9.81 * dt, -30);
+    if (this.ascending && this.vertical <= 0) this.ascending = false;
+    const fallSpeed = -this.vertical;
+    const desired = { x: this.vel.x * dt, y: this.vertical * dt, z: this.vel.y * dt };
     this.controller.computeColliderMovement(this.collider, desired, undefined, undefined, (c) => c.handle !== this.collider.handle);
     const m = this.controller.computedMovement();
-    this.grounded = this.controller.computedGrounded();
+    const wasGrounded = this.grounded;
+    this.grounded = this.controller.computedGrounded() && !this.ascending;
+    if (this.grounded) {
+      if (!wasGrounded) {
+        this.landing = Math.min(1, Math.max(0, fallSpeed - 1.5) / 5);
+        this.controller.enableSnapToGround(0.5);
+      }
+    } else if (this.ascending && m.y < this.vertical * dt * 0.5) {
+      this.vertical = Math.min(this.vertical, 0); // bumped the head (eaves, branches)
+    }
+    this.landing = Math.max(0, this.landing - dt * 3.5);
     const half = this.w.data.extent / 2 - 2;
     const p = { x: T.MathUtils.clamp(b.x + m.x, -half, half), y: b.y + m.y, z: T.MathUtils.clamp(b.z + m.z, -half, half) };
     // never sink below the heightfield (fast falls, teleports)

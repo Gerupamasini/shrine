@@ -5,7 +5,7 @@ import { atmosphereUniforms } from "../engine/atmosphere";
 import type { World } from "./data";
 import { Terrain } from "./terrain";
 
-export type System = { update?(dt: number, t: number, cam: T.PerspectiveCamera): void; setQuality?(q: Quality): void };
+export type System = { update?(dt: number, t: number, cam: T.PerspectiveCamera): void; setQuality?(q: Quality): void; setTime?(hours: number): void };
 
 export class Landscape {
   scene = new T.Scene();
@@ -38,9 +38,13 @@ export class Landscape {
   add(s: System) {
     this.systems.push(s);
     s.setQuality?.(this.quality);
+    s.setTime?.(this.hours);
   }
+  hours = 18;
   setTime(h: number) {
+    this.hours = h;
     this.lighting.setTime(h);
+    for (const s of this.systems) s.setTime?.(h);
   }
   setQuality(q: Quality) {
     this.quality = q;

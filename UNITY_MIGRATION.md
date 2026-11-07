@@ -25,9 +25,10 @@
 2. `heightmap.r16` を読む。ヘッダーなし、uint16 little-endian、行優先、1行目がz=−600（北端）、1列目がx=−600。
    - 高さは `y = raw / 65535 × 420 − 20`、Unityに入れる値は `raw / 65535f`。
 3. Z反転のため、`heights[row, col]` に入れる際に行を逆順にする（Unityの行0は南端になる）。
-4. `splat0.png` と `splat1.png`（RGBA×2で8層）をAlphamapにする。層の順番と使うテクスチャは `materials.json` の `terrainLayers` にある。
-   - 順番：grass / forest / dirt / rock / paddy / riverbed / gravel / asphalt
+4. `splat0.png`・`splat1.png`・`splat2.png`（RGBA×3、うち9層を使用）をAlphamapにする。層の順番と使うテクスチャは `materials.json` の `terrainLayers` にある。
+   - 順番：grass / forest / dirt / rock / paddy / riverbed / gravel / asphalt / furrows
    - 画像も同じく上下反転する。各層の `size` がTerrainLayerの `tileSize` に当たる。
+   - `fixed: true` の層（furrows＝畑の畝）は回転させずに貼る。畝は世界のX方向に走り、作物の列（`clutter.json` の `crop`）と揃っている。
 5. `vegetation-mask.png` を植生・Detailの密度に使う。
    - R：森の密度
    - G：区画IDのハッシュ
@@ -44,7 +45,7 @@
 | `scene.json` の `steps` | 200段の各段 | 段鼻のx、踏面の上端y、z、幅、奥行き、蹴上げ |
 | `scene.json` の `stair` | 石段の全体寸法 | |
 | `vegetation.json` | 樹木（樹種ごと） | `[x, y, z, scale, yaw, variant, lean]` |
-| `clutter.json` | 下草・岩など | `[x, y, z, scale, yaw, variant]` |
+| `clutter.json` | 下草・岩・畑の作物（`crop`、variantは作物の種類）など | `[x, y, z, scale, yaw, variant]` |
 | `scene.json` の `river.points` | 川の中心線 | `[x, waterY, z, width]` |
 | `scene.json` の `roads` | 道 | |
 | `scene.json` の `powerLine` | 電柱の位置 | 電線は3本、たわみ0.65m |
@@ -69,7 +70,7 @@
 | 樹木 | `public/assets/models/trees/<樹種>_<0-3>.glb` | 1ファイルに `_lod0` と `_lod1` の2メッシュ |
 | 小物 | `public/assets/models/props/*.glb` | Poly HavenのCC0素材を軽量化したもの。テクスチャを内蔵 |
 
-- 寸法・三角形数は `architecture/index.json` と `trees/trees.json` にあります。
+- 寸法・三角形数は `architecture/index.json` と `trees/trees.json` にあります。家の間口・奥行き・階数・曲り家の翼屋は `tools/architecture/presets.json` です（配置JSONの `wing` は翼屋の衝突判定用の箱で、家のローカル座標）。
 - 樹木はLODGroupにし、LOD0とLOD1の切り替え距離（標準45m / 140m）を画面占有率に換算してください。遠景は、Unityで再生成したビルボード（Impostor）を使ってください。
 - 樹木の頂点カラー `COLOR_0` は風の重みです。R=幹の揺れ、G=枝のしなり、B=葉の揺れの位相。SpeedTree風の風シェーダーを作る際の入力にしてください。
 
@@ -85,6 +86,7 @@
 - **size**：テクスチャ1枚が覆う長さ（m）。GLBのUVはメートル単位なので、tiling = 1 / size です。
 - **color**：albedoに乗算する色（sRGBの16進）。
 - **葉**：アルファカットオフ0.5、両面描画、半透過（HDRPならTranslucent / Subsurface）。
+- **dusk**：`[開始時刻, 最大時刻, 最大の発光強度]`。窓明かり・自販機・街灯の発光を時刻で上げる（Unityでは時刻スクリプトから材質のEmissionを制御）。
 
 ## 環境（照明の再現）
 

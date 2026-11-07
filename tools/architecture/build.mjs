@@ -406,15 +406,12 @@ function jizo() {
 }
 
 // ---------------------------------------------------------------- houses
-const HOUSE_PRESETS = {
-  "minka-kayabuki": [[13.5, 9.0], [12.0, 8.5], [14.5, 9.5], [11.5, 8.0]],
-  "minka-kawara": [[12.0, 8.5], [10.8, 8.0], [13.5, 9.0], [11.4, 9.5]],
-  "minka-totan": [[11.5, 8.0], [12.8, 8.6], [10.6, 7.6], [13.2, 9.2]],
-  "minka-kura": [[6.5, 5.0], [7.2, 5.4], [6.0, 4.6], [7.5, 5.5]],
-};
+const PRESETS = JSON.parse(fs.readFileSync(path.join(ROOT, "tools/architecture/presets.json"), "utf8"));
+const HOUSE_PRESETS = Object.fromEntries(Object.entries(PRESETS).filter(([k]) => !k.startsWith("_")));
 function minka(type, v) {
   const r = rng(1000 + v * 31 + type.length * 7);
-  const [W, D] = HOUSE_PRESETS[type][v];
+  const pre = HOUSE_PRESETS[type][v];
+  const W = pre.W, D = pre.D, storeys = pre.storeys ?? 1;
   const m = new Model(`${type}_${v}`);
   const F = type === "minka-kura" ? 0.45 : 0.6;
   // stone footing course and floor
@@ -433,9 +430,9 @@ function minka(type, v) {
   const bays = Math.round(W / 1.82);
   const bayW = W / bays;
   const wallH = type === "minka-kayabuki" ? 2.35 : 2.7;
-  const upper = type === "minka-kayabuki" ? "plaster_clay" : "plaster_white";
-  for (let i = 0; i <= bays; i++) for (const z of [-D / 2, D / 2]) m.box("wood_old", 0.14, wallH, 0.14, -W / 2 + i * bayW, F + wallH / 2, z);
-  for (const s of [-1, 1]) for (let i = 0; i <= 4; i++) m.box("wood_old", 0.14, wallH, 0.14, s * W / 2, F + wallH / 2, -D / 2 + (D / 4) * i);
+  const upper = type === "minka-kayabuki" && v % 2 === 0 ? "plaster_clay" : "plaster_white";
+  for (let i = 0; i <= bays; i++) for (const z of [-D / 2, D / 2]) m.box("wood_frame", 0.15, wallH, 0.15, -W / 2 + i * bayW, F + wallH / 2, z);
+  for (const s of [-1, 1]) for (let i = 0; i <= 4; i++) m.box("wood_frame", 0.15, wallH, 0.15, s * W / 2, F + wallH / 2, -D / 2 + (D / 4) * i);
   // back and side walls
   m.box("wood_siding", W, 1.0, 0.1, 0, F + 0.5, -D / 2);
   m.box(upper, W, wallH - 1.0, 0.1, 0, F + 1.0 + (wallH - 1.0) / 2, -D / 2);
@@ -445,8 +442,8 @@ function minka(type, v) {
   }
   // nuki beams on walls
   for (const y of [F + 1.0, F + wallH - 0.05]) {
-    m.box("wood_old", W + 0.05, 0.12, 0.16, 0, y, -D / 2);
-    for (const s of [-1, 1]) m.box("wood_old", 0.16, 0.12, D + 0.05, s * W / 2, y, 0);
+    m.box("wood_frame", W + 0.05, 0.13, 0.17, 0, y, -D / 2);
+    for (const s of [-1, 1]) m.box("wood_frame", 0.17, 0.13, D + 0.05, s * W / 2, y, 0);
   }
   // small windows on side/back
   for (let i = 0; i < 2; i++) {
@@ -456,8 +453,8 @@ function minka(type, v) {
   }
   // front: engawa + sliding doors (glass on kawara/totan houses, shoji/amado on kayabuki)
   const front = D / 2;
-  m.box("wood_old", W - 1.8, 0.08, 0.95, 0.9, F + 0.0, front + 0.47);
-  for (let i = 0; i <= bays; i++) if (i > 0) m.box("wood_old", 0.1, F, 0.1, -W / 2 + i * bayW, F / 2, front + 0.9);
+  m.box("wood_frame", W - 1.8, 0.08, 0.95, 0.9, F + 0.0, front + 0.47);
+  for (let i = 0; i <= bays; i++) if (i > 0) m.box("wood_frame", 0.1, F, 0.1, -W / 2 + i * bayW, F / 2, front + 0.9);
   const glassy = type !== "minka-kayabuki";
   const doorStart = 1;
   for (let i = doorStart; i < bays; i++) {
@@ -478,18 +475,97 @@ function minka(type, v) {
     }
   }
   // doma entrance (earthen floor) at the left bay with a wooden sliding door
-  m.box("wood_dark", bayW - 0.1, 2.0, 0.06, -W / 2 + bayW / 2, 1.0, front - 0.02);
-  m.box("wood_planks", bayW * 0.5, 1.95, 0.06, -W / 2 + bayW * 0.3, 1.0, front + 0.03);
-  m.box("wood_old", W + 0.1, 0.14, 0.18, 0, F + wallH, front);
+  const doorTop = F + 1.85;
+  m.box("interior_dark", bayW - 0.1, doorTop, 0.06, -W / 2 + bayW / 2, doorTop / 2, front - 0.3);
+  m.box("wood_planks", bayW * 0.5, doorTop - 0.05, 0.06, -W / 2 + bayW * 0.3, doorTop / 2, front + 0.03);
+  // transom walls (kokabe) between the door head and the eave beam, with a lintel (kamoi)
+  m.box(upper, W - 0.05, F + wallH - doorTop, 0.1, 0, (doorTop + F + wallH) / 2, front - 0.02);
+  m.box("wood_frame", W + 0.05, 0.12, 0.17, 0, doorTop + 0.04, front + 0.01);
+  m.box("wood_frame", W + 0.1, 0.15, 0.19, 0, F + wallH, front);
   // roofs
   if (type === "minka-kayabuki") {
     const ret = hipRoof(m, "roof_thatch", { W, D, over: 1.15, eaveY: F + wallH + 0.15, ridgeY: F + wallH + 0.15 + (D / 2 + 1.15) * 1.25, sori: 0.0, thick: 0.75, gable: 0.82, uv: 0.7, ridgeMat: "roof_kawara_ridge", gableMat: "wood_old", ridgeH: 0.5, ridgeW: 0.8, sag: 0.05 });
     // ridge cover sticks (gushi)
     for (let k = -6; k <= 6; k++) m.box("wood_old", 0.08, 0.9, 0.08, k * (ret.xg / 6.5), F + wallH + 0.15 + (D / 2 + 1.15) * 1.25 + 0.25, 0, { rx: Math.PI / 2 });
   } else if (type === "minka-totan") {
-    hipRoof(m, "roof_tin", { W, D, over: 0.9, eaveY: F + wallH + 0.1, ridgeY: F + wallH + 0.1 + (D / 2 + 0.9) * 1.05, sori: 0, thick: 0.12, gable: 0.78, uv: 1, ridgeMat: "roof_tin", gableMat: "wood_siding", ridgeH: 0.2, sag: 0.02 });
+    const tin = ["roof_tin", "roof_tin_blue", "roof_tin", "roof_tin_green"][v];
+    hipRoof(m, tin, { W, D, over: 0.9, eaveY: F + wallH + 0.1, ridgeY: F + wallH + 0.1 + (D / 2 + 0.9) * 1.05, sori: 0, thick: 0.12, gable: 0.78, uv: 1, ridgeMat: tin, gableMat: "wood_siding", ridgeH: 0.2, sag: 0.02 });
+  } else if (storeys === 2) {
+    // 1970s-80s rebuilt farmhouse: lower hisashi roof all round, upper storey rising through it
+    hipRoof(m, "roof_kawara", { W, D, over: 0.9, eaveY: F + wallH + 0.15, ridgeY: F + wallH + 0.15 + (D / 2 + 0.9) * 0.42, sori: 0.08, thick: 0.2, gable: 1, ridgeMat: "roof_kawara", ridgeH: 0.2 });
+    const W2 = W * 0.66, D2 = D * 0.74, y2 = F + wallH, h2 = 2.75;
+    m.box("plaster_white", W2, h2, D2, 0, y2 + h2 / 2, -D * 0.04);
+    for (let i = 0; i <= 3; i++) for (const zs of [-1, 1]) m.box("wood_frame", 0.13, h2, 0.13, -W2 / 2 + (W2 / 3) * i, y2 + h2 / 2, -D * 0.04 + zs * D2 / 2);
+    m.box("wood_frame", W2 + 0.05, 0.12, D2 + 0.05, 0, y2 + h2 - 0.06, -D * 0.04);
+    // upper windows: aluminium sashes with a dark interior, rain shutters (amado) boxes on two
+    for (let i = 0; i < 3; i++) {
+      const cx = -W2 / 2 + (W2 / 3) * (i + 0.5), fz = -D * 0.04 + D2 / 2;
+      m.box("interior_dark", W2 / 3 - 0.35, 1.1, 0.05, cx, y2 + 1.55, fz - 0.06);
+      m.box("glass", W2 / 3 - 0.35, 1.1, 0.02, cx, y2 + 1.55, fz + 0.02);
+      for (const dx of [-(W2 / 3 - 0.35) / 2, 0, (W2 / 3 - 0.35) / 2]) m.box("aluminium", 0.04, 1.14, 0.05, cx + dx, y2 + 1.55, fz + 0.03);
+      for (const dy of [-0.55, 0.55]) m.box("aluminium", W2 / 3 - 0.3, 0.04, 0.05, cx, y2 + 1.55 + dy, fz + 0.03);
+      if (i !== 1) m.box("wood_siding", 0.32, 1.25, 0.18, cx + (W2 / 3 - 0.35) / 2 + 0.2, y2 + 1.55, fz + 0.08);
+    }
+    hipRoof(m, "roof_kawara", { W: W2, D: D2, over: 0.75, eaveY: y2 + h2 + 0.1, ridgeY: y2 + h2 + 0.1 + (D2 / 2 + 0.75) * 0.6, sori: 0.12, thick: 0.2, gable: r() < 0.5 ? 0.6 : 1, ridgeMat: "roof_kawara_ridge", gableMat: "plaster_white", ridgeH: 0.42 });
   } else {
     hipRoof(m, "roof_kawara", { W, D, over: 1.0, eaveY: F + wallH + 0.15, ridgeY: F + wallH + 0.15 + (D / 2 + 1.0) * 0.62, sori: 0.15, thick: 0.22, gable: r() < 0.5 ? 0.6 : 1, ridgeMat: "roof_kawara_ridge", gableMat: "plaster_white", ridgeH: 0.45 });
+  }
+  // magariya: L-shaped wing (former stable / barn) projecting forward at one end
+  if (pre.wing) {
+    const [wx, wz, ww, wd] = pre.wing;
+    const wh = 2.3, z0 = wz - wd / 2;
+    m.box("stone_granite", ww + 0.2, F, wd + 0.2, wx, F / 2, wz);
+    for (const sx of [-1, 1]) {
+      m.box("wood_siding", 0.1, 1.1, wd, wx + sx * ww / 2, F + 0.55, wz);
+      m.box(type === "minka-kayabuki" ? "plaster_clay" : "plaster_white", 0.1, wh - 1.1, wd, wx + sx * ww / 2, F + 1.1 + (wh - 1.1) / 2, wz);
+    }
+    m.box("wood_siding", ww, wh, 0.1, wx, F + wh / 2, z0 + wd);
+    for (const sx of [-1, 0, 1]) for (const zz of [z0, z0 + wd]) m.box("wood_frame", 0.15, wh, 0.15, wx + sx * ww / 2, F + wh / 2, zz);
+    // big stable doorway with a slatted window above
+    m.box("interior_dark", 1.8, 1.9, 0.06, wx + (wx > 0 ? -ww / 2 : ww / 2) * 0.98, F + 0.95, wz + 0.6, { ry: Math.PI / 2 });
+    for (let k = 0; k < 7; k++) m.box("wood_frame", 0.04, 0.45, 0.05, wx - 0.9 + k * 0.3, F + 1.8, z0 + wd + 0.06);
+    const wr = new Model("wing-roof");
+    const roofMat = type === "minka-kayabuki" ? "roof_thatch" : "roof_tin_blue";
+    gableRoof(wr, roofMat, { W: wd + 0.9, over: 0.0, eaveY: F + wh + 0.1, ridgeY: F + wh + 0.1 + (ww / 2 + 0.9) * (type === "minka-kayabuki" ? 1.1 : 0.7), frontRun: ww / 2 + 0.9, backRun: ww / 2 + 0.9, thick: type === "minka-kayabuki" ? 0.6 : 0.1, uv: 0.7 });
+    m.merge(wr, new THREE.Matrix4().makeRotationY(Math.PI / 2).setPosition(wx, 0, wz + 0.45));
+  }
+  // rain gutters + downpipes on tiled/tin roofs (kayabuki has none)
+  if (type !== "minka-kayabuki") {
+    const over = type === "minka-totan" ? 0.9 : 1.0;
+    const eY = F + wallH + 0.1;
+    for (const zs of [1, -1]) {
+      const g = new THREE.CylinderGeometry(0.06, 0.06, W + over * 2, 8, 1, true, 0, Math.PI);
+      g.rotateZ(Math.PI / 2);
+      g.rotateX(Math.PI);
+      g.translate(0, eY - 0.06, zs * (D / 2 + over + 0.02));
+      m.add("metal_grey", g);
+      m.cyl("metal_grey", 0.035, 0.035, eY - 0.06, (W / 2 + over - 0.3) * (zs > 0 ? 1 : -1), 0, zs * (D / 2 + over * 0.15), 6);
+    }
+  }
+  // 1990s TV antenna (Yagi) on a mast at the ridge end
+  if (r() < 0.8) {
+    const ridgeY = storeys === 2 ? F + wallH + 2.85 + (D * 0.74 / 2 + 0.75) * 0.6 : type === "minka-kayabuki" ? F + wallH + 0.15 + (D / 2 + 1.15) * 1.25 : type === "minka-totan" ? F + wallH + 0.1 + (D / 2 + 0.9) * 1.05 : F + wallH + 0.15 + (D / 2 + 1.0) * 0.62;
+    const ax = (r() < 0.5 ? -1 : 1) * ((storeys === 2 ? W * 0.33 : W / 2) - 1.6);
+    const mastH = 3.2 + r() * 1.5;
+    const yaw = r() * Math.PI;
+    m.cyl("metal_grey", 0.025, 0.025, mastH, ax, ridgeY - 1.2, 0, 6);
+    for (const k of [0, 1]) {
+      const by = ridgeY - 1.2 + mastH - 0.25 - k * 0.9;
+      m.box("metal_grey", 1.7 - k * 0.4, 0.025, 0.025, ax, by, 0, { ry: yaw });
+      for (let e = 0; e < 7 - k * 2; e++) {
+        const t = -0.75 + e * 0.24;
+        m.box("metal_grey", 0.018, 0.018, 0.55 - e * 0.04, ax + Math.cos(yaw) * t, by, -Math.sin(yaw) * t, { ry: yaw });
+      }
+    }
+    // guy wires
+    for (const a of [0.6, 2.7, 4.8]) {
+      const len = Math.hypot(1.8, mastH - 0.6);
+      const g = new THREE.CylinderGeometry(0.006, 0.006, len, 3);
+      g.translate(0, len / 2, 0);
+      g.applyMatrix4(new THREE.Matrix4().makeRotationAxis(new THREE.Vector3(Math.sin(a), 0, -Math.cos(a)), Math.atan2(1.8, mastH - 0.6)));
+      g.translate(ax + Math.cos(a) * 1.8, ridgeY - 1.2 + 0.6, Math.sin(a) * 1.8 * 0.6);
+      m.add("metal_dark", g);
+    }
   }
   // lean-to (geya) on the side for some houses
   if (r() < 0.6) {
@@ -547,6 +623,11 @@ function denchu(withTransformer) {
   if (withTransformer) {
     m.cyl("metal_grey", 0.24, 0.24, 0.7, 0.32, 7.2, 0, 12);
     m.box("metal_dark", 0.5, 0.08, 0.08, 0.2, 7.95, 0);
+  } else {
+    // 1990s rural street lamp: bent arm with a fluorescent tube under a steel hood
+    m.box("metal_grey", 1.5, 0.05, 0.05, 0.85, 6.6, 0, { rz: -0.12 });
+    m.box("metal_grey", 0.62, 0.08, 0.2, 1.62, 6.52, 0);
+    m.box("lamp_bulb", 0.5, 0.03, 0.12, 1.62, 6.47, 0);
   }
   return m;
 }
@@ -581,6 +662,24 @@ function busStop() {
   m.box("concrete", 0.6, 0.12, 0.6, 0, 0.06, 0);
   m.box("wood_old", 1.6, 0.05, 0.35, 1.3, 0.45, 0);
   for (const x of [0.65, 1.95]) m.box("wood_old", 0.06, 0.45, 0.3, x, 0.22, 0);
+  return m;
+}
+function jihanki(v) {
+  // drinks vending machine (generic): painted steel cabinet, lit display of cans, dispenser slot
+  const m = new Model(`jihanki_${v}`);
+  const body = v === 0 ? "car_paint" : "vend_red";
+  m.box(body, 1.02, 1.83, 0.72, 0, 0.915, 0);
+  m.box("vend_lit", 0.9, 0.92, 0.02, 0, 1.28, 0.365);
+  const cans = ["cloth_red", "sign_blue", "brass", "car_paint", "bamboo_green", "sign_blue", "cloth_red", "metal_grey"];
+  for (let row = 0; row < 3; row++)
+    for (let k = 0; k < 8; k++) {
+      m.cyl(cans[(k + row * 3 + v) % cans.length], 0.032, 0.032, 0.12, -0.39 + k * 0.111, 0.92 + row * 0.3, 0.385, 8);
+      m.box("vend_lit", 0.06, 0.025, 0.012, -0.39 + k * 0.111, 0.89 + row * 0.3, 0.392);
+    }
+  m.box("glass", 0.92, 0.94, 0.01, 0, 1.28, 0.4);
+  m.box("interior_dark", 0.62, 0.2, 0.04, 0, 0.32, 0.37);          // dispenser opening
+  m.box("metal_dark", 0.12, 0.3, 0.03, 0.36, 0.72, 0.375);          // coin / bill panel
+  m.box(body, 1.06, 0.06, 0.76, 0, 1.86, 0);
   return m;
 }
 function bridge(span) {
@@ -626,11 +725,12 @@ function stairs() {
       // nosing faces -X (downhill); block sits between front edge x and x+depth
       g.translate(s.x + depth / 2 - 0.02, top - (st.rise + 0.12) / 2 + dh, z0 + w / 2);
       const edge = b === 0 || b === nb - 1;
-      m.add(edge && r() < 0.45 ? "stone_moss" : "stone_step", g, { uvScale: 1 });
+      const pick = r();
+      m.add(edge && pick < 0.4 ? "stone_paving_moss" : pick < 0.72 ? "stone_step" : "stone_step_b", g, { uvScale: 1 });
       z0 += w;
     }
     // side curbs (stepped stones along both edges)
-    for (const side of [-1, 1]) curb.box(r() < 0.6 ? "stone_moss" : "stone_step", depth + 0.02, 0.45, 0.32, s.x + depth / 2, top + 0.08 + (r() - 0.5) * 0.04, st.z + side * (st.width / 2 + 0.16));
+    for (const side of [-1, 1]) curb.box(r() < 0.6 ? "stone_paving_moss" : "stone_step_b", depth + 0.02, 0.45, 0.32, s.x + depth / 2, top + 0.08 + (r() - 0.5) * 0.04, st.z + side * (st.width / 2 + 0.16));
   }
   // landings and forecourt paving (ishidatami)
   const per = st.flight * st.tread + st.landing;
@@ -641,7 +741,7 @@ function stairs() {
       let z = z0;
       while (z < z1 - 0.05) {
         const wid = Math.min(z1 - z, 0.6 + r() * 0.7);
-        m.box(r() < 0.25 ? "stone_moss" : "stone_step", len - 0.02, 0.24, wid - 0.02, x + len / 2, y - 0.08 + (r() - 0.5) * 0.012, z + wid / 2);
+        m.box(r() < 0.25 ? "stone_paving_moss" : "stone_step", len - 0.02, 0.24, wid - 0.02, x + len / 2, y - 0.08 + (r() - 0.5) * 0.012, z + wid / 2);
         z += wid;
       }
       x += len;
@@ -650,7 +750,7 @@ function stairs() {
   for (let f = 0; f < 3; f++) {
     const x0 = st.x0 + f * per + st.flight * st.tread;
     pave(x0, x0 + st.landing, st.footY + (f + 1) * st.flight * st.rise, st.z - st.width / 2, st.z + st.width / 2);
-    for (const side of [-1, 1]) curb.box("stone_moss", st.landing, 0.45, 0.32, x0 + st.landing / 2, st.footY + (f + 1) * st.flight * st.rise + 0.1, st.z + side * (st.width / 2 + 0.16));
+    for (const side of [-1, 1]) curb.box("stone_paving_moss", st.landing, 0.45, 0.32, x0 + st.landing / 2, st.footY + (f + 1) * st.flight * st.rise + 0.1, st.z + side * (st.width / 2 + 0.16));
   }
   pave(96, st.x0, st.footY, st.z - 2.4, st.z + 2.4);                     // forecourt
   pave(st.x1, 244.0, st.topY, st.z - 1.3, st.z + 1.3);                    // sando to the haiden
@@ -677,7 +777,31 @@ function stairs() {
   return m;
 }
 
+// ---------------------------------------------------------------- road side ditches (world coordinates)
+function ditches() {
+  const m = new Model("road-ditch");
+  const pts = scene.roads[0].points, dd = scene.ditch;
+  const r = rng(77);
+  for (let i = 0; i < pts.length - 1; i++) {
+    const [ax, ay, az] = pts[i], [bx, by, bz] = pts[i + 1];
+    if (az < dd.zRange[0] || bz > dd.zRange[1]) continue;
+    const len = Math.hypot(bx - ax, bz - az), dirx = (bx - ax) / len, dirz = (bz - az) / len;
+    const nx = -dirz, nz = dirx, yaw = Math.atan2(dirx, dirz);
+    for (const side of [-1, 1]) {
+      const cx = (ax + bx) / 2 + nx * side * dd.offset, cz = (az + bz) / 2 + nz * side * dd.offset;
+      const y = (ay + by) / 2 - 0.07;
+      const L = len + 0.03, w = dd.width, wall = 0.1, dep = dd.depth;
+      // two walls, floor (inner faces stained), and a concrete lid on some segments
+      for (const ws of [-1, 1]) m.box("concrete_old", L, dep + 0.35, wall, cx + nx * ws * (w / 2 + wall / 2), y - (dep + 0.35) / 2 + 0.03, cz + nz * ws * (w / 2 + wall / 2), { ry: yaw + Math.PI / 2 });
+      m.box("concrete_dark", L, 0.06, w, cx, y - dep, cz, { ry: yaw + Math.PI / 2 });
+      if (r() < 0.22) m.box("concrete_old", L * 0.96, 0.08, w + 0.16, cx, y + 0.01, cz, { ry: yaw + Math.PI / 2 });
+    }
+  }
+  return m;
+}
+
 // ---------------------------------------------------------------- build all
+await save("road-ditch", ditches());
 await save("torii-stone", torii("stone"));
 await save("torii-wood", torii("wood"));
 for (let v = 0; v < 2; v++) await save(v ? `toro_${v}` : "toro", toro(v));
@@ -698,6 +822,7 @@ for (const type of Object.keys(HOUSE_PRESETS)) for (let v = 0; v < 4; v++) {
   const { m, W, D } = minka(type, v);
   await save(`${type}_${v}`, m);
   index[`${type}_${v}`].footprint = [W, D];
+  index[`${type}_${v}`].storeys = HOUSE_PRESETS[type][v].storeys;
 }
 for (let v = 0; v < 2; v++) await save(`naya_${v}`, naya(v));
 await save("block-wall", blockWall());
@@ -706,20 +831,21 @@ await save("denchu", denchu(false));
 await save("denchu-trans", denchu(true));
 await save("kei-truck", keiTruck());
 await save("bus-stop", busStop());
+for (let v = 0; v < 2; v++) await save(`jihanki_${v}`, jihanki(v));
 const bz = scene.river.bridgeZ;
 const bo = scene.objects.find((o) => o.asset === "bridge");
 await save("bridge", bridge(bo?.span ?? 11));
 await save("stairs", stairs());
 fs.writeFileSync(path.join(OUT, "index.json"), JSON.stringify({ presets: HOUSE_PRESETS, assets: index }, null, 1));
 // weld + quantize every GLB (KHR_mesh_quantization: supported by three.js and glTFast)
-const { NodeIO } = await import("@gltf-transform/core");
+const { NodeIO, PropertyType } = await import("@gltf-transform/core");
 const { ALL_EXTENSIONS } = await import("@gltf-transform/extensions");
 const { weld, quantize, dedup } = await import("@gltf-transform/functions");
 const io2 = new NodeIO().registerExtensions(ALL_EXTENSIONS);
 let total = 0;
 for (const f of fs.readdirSync(OUT).filter((f) => f.endsWith(".glb"))) {
   const doc = await io2.read(path.join(OUT, f));
-  await doc.transform(weld({ tolerance: 0.0005 }), dedup(), quantize({ pattern: /^(POSITION|NORMAL)$/, quantizePosition: 16, quantizeNormal: 10 }));
+  await doc.transform(weld({ tolerance: 0.0005 }), dedup({ propertyTypes: [PropertyType.ACCESSOR, PropertyType.MESH] }), quantize({ pattern: /^(POSITION|NORMAL)$/, quantizePosition: 16, quantizeNormal: 10 }));
   await io2.write(path.join(OUT, f), doc);
   total += fs.statSync(path.join(OUT, f)).size;
 }
