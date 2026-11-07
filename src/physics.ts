@@ -82,6 +82,12 @@ export class Walker {
       } else {
         const h = c.halfExtents ?? [1, 1, 1];
         box(x, y + h[1] * s, z, h[0] * s, h[1] * s, h[2] * s, yaw);
+        // L-shaped farmhouse wing (magariya): local offset rotated by the house yaw
+        const wing = o.wing as { offset: number[]; halfExtents: number[] } | undefined;
+        if (wing) {
+          const [ox, oz] = wing.offset, cs = Math.cos(yaw), sn = Math.sin(yaw);
+          box(x + ox * cs + oz * sn, y + wing.halfExtents[1], z - ox * sn + oz * cs, wing.halfExtents[0], wing.halfExtents[1], wing.halfExtents[2], yaw);
+        }
       }
       if (o.asset.startsWith("torii"))
         for (const side of [-1, 1]) {

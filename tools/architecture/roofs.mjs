@@ -1,7 +1,15 @@
 // Japanese roof generators: yosemune (hip), irimoya (hip-and-gable), kirizuma (gable),
 // nagare (asymmetric gable). Local: ridge along X, front eave at +Z.
 import * as THREE from "three";
-import { V, thickSheet, gridSurface } from "./kit.mjs";
+import { V, thickSheet, thickSheetParts, gridSurface } from "./kit.mjs";
+
+/** roof sheet: covering on top and on the cut edges, boarded soffit underneath */
+function sheet(model, mat, soffit, grid, thick, uv) {
+  const p = thickSheetParts(grid, thick, uv, uv);
+  model.add(mat, p.top, { uv: "keep" });
+  model.add(mat, p.edges, { uv: "keep" });
+  model.add(soffit, p.bottom, { uv: "keep" });
+}
 
 /**
  * @param o.W body width (X), o.D body depth (Z), o.over eave overhang, o.eaveY, o.ridgeY,
@@ -30,7 +38,7 @@ export function hipRoof(model, mat, o) {
       }
       grid.push(side > 0 ? row : row.slice().reverse());
     }
-    model.add(mat, thickSheet(grid, thick, uv, uv), { uv: "keep" });
+    sheet(model, mat, o.soffitMat ?? "roof_soffit", grid, thick, uv);
   }
   // hip ends (below the gable cut)
   for (const side of [1, -1]) {
@@ -46,7 +54,7 @@ export function hipRoof(model, mat, o) {
       }
       grid.push(side > 0 ? row.slice().reverse() : row);
     }
-    model.add(mat, thickSheet(grid, thick, uv, uv), { uv: "keep" });
+    sheet(model, mat, o.soffitMat ?? "roof_soffit", grid, thick, uv);
   }
   // irimoya gable triangles (tsuma) with a bargeboard
   if (cutV < 1) {
@@ -82,7 +90,7 @@ export function gableRoof(model, mat, o) {
       grid.push([V(-ex, y, side * run * (1 - v)), V(0, y, side * run * (1 - v)), V(ex, y, side * run * (1 - v))].map((p) => p).slice(side > 0 ? 0 : 0));
       if (side < 0) grid[grid.length - 1].reverse();
     }
-    model.add(mat, thickSheet(grid, thick, uv, uv), { uv: "keep" });
+    sheet(model, mat, o.soffitMat ?? "roof_soffit", grid, thick, uv);
   }
   model.box(o.ridgeMat ?? mat, 2 * ex + 0.2, 0.25, 0.35, 0, ridgeY + 0.08, 0);
 }

@@ -67,9 +67,13 @@ export class SkyDome {
           float srcAz = az - uSunAz + uSrcAz;
           float w = clamp(1.0 - max(el, 0.0) / 50.0, 0.0, 1.0);
           float srcEl = el + (uSrcEl - uSunEl) * w * w;
-          float u = fract(srcAz / 360.0);
+          // seam-free wrap: take derivatives from whichever of two offset u's is continuous here
+          float ua = fract(srcAz / 360.0), ub = fract(srcAz / 360.0 + 0.5) - 0.5;
           float v = (90.0 - srcEl) / (90.0 - uBottom);
-          vec3 sky = srgbToLinear(texture2D(uBackdrop, vec2(u, clamp(v, 0.001, 0.999))).rgb);
+          vec2 dxa = vec2(dFdx(ua), dFdx(v)), dya = vec2(dFdy(ua), dFdy(v));
+          vec2 dxb = vec2(dFdx(ub), dFdx(v)), dyb = vec2(dFdy(ub), dFdy(v));
+          bool useB = abs(dxb.x) + abs(dyb.x) < abs(dxa.x) + abs(dya.x);
+          vec3 sky = srgbToLinear(textureGrad(uBackdrop, vec2(ua, clamp(v, 0.001, 0.999)), useB ? dxb : dxa, useB ? dyb : dya).rgb);
           // undo the soft shoulder used when encoding (approximate)
           sky = sky + max(sky - 0.85, 0.0) * 1.6 * sky;
           sky *= uScale * uExposure * uTint;

@@ -17,6 +17,10 @@ export const atmosphereUniforms = {
   uFogSun: { value: new T.Color(1.0, 0.72, 0.45) },
   uSunDir: { value: new T.Vector3(0, 0.1, -1) },
   uFogMaxOpacity: { value: 0.88 },
+  /** ground-hugging humid haze over the valley floor (scale height ~17 m) */
+  uGroundDensity: { value: 0.0011 },
+  uGroundFalloff: { value: 0.06 },
+  uGroundBase: { value: 4.0 },
   uTime: { value: 0 },
 };
 
@@ -75,6 +79,7 @@ export function installAtmosphere() {
   uniform vec3 uFogSun;
   uniform vec3 uSunDir;
   uniform float uFogMaxOpacity;
+  uniform float uGroundDensity, uGroundFalloff, uGroundBase;
   vec3 applyAtmosphere( vec3 col, vec3 worldPos ) {
     vec3 ray = worldPos - cameraPosition;
     float dist = length( ray );
@@ -85,6 +90,13 @@ export function installAtmosphere() {
     float kd = k * dy;
     float integ = abs( kd ) > 1e-4 ? ( 1.0 - exp( -kd ) ) / kd : 1.0 - 0.5 * kd;
     float tau = uFogDensity * exp( -k * h0 ) * dist * integ;
+    {
+      // second, low layer: same analytic integral with a short scale height
+      float k2 = uGroundFalloff;
+      float kd2 = k2 * dy;
+      float integ2 = abs( kd2 ) > 1e-4 ? ( 1.0 - exp( -kd2 ) ) / kd2 : 1.0 - 0.5 * kd2;
+      tau += uGroundDensity * exp( -k2 * max( cameraPosition.y - uGroundBase, -10.0 ) ) * dist * integ2;
+    }
     float ext = exp( -tau );
     float mu = dot( dir, uSunDir );
     float g = 0.72;

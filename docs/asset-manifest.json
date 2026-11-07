@@ -86,8 +86,8 @@
  },
  {
   "path": "assets/foliage/grass-clump-albedo.png",
-  "bytes": 814435,
-  "sha256": "87bb85dd2782e2e453d6b13126f1c8e8d21e0d6736704734b8e8944b9400f30f",
+  "bytes": 1618918,
+  "sha256": "c92983ae367214e3658a8d24d6ef52f2298f560380e729732d95e049d5cb8905",
   "origin": "Poly Haven",
   "page": "https://polyhaven.com/a/grass_medium_01",
   "authors": [
@@ -228,8 +228,8 @@
  },
  {
   "path": "assets/models/architecture/block-wall.glb",
-  "bytes": 2608,
-  "sha256": "9f8df9976be2ebd09dedda2efa90fff228b0011d5cfd666202277067965746d4",
+  "bytes": 2652,
+  "sha256": "5f52a5a60e0f600d17474ec84360a3d149beb9f0bda67af5b98a8e74ae79d593",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/architecture/build.mjs"
@@ -244,32 +244,32 @@
  },
  {
   "path": "assets/models/architecture/bus-stop.glb",
-  "bytes": 9844,
-  "sha256": "de382dcb05ccbdc53421898a0426da92a5059f400cd06635322b2fba27a9c5ab",
+  "bytes": 9984,
+  "sha256": "f79f8ab39ee8bcaac184d078eec712b892876ae10009e9984a137306162a2928",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/architecture/build.mjs"
  },
  {
   "path": "assets/models/architecture/denchu-trans.glb",
-  "bytes": 17628,
-  "sha256": "b4accd7d094d2367550dddf19405c358546541e13b9ab113a4c07cfc434d9c01",
+  "bytes": 17772,
+  "sha256": "5d029d5ac1c83c1ce0ab343f05085284eb2b8505e0060d29e25aaf4be6c25ea0",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/architecture/build.mjs"
  },
  {
   "path": "assets/models/architecture/denchu.glb",
-  "bytes": 14848,
-  "sha256": "26504d686e2ab16a0305f90947f97225f127a7c8b52585e8235ab6d967f7ffdc",
+  "bytes": 18152,
+  "sha256": "252d8d42d32d208eb1e9af1ef19f52cc719db244bd0fd2efc75b289cef294029",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/architecture/build.mjs"
  },
  {
   "path": "assets/models/architecture/ema.glb",
-  "bytes": 47232,
-  "sha256": "59b241c470fe8f249961fcd9bc70276d28efe5c527c40e8dc71d7ce340b648d7",
+  "bytes": 47956,
+  "sha256": "87fa467645bfb8c8472366c7abac0c2511d167935901bb2fbe6a437190692e04",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/architecture/build.mjs"
@@ -284,24 +284,24 @@
  },
  {
   "path": "assets/models/architecture/haiden.glb",
-  "bytes": 269504,
-  "sha256": "ac2870208607ce96536638933181a83957b161d2d61632bdd4be9f3829b45af9",
+  "bytes": 270568,
+  "sha256": "5dd0739739ac05deb0cb0768ff93c799d34d38ca65c4f45ead6d8dfd9b1767d4",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/architecture/build.mjs"
  },
  {
   "path": "assets/models/architecture/honden.glb",
-  "bytes": 56472,
-  "sha256": "7b6ab8bc47e20b0cd89be80f008ad627fe288eb3e77da041bbf5a4ad89e09564",
+  "bytes": 57384,
+  "sha256": "0d16e3c8c3403884aa70e054d556527af15051bdfe26f88d6e53be15ff57211a",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/architecture/build.mjs"
  },
  {
   "path": "assets/models/architecture/index.json",
-  "bytes": 13372,
-  "sha256": "230a4d24c6beb146c60db16cbbf4bd82f723d3fe0d2255789d46adfd89859f42",
+  "bytes": 15598,
+  "sha256": "859c0cf6721d253708726dc6cf7b4bab94f4b0652b0e35d25f557b2c7b9c2fb5",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/architecture/build.mjs"
@@ -315,233 +315,249 @@
   "tool": "tools/architecture/build.mjs"
  },
  {
+  "path": "assets/models/architecture/jihanki_0.glb",
+  "bytes": 40780,
+  "sha256": "d85db9133d59765ffcaf923d5db54758e509d404d5aef7b30e14cb8c29cdac43",
+  "origin": "original (this repo)",
+  "licence": "CC0 1.0",
+  "tool": "tools/architecture/build.mjs"
+ },
+ {
+  "path": "assets/models/architecture/jihanki_1.glb",
+  "bytes": 38840,
+  "sha256": "a47f4f4d610b18aee13b9de415c4e828093fd3ebe7398a89398d80c7bb584ac3",
+  "origin": "original (this repo)",
+  "licence": "CC0 1.0",
+  "tool": "tools/architecture/build.mjs"
+ },
+ {
   "path": "assets/models/architecture/jizo.glb",
-  "bytes": 95404,
-  "sha256": "b17f82f1a855bbd33ef89a2c25ce66138a962756461b2b01f7fec9467e774535",
+  "bytes": 95456,
+  "sha256": "c928fe0a5b44c34b968c5b1dcd28653ca378a5ce2572b925edbf3e339b96b9c6",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/architecture/build.mjs"
  },
  {
   "path": "assets/models/architecture/kei-truck.glb",
-  "bytes": 20068,
-  "sha256": "fe3727321a53ad3e9921c89dabf4e58bbafff422674b1b993504b85c882aadbb",
+  "bytes": 20256,
+  "sha256": "11c338f18a504a5faf1a21344561eba8dd283b92339e0f581c83b3d6fc9e5b86",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/architecture/build.mjs"
  },
  {
   "path": "assets/models/architecture/komainu-a.glb",
-  "bytes": 633184,
-  "sha256": "6c349992c9499918d074813250b8c73f41fe4714fa1509c5e944a9db702b115f",
+  "bytes": 633280,
+  "sha256": "b6d97185ec0092ae434d86a3b00e4149d7b1598feebf7f983892bd29d8f5e0bb",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/architecture/build.mjs"
  },
  {
   "path": "assets/models/architecture/komainu-un.glb",
-  "bytes": 630352,
-  "sha256": "c3a8c66a0c5ed67d79d103e0f83747aaaa9e305037c975fc3977873d4ffd2889",
+  "bytes": 630452,
+  "sha256": "731e041c0ba8e7377b454a94e5dc946c44b74aa50ab21d99a23dcacaec321fad",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/architecture/build.mjs"
  },
  {
   "path": "assets/models/architecture/minka-kawara_0.glb",
-  "bytes": 173328,
-  "sha256": "59d38dbc07d9c629c92a8c49234ff94e5f95d03b10452441b80d31f59d27cbef",
+  "bytes": 177332,
+  "sha256": "4eacd44f9e24eca072cd8f0547038e97ce7f2455ca067ca4c71b1f23980962ac",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/architecture/build.mjs"
  },
  {
   "path": "assets/models/architecture/minka-kawara_1.glb",
-  "bytes": 158160,
-  "sha256": "73ef1fcec72e8e1aef063647b598853bc1cd8197ef114942eeb0ad141a5439b6",
+  "bytes": 256476,
+  "sha256": "7e177ee1093886496d0d6821d68b82ab44f04d880235801ec811ed428b407958",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/architecture/build.mjs"
  },
  {
   "path": "assets/models/architecture/minka-kawara_2.glb",
-  "bytes": 145200,
-  "sha256": "6339d1313b7533030e107550e24a4c6e2f4f11073dd6911a697c48911bfbbf44",
+  "bytes": 150396,
+  "sha256": "69f3ab9abad7ccb18e88f05492d464401f8c9415e8c535d0238eece38a5819c9",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/architecture/build.mjs"
  },
  {
   "path": "assets/models/architecture/minka-kawara_3.glb",
-  "bytes": 160664,
-  "sha256": "866a1a6190b450bf3d447ce86d3244639783ad2d9a8c1b9aee0f937760d25698",
+  "bytes": 257204,
+  "sha256": "b0d7ddbd52a1c441060d81dc9e7c58610dfaf416472d611cbfee8b6f2192419b",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/architecture/build.mjs"
  },
  {
   "path": "assets/models/architecture/minka-kayabuki_0.glb",
-  "bytes": 156784,
-  "sha256": "38dd96811ac5d44ff963e9aeed14b5f8a9c3d077412b37c149143783a12b2840",
+  "bytes": 158572,
+  "sha256": "77145370b014c9b2222448b53e0b0a229d3e3c94d47a30a2a0707f607af28b64",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/architecture/build.mjs"
  },
  {
   "path": "assets/models/architecture/minka-kayabuki_1.glb",
-  "bytes": 172032,
-  "sha256": "7e3afa96b55d5ac373417ec5b77a0905ee74ee0aa86cbbb74b1a645adac8b48a",
+  "bytes": 173972,
+  "sha256": "96309b3b40bd8d3807da9cf9aa80092a0d6bde3644162414ad1a8e5b4b7720a3",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/architecture/build.mjs"
  },
  {
   "path": "assets/models/architecture/minka-kayabuki_2.glb",
-  "bytes": 175824,
-  "sha256": "b20ae8967cded9cea14de752011305d34a848d1ab8395b23ac32a1399e572965",
+  "bytes": 200292,
+  "sha256": "8bfc7043750c420ce4e4dbf17b019c00f3fcd07c681a6d715cf98fb704fbb128",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/architecture/build.mjs"
  },
  {
   "path": "assets/models/architecture/minka-kayabuki_3.glb",
-  "bytes": 149980,
-  "sha256": "b168f7d757b616810c3fe264b2dac1039a6dba2da95caa2fd5cb837cecc8812d",
+  "bytes": 151824,
+  "sha256": "1c129f177a0220b1a3b70ed475813d96ace38e90f8edb4ccf8b4231d4735e751",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/architecture/build.mjs"
  },
  {
   "path": "assets/models/architecture/minka-kura_0.glb",
-  "bytes": 15248,
-  "sha256": "819cc3186dccba7edda153dd36e24c1a0c70405cdea14d8184d2c59f22fd296f",
+  "bytes": 16076,
+  "sha256": "d0987e62abf0502f119469ccc2a86eff81cf7d2096f5dd810f24ba29caafc230",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/architecture/build.mjs"
  },
  {
   "path": "assets/models/architecture/minka-kura_1.glb",
-  "bytes": 15248,
-  "sha256": "dd4a872110f41fad0b4e8f9f5a5729bd1307f62195fffb96495e07d80234ef5d",
+  "bytes": 16076,
+  "sha256": "533a255f404351d738dfa657a4b1bfa08ed93c097c0f4f4e5888ab31870d3483",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/architecture/build.mjs"
  },
  {
   "path": "assets/models/architecture/minka-kura_2.glb",
-  "bytes": 15248,
-  "sha256": "3059c57ddae0ec6b340beabb87f687118fc7640bdea8b9e267074f9bd489119a",
+  "bytes": 16076,
+  "sha256": "9c25459ba17112ab8eaf439f04255f87322cfab34c47e1ea21f9a8088b3e5f67",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/architecture/build.mjs"
  },
  {
   "path": "assets/models/architecture/minka-kura_3.glb",
-  "bytes": 15248,
-  "sha256": "0370bae6cca76cd63edf67205bf07998c1fc44c26aff3fb590092bfe2eacacec",
+  "bytes": 16076,
+  "sha256": "d3da24b0b431628f009d35272a0dc7d7a8432b830911444d9f14d96618c1ac41",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/architecture/build.mjs"
  },
  {
   "path": "assets/models/architecture/minka-totan_0.glb",
-  "bytes": 151480,
-  "sha256": "42dc7117d172d6e885be1dc3788f0e2990dd57cb6d378450e11d7118e143b819",
+  "bytes": 156352,
+  "sha256": "2c9d9547632be3b71a87a12511780e8b7163dbe456117b857150323c34fdb120",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/architecture/build.mjs"
  },
  {
   "path": "assets/models/architecture/minka-totan_1.glb",
-  "bytes": 151028,
-  "sha256": "75baf0b1a2ceeb429115297c1de50a4c1b4d0375423c9ac6c8be8a06dfba1b00",
+  "bytes": 174900,
+  "sha256": "2c74e75435ad9f50ea148cc799eb4793b214df3106d0d79a7e957240d806d045",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/architecture/build.mjs"
  },
  {
   "path": "assets/models/architecture/minka-totan_2.glb",
-  "bytes": 145364,
-  "sha256": "a7c38188f372e0895e9a9a57599a291fbe80fe5d34164d50feeea784e672eab4",
+  "bytes": 150288,
+  "sha256": "8eb06d6a75bd630eb4da1c4d149b5cb9fe8e4469db3e579caf5d3928dba8e25d",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/architecture/build.mjs"
  },
  {
   "path": "assets/models/architecture/minka-totan_3.glb",
-  "bytes": 151656,
-  "sha256": "e346dbb578b803d350ecb8faaf4665afdf6772291743996d6da9d9af7cb651fd",
+  "bytes": 153360,
+  "sha256": "6dd57f51ad4d54f0ed30153c62d64f9ccf75aa6c95d92ee55f5c1e5c095df3ce",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/architecture/build.mjs"
  },
  {
   "path": "assets/models/architecture/naya_0.glb",
-  "bytes": 28464,
-  "sha256": "23aa741d93d1ecc0f472e07b08b476fdcbeab97e3827cd307b43129ccfb7b2e1",
+  "bytes": 29284,
+  "sha256": "ba927595f52e09092c02a57a467e39c9129d590107702346697116627238f505",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/architecture/build.mjs"
  },
  {
   "path": "assets/models/architecture/naya_1.glb",
-  "bytes": 28464,
-  "sha256": "325b3555e0d06726d3777e54fdedf1cc4354a39ec20cf278ec752e5e54777253",
+  "bytes": 29284,
+  "sha256": "143baf6d963fc318394c1d68cd7d9f87d5f24dfca9b9ec4e43bf428dd46942d0",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/architecture/build.mjs"
  },
  {
   "path": "assets/models/architecture/road-ditch.glb",
-  "bytes": 1748184,
-  "sha256": "0c24bee0703a2bf3b9f6aea4cdd27b617233d4c34dd54b3907fffd637b18eebc",
+  "bytes": 1748232,
+  "sha256": "e286445743d9470ff894a550b5311c29cd4fd5fe4309706f3fc551b29f75f71e",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/architecture/build.mjs"
  },
  {
   "path": "assets/models/architecture/saisen.glb",
-  "bytes": 10172,
-  "sha256": "5725b63af6453cdc1de00b8945560a13f13a5af3deb6c496d0ff62d3b2177a74",
+  "bytes": 10220,
+  "sha256": "bccfa83ceafc0bffa3fbb480368a7c306a45082fa26fee807a5fecae0a50f5aa",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/architecture/build.mjs"
  },
  {
   "path": "assets/models/architecture/sekihi.glb",
-  "bytes": 12240,
-  "sha256": "401619d823baf3e2628f60a81934637d6ccfa209aaa30d85eee24fc411899805",
+  "bytes": 12288,
+  "sha256": "db23f0e35787a5c5339837e7060e286b3b4f248e7e99f29be4e7195a815878a6",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/architecture/build.mjs"
  },
  {
   "path": "assets/models/architecture/shamusho.glb",
-  "bytes": 96472,
-  "sha256": "496065994215521defbffaeb1ab55787ee4e757e8c460db6a31aed1073d2e991",
+  "bytes": 97500,
+  "sha256": "edc03452401d91230d65c07643a06e3f31b6e347072e0f83aacc157f54b54c4e",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/architecture/build.mjs"
  },
  {
   "path": "assets/models/architecture/shimenawa-tree.glb",
-  "bytes": 31508,
-  "sha256": "3eab77e9165de1d84b4eb41115b93423fe62a437c87aa9b76d40026f9bbab625",
+  "bytes": 31568,
+  "sha256": "072c04dda8332b0bdab0e7602945a263e4a751603a9aca818d6b666c3ba2271b",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/architecture/build.mjs"
  },
  {
   "path": "assets/models/architecture/stairs.glb",
-  "bytes": 1840708,
-  "sha256": "fbac1dfc51e69799b3cfbc2902a403213d6fde160d139f60e368f4cbcac55c93",
+  "bytes": 1805672,
+  "sha256": "da5c188b186071134c610da4965adbd3df628b9dfff8b4f793874f97bd089cd9",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/architecture/build.mjs"
  },
  {
   "path": "assets/models/architecture/temizuya.glb",
-  "bytes": 41232,
-  "sha256": "7079606eda1580a117f93ad577a481a833600e6771309bd05b6044d746d02e29",
+  "bytes": 42160,
+  "sha256": "decfecb1045cd203d877f3755fbc2527904cfd90ba0a549bb1ca3fd6698ab702",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/architecture/build.mjs"
@@ -556,27 +572,65 @@
  },
  {
   "path": "assets/models/architecture/torii-wood.glb",
-  "bytes": 38224,
-  "sha256": "671187780e927ed8b8c50e7bc49d77fb68829d8c7e506ad9e7ad2a59ac20e0cb",
+  "bytes": 38324,
+  "sha256": "314168652ee82484ff5adc49d010161c3b44ca98949d0310f30196fba2f49f96",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/architecture/build.mjs"
  },
  {
   "path": "assets/models/architecture/toro.glb",
-  "bytes": 32184,
-  "sha256": "390aaac4bedc031fcfc2f7175d693bd54f1f75dc05524b399a4b9cb33a0a1547",
+  "bytes": 32232,
+  "sha256": "59713493c3c74de12ecf7e8b42b90ea4dc046a76ce390acd2914e9aba500ed00",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/architecture/build.mjs"
  },
  {
   "path": "assets/models/architecture/toro_1.glb",
-  "bytes": 32760,
-  "sha256": "58b7a9385f964b643e098e52395c79180f28b5922fd5b1943b6e82b2364cdcbf",
+  "bytes": 32856,
+  "sha256": "8bfed0590799b3e3f6d0c33aea7d16180562d2799b38f15f30ac532cd18c12b6",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/architecture/build.mjs"
+ },
+ {
+  "path": "assets/models/props/crop-bush.glb",
+  "bytes": 483208,
+  "sha256": "bb7232c94eff2db611535f9dee9bef28c7401cdcae27cf2e03b7b5d963791846",
+  "origin": "Poly Haven",
+  "page": "https://polyhaven.com/a/shrub_03",
+  "authors": [
+   "Rico Cilliers"
+  ],
+  "licence": "CC0 1.0",
+  "processing": "low-poly copy for vegetable rows, specimens split (tools/assets/process_models.mjs)"
+ },
+ {
+  "path": "assets/models/props/crop-leafy.glb",
+  "bytes": 716020,
+  "sha256": "4ba8c24bd43001a2113248116728ff237a4a4aaca7c7464d457f5a03323232b9",
+  "origin": "Poly Haven",
+  "page": "https://polyhaven.com/a/nettle_plant",
+  "authors": [
+   "Rico Cilliers",
+   "Rob Tuytel"
+  ],
+  "licence": "CC0 1.0",
+  "processing": "low-poly copy for vegetable rows, specimens split (tools/assets/process_models.mjs)"
+ },
+ {
+  "path": "assets/models/props/crop-low.glb",
+  "bytes": 638524,
+  "sha256": "ca85c3e830caacbf840e9cd4a612cd9e97f4c13efab5a90618afc527c5f2e4c1",
+  "origin": "Poly Haven",
+  "page": "https://polyhaven.com/a/weed_plant_02",
+  "authors": [
+   "Rico Cilliers",
+   "Rob Tuytel"
+  ],
+  "licence": "CC0 1.0",
+  "processing": "low-poly copy for vegetable rows, specimens split (tools/assets/process_models.mjs)"
  },
  {
   "path": "assets/models/props/dead_tree_trunk.glb",
@@ -588,12 +642,12 @@
    "Rob Tuytel"
   ],
   "licence": "CC0 1.0",
-  "processing": "alpha merged, decimated, textures resized (tools/assets/process_models.mjs)"
+  "processing": "alpha merged, specimens split where the source is a sheet, decimated, textures resized (tools/assets/process_models.mjs)"
  },
  {
   "path": "assets/models/props/fern_02.glb",
-  "bytes": 182120,
-  "sha256": "bb00528357b24385450e2ed3a2eada38b8fe370c01fe03fe2ad1b86c733e00f0",
+  "bytes": 394744,
+  "sha256": "aa1402cd71b91fc8a2fc438fd77060729a1c09369d4913c77f69bd8c65196ba7",
   "origin": "Poly Haven",
   "page": "https://polyhaven.com/a/fern_02",
   "authors": [
@@ -601,12 +655,12 @@
    "Rob Tuytel"
   ],
   "licence": "CC0 1.0",
-  "processing": "alpha merged, decimated, textures resized (tools/assets/process_models.mjs)"
+  "processing": "alpha merged, specimens split where the source is a sheet, decimated, textures resized (tools/assets/process_models.mjs)"
  },
  {
   "path": "assets/models/props/nettle_plant.glb",
-  "bytes": 341288,
-  "sha256": "01fab292b7fdf4bdeb0e7dc133e9421885578117bf424146a36e0caf79b99bc6",
+  "bytes": 741200,
+  "sha256": "3873ef1dbf37d87e38e43ace252a311f170d475702dd2444d56ec92fe0c09695",
   "origin": "Poly Haven",
   "page": "https://polyhaven.com/a/nettle_plant",
   "authors": [
@@ -614,7 +668,7 @@
    "Rob Tuytel"
   ],
   "licence": "CC0 1.0",
-  "processing": "alpha merged, decimated, textures resized (tools/assets/process_models.mjs)"
+  "processing": "alpha merged, specimens split where the source is a sheet, decimated, textures resized (tools/assets/process_models.mjs)"
  },
  {
   "path": "assets/models/props/rock_07.glb",
@@ -626,79 +680,67 @@
    "Jenelle van Heerden"
   ],
   "licence": "CC0 1.0",
-  "processing": "alpha merged, decimated, textures resized (tools/assets/process_models.mjs)"
- },
- {
-  "path": "assets/models/props/rock_09.glb",
-  "bytes": 176164,
-  "sha256": "7ba1fa9086104a48cfe2e79a1e632da1161d750ae60eb5ae383532c4a243f3a1",
-  "origin": "Poly Haven",
-  "page": "https://polyhaven.com/a/rock_09",
-  "authors": [
-   "Jenelle van Heerden"
-  ],
-  "licence": "CC0 1.0",
-  "processing": "alpha merged, decimated, textures resized (tools/assets/process_models.mjs)"
+  "processing": "alpha merged, specimens split where the source is a sheet, decimated, textures resized (tools/assets/process_models.mjs)"
  },
  {
   "path": "assets/models/props/rock_moss_set_01.glb",
-  "bytes": 191152,
-  "sha256": "7c4b3e7d4b8d223d765f95a28cf8c66253962e1165ca010f1d54d5fa56c0c675",
+  "bytes": 364680,
+  "sha256": "f57e0e0b6a39e91d39047eb637bc1be388e9ad844412b61131c386a6a9f355c6",
   "origin": "Poly Haven",
   "page": "https://polyhaven.com/a/rock_moss_set_01",
   "authors": [
    "Kless Gyzen"
   ],
   "licence": "CC0 1.0",
-  "processing": "alpha merged, decimated, textures resized (tools/assets/process_models.mjs)"
+  "processing": "alpha merged, specimens split where the source is a sheet, decimated, textures resized (tools/assets/process_models.mjs)"
  },
  {
   "path": "assets/models/props/rock_moss_set_02.glb",
-  "bytes": 235192,
-  "sha256": "672c4eba1d2000e490a604263f8f9e1cc483966b829457b9a799732bc563215c",
+  "bytes": 403300,
+  "sha256": "a68d7381159319bb493a5e8c9a5289e3ddde6e93ef77230686465fcf3807c262",
   "origin": "Poly Haven",
   "page": "https://polyhaven.com/a/rock_moss_set_02",
   "authors": [
    "Kless Gyzen"
   ],
   "licence": "CC0 1.0",
-  "processing": "alpha merged, decimated, textures resized (tools/assets/process_models.mjs)"
+  "processing": "alpha merged, specimens split where the source is a sheet, decimated, textures resized (tools/assets/process_models.mjs)"
  },
  {
   "path": "assets/models/props/shrub_02.glb",
-  "bytes": 280608,
-  "sha256": "7c0b8286e67124502101b791b57b61499ecbc8b34d429ac3d423cf57e89a2e52",
+  "bytes": 477204,
+  "sha256": "41fa5605ba707484fe49ee57e7981feaba10a4fcee77407f39d4eea207c6e474",
   "origin": "Poly Haven",
   "page": "https://polyhaven.com/a/shrub_02",
   "authors": [
    "Rico Cilliers"
   ],
   "licence": "CC0 1.0",
-  "processing": "alpha merged, decimated, textures resized (tools/assets/process_models.mjs)"
+  "processing": "alpha merged, specimens split where the source is a sheet, decimated, textures resized (tools/assets/process_models.mjs)"
  },
  {
   "path": "assets/models/props/shrub_03.glb",
-  "bytes": 295080,
-  "sha256": "00a7833228e2fa840f0d261fd80091a5bf3a816c8ee9c0f1bccdcd4d9ec8c30d",
+  "bytes": 507276,
+  "sha256": "6459b6195fb6ab838ce1042b0b5da0802982bcfd988e8068bb0f9f1c3086c9b8",
   "origin": "Poly Haven",
   "page": "https://polyhaven.com/a/shrub_03",
   "authors": [
    "Rico Cilliers"
   ],
   "licence": "CC0 1.0",
-  "processing": "alpha merged, decimated, textures resized (tools/assets/process_models.mjs)"
+  "processing": "alpha merged, specimens split where the source is a sheet, decimated, textures resized (tools/assets/process_models.mjs)"
  },
  {
   "path": "assets/models/props/shrub_04.glb",
-  "bytes": 284648,
-  "sha256": "618719a2a57e8bfd454163ce4193a7c1ef54df4440fd0e6c394b7076c661b98c",
+  "bytes": 447776,
+  "sha256": "f18549cb67a0597c8d3c9e8e6e4a0c56b29149d2bb3a50b0279264438b3a1d3e",
   "origin": "Poly Haven",
   "page": "https://polyhaven.com/a/shrub_04",
   "authors": [
    "Rico Cilliers"
   ],
   "licence": "CC0 1.0",
-  "processing": "alpha merged, decimated, textures resized (tools/assets/process_models.mjs)"
+  "processing": "alpha merged, specimens split where the source is a sheet, decimated, textures resized (tools/assets/process_models.mjs)"
  },
  {
   "path": "assets/models/props/stone_01.glb",
@@ -711,7 +753,7 @@
    "Rico Cilliers"
   ],
   "licence": "CC0 1.0",
-  "processing": "alpha merged, decimated, textures resized (tools/assets/process_models.mjs)"
+  "processing": "alpha merged, specimens split where the source is a sheet, decimated, textures resized (tools/assets/process_models.mjs)"
  },
  {
   "path": "assets/models/props/tree_stump_01.glb",
@@ -723,12 +765,12 @@
    "Rob Tuytel"
   ],
   "licence": "CC0 1.0",
-  "processing": "alpha merged, decimated, textures resized (tools/assets/process_models.mjs)"
+  "processing": "alpha merged, specimens split where the source is a sheet, decimated, textures resized (tools/assets/process_models.mjs)"
  },
  {
   "path": "assets/models/props/weed_plant_02.glb",
-  "bytes": 253704,
-  "sha256": "472ab986e83a354b72fac101a8e68aeb3f797a0c9bc5d96dc99aabab43773a50",
+  "bytes": 643376,
+  "sha256": "d2cbcfb1049f50c77fc21de9721ea1d303ed674ab62d510ddd3c4a93444089bb",
   "origin": "Poly Haven",
   "page": "https://polyhaven.com/a/weed_plant_02",
   "authors": [
@@ -736,7 +778,7 @@
    "Rob Tuytel"
   ],
   "licence": "CC0 1.0",
-  "processing": "alpha merged, decimated, textures resized (tools/assets/process_models.mjs)"
+  "processing": "alpha merged, specimens split where the source is a sheet, decimated, textures resized (tools/assets/process_models.mjs)"
  },
  {
   "path": "assets/models/props/wicker_basket_01.glb",
@@ -748,7 +790,7 @@
    "Kuutti Siitonen"
   ],
   "licence": "CC0 1.0",
-  "processing": "alpha merged, decimated, textures resized (tools/assets/process_models.mjs)"
+  "processing": "alpha merged, specimens split where the source is a sheet, decimated, textures resized (tools/assets/process_models.mjs)"
  },
  {
   "path": "assets/models/props/wooden_barrels_01.glb",
@@ -760,19 +802,7 @@
    "James Ray Cock"
   ],
   "licence": "CC0 1.0",
-  "processing": "alpha merged, decimated, textures resized (tools/assets/process_models.mjs)"
- },
- {
-  "path": "assets/models/props/wooden_broom.glb",
-  "bytes": 499000,
-  "sha256": "0d8e8b56c687c8ff417ded42f981bc3806eb7b672a6b686a8d81568a54b36daf",
-  "origin": "Poly Haven",
-  "page": "https://polyhaven.com/a/wooden_broom",
-  "authors": [
-   "Balen"
-  ],
-  "licence": "CC0 1.0",
-  "processing": "alpha merged, decimated, textures resized (tools/assets/process_models.mjs)"
+  "processing": "alpha merged, specimens split where the source is a sheet, decimated, textures resized (tools/assets/process_models.mjs)"
  },
  {
   "path": "assets/models/props/wooden_bucket_01.glb",
@@ -784,7 +814,7 @@
    "James Ray Cock"
   ],
   "licence": "CC0 1.0",
-  "processing": "alpha merged, decimated, textures resized (tools/assets/process_models.mjs)"
+  "processing": "alpha merged, specimens split where the source is a sheet, decimated, textures resized (tools/assets/process_models.mjs)"
  },
  {
   "path": "assets/models/props/wooden_crate_01.glb",
@@ -796,7 +826,7 @@
    "James Ray Cock"
   ],
   "licence": "CC0 1.0",
-  "processing": "alpha merged, decimated, textures resized (tools/assets/process_models.mjs)"
+  "processing": "alpha merged, specimens split where the source is a sheet, decimated, textures resized (tools/assets/process_models.mjs)"
  },
  {
   "path": "assets/models/props/wooden_ladder.glb",
@@ -808,7 +838,7 @@
    "Miroslav Turura"
   ],
   "licence": "CC0 1.0",
-  "processing": "alpha merged, decimated, textures resized (tools/assets/process_models.mjs)"
+  "processing": "alpha merged, specimens split where the source is a sheet, decimated, textures resized (tools/assets/process_models.mjs)"
  },
  {
   "path": "assets/models/trees/akamatsu_0.glb",
@@ -876,24 +906,24 @@
  },
  {
   "path": "assets/models/trees/broadleaf_0.glb",
-  "bytes": 186584,
-  "sha256": "aceacf2cb2375bc1bd65dc64e3e86145ca16f548f6e5a0b2d636abbc5b5d01d2",
+  "bytes": 186580,
+  "sha256": "aca3a14ef07f87aa2aad110414e7d275a80dd8aa2a74367b61598ab9f74f3aca",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/trees/build-trees.mjs"
  },
  {
   "path": "assets/models/trees/broadleaf_1.glb",
-  "bytes": 157560,
-  "sha256": "4657107ce34fccd8195adcc92f02f45a6dd7c438b5d04beb3511a34a21854f6f",
+  "bytes": 157564,
+  "sha256": "cd6c75cbc87055b29fc030b17332ec3c3000481f23f94b2ecfd1a23458820c34",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/trees/build-trees.mjs"
  },
  {
   "path": "assets/models/trees/broadleaf_2.glb",
-  "bytes": 149080,
-  "sha256": "f6fcc46f0f581ad85e528b7875d6fbb60b9b0240747da3613e597960bfbb9239",
+  "bytes": 149076,
+  "sha256": "e0bf858cd9a2f618d50e33d79f7ce8eafcce18d1f5d5edecf831e5316dbd0e86",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/trees/build-trees.mjs"
@@ -901,7 +931,7 @@
  {
   "path": "assets/models/trees/broadleaf_3.glb",
   "bytes": 174008,
-  "sha256": "9098a0fafc847960758cc44b6e575abb9064d4152bbc10f4b015e0bc86cd60ae",
+  "sha256": "39a5af5bfcb91f2e439f5cce7cd2fa8924f9b5195bbcd7795d846fb03d56d769",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/trees/build-trees.mjs"
@@ -941,7 +971,7 @@
  {
   "path": "assets/models/trees/keyaki_0.glb",
   "bytes": 158492,
-  "sha256": "98cdf1d91e1a2073f26df4c1f27f456b3fa0bcaea9db089ff9c31528222bc76a",
+  "sha256": "35b035e65fa95a6828a766ae4399cdc0ae55033a49e157ba5e8a88cc2876c611",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/trees/build-trees.mjs"
@@ -949,7 +979,7 @@
  {
   "path": "assets/models/trees/keyaki_1.glb",
   "bytes": 139004,
-  "sha256": "0d738f7899dde9c24ff23323dbe9fac1612587b47a21d2c0109e2030f9689dea",
+  "sha256": "bd23de1b0b6f724b714cf11da7f83df5e1aea76159b18ada7d04b3401979a6de",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/trees/build-trees.mjs"
@@ -957,15 +987,15 @@
  {
   "path": "assets/models/trees/keyaki_2.glb",
   "bytes": 189060,
-  "sha256": "7e2c7ca077c487bd7ed144ada9142bce9f7e61a2cda220b40a21305861313313",
+  "sha256": "aeb56e709426d1303f7ba73af1c4110f7fd2bfa8ec7906bfc14448f357ef5144",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/trees/build-trees.mjs"
  },
  {
   "path": "assets/models/trees/keyaki_3.glb",
-  "bytes": 158484,
-  "sha256": "da4eaefa949c69e7ac2b0d01518364a904f6dbf593e340c9c9d5182f8126d2ea",
+  "bytes": 158488,
+  "sha256": "d5b4b151051b901c94079403cccdcf75d325b4d09599e90f45a58b4621d3ca5b",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/trees/build-trees.mjs"
@@ -1153,6 +1183,42 @@
   "page": "https://polyhaven.com/a/concrete_block_wall",
   "authors": [
    "Charlotte Baglioni"
+  ],
+  "licence": "CC0 1.0",
+  "processing": "resized/re-encoded, ARM packed (tools/assets/process_textures.py)"
+ },
+ {
+  "path": "assets/textures/farm_furrows/albedo.jpg",
+  "bytes": 237389,
+  "sha256": "1b3156cd104d027361f29ea47ed7dd46e7db487e866b022b99adc7d5376c2a50",
+  "origin": "Poly Haven",
+  "page": "https://polyhaven.com/a/farm_furrows",
+  "authors": [
+   "Amal Kumar"
+  ],
+  "licence": "CC0 1.0",
+  "processing": "resized/re-encoded, ARM packed (tools/assets/process_textures.py)"
+ },
+ {
+  "path": "assets/textures/farm_furrows/arm.jpg",
+  "bytes": 248013,
+  "sha256": "0dd59cbe477f78e031abfcdd038b215a08e54549c96a4a2d1478549c59214989",
+  "origin": "Poly Haven",
+  "page": "https://polyhaven.com/a/farm_furrows",
+  "authors": [
+   "Amal Kumar"
+  ],
+  "licence": "CC0 1.0",
+  "processing": "resized/re-encoded, ARM packed (tools/assets/process_textures.py)"
+ },
+ {
+  "path": "assets/textures/farm_furrows/normal.jpg",
+  "bytes": 572781,
+  "sha256": "4cff7c1b6edd7d0d827509743bac741b67658141eec3ed91ab8ef5cc07babeb6",
+  "origin": "Poly Haven",
+  "page": "https://polyhaven.com/a/farm_furrows",
+  "authors": [
+   "Amal Kumar"
   ],
   "licence": "CC0 1.0",
   "processing": "resized/re-encoded, ARM packed (tools/assets/process_textures.py)"
@@ -1996,8 +2062,8 @@
  },
  {
   "path": "world/clutter.json",
-  "bytes": 115338,
-  "sha256": "207ce167b31a38cd932002d716acd50e1d1a1a5670ccf3d5ad146ce57c68f3a8",
+  "bytes": 2180425,
+  "sha256": "eeddacaf98ac4ac8c3b9956493bcb95c12473869dc947a709f837acc46dd2776",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/world/generate_world.py"
@@ -2020,8 +2086,8 @@
  },
  {
   "path": "world/heightmap.png",
-  "bytes": 978931,
-  "sha256": "9f50630c26da1735cfe7e3a986d1402f80d98495577659356a05cf16c7bf7d35",
+  "bytes": 975576,
+  "sha256": "202640d84ca3ac4cad457786de66a496db66d3f8027138da6887078707721701",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/world/generate_world.py"
@@ -2029,63 +2095,71 @@
  {
   "path": "world/heightmap.r16",
   "bytes": 2101250,
-  "sha256": "d9b0b415117bb8187b96068f9c244dbd307aba371bf832eaa638c94cc11f18cd",
+  "sha256": "2299323bd7a45b98cf93145e0a6258e0e5b5484da9829968219f1a346c047e52",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/world/generate_world.py"
  },
  {
   "path": "world/materials.json",
-  "bytes": 7383,
-  "sha256": "2ca09141acd7be27a540dd781b6123a2874ae1bada22ffc824f61063c8483475",
+  "bytes": 8662,
+  "sha256": "dd06b421aa73138fbe9ea40e12d1112bced0c46ca3e127a6da555ee1e04ca209",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/world/generate_world.py"
  },
  {
   "path": "world/paddy-level.png",
-  "bytes": 11974,
-  "sha256": "6b6eda346513dd16266fc291c441e173fd88b4c47caf09b6e4f378ee1f206dbb",
+  "bytes": 13689,
+  "sha256": "047e1265c1b1386c6fbbbb47b4a938dc18bb8a3da46e89c954dfa5d382724237",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/world/generate_world.py"
  },
  {
   "path": "world/scene.json",
-  "bytes": 223301,
-  "sha256": "f0c611b5627161bcf4917ed5e58063a99d758941bc64fad89346e947443e6744",
+  "bytes": 229223,
+  "sha256": "e346f017862b958965a453b338f72de67895d59c7d7df8a99a1778a5602bede5",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/world/generate_world.py"
  },
  {
   "path": "world/splat0.png",
-  "bytes": 325973,
-  "sha256": "220ee2600dfa8fa9b58005df757ce46898165274afe7510fdadb1dbfd14d0daa",
+  "bytes": 326428,
+  "sha256": "d44765dfb7e500f35e97fbd122795ceb885a1fdf4487c1a523283fbdf6f0f2e6",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/world/generate_world.py"
  },
  {
   "path": "world/splat1.png",
-  "bytes": 31762,
-  "sha256": "6efa0e20922fe2cf85e89f1659a115b060b0099c288e29d618011940d206b4f6",
+  "bytes": 33111,
+  "sha256": "eed2b1429a6f0b0a52988371c3c489a884b65cfa6041d4b241fdb36503366412",
+  "origin": "original (this repo)",
+  "licence": "CC0 1.0",
+  "tool": "tools/world/generate_world.py"
+ },
+ {
+  "path": "world/splat2.png",
+  "bytes": 7017,
+  "sha256": "8f931c1bd4c00171c5fe45bac87b565cac58a00dfbccc83729f1923453643908",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/world/generate_world.py"
  },
  {
   "path": "world/vegetation-mask.png",
-  "bytes": 313235,
-  "sha256": "ee132e81d4b1aaea10c743c6c54a5632d9b71c838985e678c0aacc230b629357",
+  "bytes": 314953,
+  "sha256": "525db8422c4fee79fbd7921caae5e05ee4f5a3fb0bf29cc3e2e3de3b6cd6798a",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/world/generate_world.py"
  },
  {
   "path": "world/vegetation.json",
-  "bytes": 1722093,
-  "sha256": "82c164a17956c0891d7d0c78c392683557287f62b912b1fd35a192bab30098db",
+  "bytes": 1712232,
+  "sha256": "101cc35934dee056c5c8765ad0ac3b612ad9736926feb508d7b8bd694cd9fde1",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/world/generate_world.py"

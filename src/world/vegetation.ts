@@ -79,8 +79,8 @@ export class Vegetation implements System {
       bark_sugi: ["japanese_cedar_bark", "#d8cfc4"],
       bark_hinoki: ["metasequoia_bark", "#d9c2b0"],
       bark_pine: ["pine_bark", "#e6c3a4"],
-      bark_broadleaf: ["japanese_zelkova_bark", "#7b766c"],
-      bark_keyaki: ["japanese_zelkova_bark", "#a8a296"],
+      bark_broadleaf: ["japanese_zelkova_bark", "#5f5b53"],
+      bark_keyaki: ["japanese_zelkova_bark", "#8d877c"],
     };
     if (bark[name]) {
       m = lib.pbr({ tex: bark[name][0], color: bark[name][1], size: 1 });

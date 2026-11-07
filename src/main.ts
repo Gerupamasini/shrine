@@ -16,7 +16,7 @@ const enter = $<HTMLButtonElement>("enter");
 enter.disabled = true;
 const params = new URLSearchParams(location.search);
 let quality = (params.get("quality") as Quality) || "standard";
-const camera = new T.PerspectiveCamera(60, innerWidth / innerHeight, 0.1, 9000);
+const camera = new T.PerspectiveCamera(55, innerWidth / innerHeight, 0.1, 9000);
 camera.rotation.order = "YXZ";
 const audio = new Soundscape();
 let renderer: T.WebGLRenderer, land: Landscape, walker: Walker, post: Post;

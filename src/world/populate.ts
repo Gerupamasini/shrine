@@ -5,7 +5,7 @@ import { Clutter } from "./clutter";
 import { GrassField, RiceCanopy, WorldTextures } from "./grass";
 import { River } from "./water";
 import { FarTerrain } from "./far";
-import { Understory } from "./understory";
+import { Understory, crops } from "./understory";
 import * as T from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { publicUrl } from "../urls";
@@ -42,7 +42,9 @@ export async function populate(land: Landscape, progress: (p: number, label: str
     land.add(new GrassField(land, wt, { rice: false, spacing: 0.85, radius: 20, blades: 0, seed: i * 7.3, clump: { geometry, map, height: 0.3, scale: 2.2 } })),
   );
   land.add(new GrassField(land, wt, { rice: false, spacing: 0.4, radius: 42, inner: 14, blades: 4 }));
-  land.add(new GrassField(land, wt, { rice: true, spacing: 0.3, radius: 18, blades: 9 }));
+  // rice hills: the photographed grass clump scaled to rice height (rice is a grass), in rows
+  land.add(new GrassField(land, wt, { rice: true, spacing: 0.36, radius: 14, blades: 0, seed: 3.1, clump: { geometry: geos[0], map, height: 0.32, scale: 2.9 } }));
   land.add(new RiceCanopy(land, wt));
-  land.add(new River(land));
+  land.add(new River(land, wt));
+  crops(land);
 }

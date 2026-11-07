@@ -33,7 +33,10 @@ def origin(rel: str):
         return {**ph(hid), "processing": "4k HDR -> LDR backdrop + original 1k HDR (tools/assets/process_textures.py)"}
     if rel.startswith("assets/models/props/"):
         mid = p[3].removesuffix(".glb")
-        return {**ph(mid), "processing": "alpha merged, decimated, textures resized (tools/assets/process_models.mjs)"}
+        crop_src = {"crop-leafy": "nettle_plant", "crop-low": "weed_plant_02", "crop-bush": "shrub_03"}
+        if mid in crop_src:
+            return {**ph(crop_src[mid]), "processing": "low-poly copy for vegetable rows, specimens split (tools/assets/process_models.mjs)"}
+        return {**ph(mid), "processing": "alpha merged, specimens split where the source is a sheet, decimated, textures resized (tools/assets/process_models.mjs)"}
     if rel.startswith("assets/foliage/grass-clump"):
         return {**ph("grass_medium_01"), "processing": "3 tall clumps extracted, decimated, alpha merged (tools/assets/process_grass.mjs)"}
     if rel.startswith("assets/foliage/") and ("needle" in rel or "pine" in rel or "leaf-" in rel or rel.endswith("atlases.json")) and "bamboo" not in rel:

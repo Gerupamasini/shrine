@@ -106,6 +106,22 @@ export function gridSurface(grid, uScale = 1, vScale = 1, flip = false) {
   return g;
 }
 
+/** Thick sheet split into its parts: {top, bottom, edges} (non-indexed). */
+export function thickSheetParts(grid, thickness, uScale = 1, vScale = 1) {
+  const rows = grid.length, cols = grid[0].length;
+  const top = gridSurface(grid, uScale, vScale);
+  const n = top.attributes.normal;
+  const under = grid.map((row, i) => row.map((p, j) => { const k = i * cols + j; return p.clone().addScaledVector(V(n.getX(k), n.getY(k), n.getZ(k)), -thickness); }));
+  const bottom = gridSurface(under, uScale, vScale, true);
+  const mid = new THREE.Vector3();
+  let cnt = 0;
+  for (const row of grid) for (const p of row) { mid.add(p); cnt++; }
+  mid.divideScalar(cnt);
+  const strips = [gridSurface([grid[rows - 1], under[rows - 1]], uScale, 1), gridSurface([under[0], grid[0]], uScale, 1),
+    gridSurface([grid.map((r) => r[0]), under.map((r) => r[0])], uScale, 1), gridSurface([under.map((r) => r[cols - 1]), grid.map((r) => r[cols - 1])], uScale, 1)];
+  return { top: top.toNonIndexed(), bottom: bottom.toNonIndexed(), edges: mergeGeometries(strips.map((e) => orientOutward(e.toNonIndexed(), mid))) };
+}
+
 /** Thick sheet: top surface grid plus offset underside and closed edges. */
 export function thickSheet(grid, thickness, uScale = 1, vScale = 1) {
   const rows = grid.length, cols = grid[0].length;

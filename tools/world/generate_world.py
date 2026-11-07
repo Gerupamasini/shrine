@@ -209,6 +209,8 @@ h = h * (1 - bm) + branch_y * bm
 
 # ---- Houses -----------------------------------------------------------------
 houses = []
+PRESETS = json.loads((ROOT / "tools/architecture/presets.json").read_text())
+
 def place_houses():
     hamlets = [(-300.0, 7, 1), (-215.0, 10, 1), (-130.0, 8, -1), (-60.0, 11, 1), (25.0, 9, -1), (120.0, 11, 1), (215.0, 9, 1), (300.0, 8, -1)]
     kinds = ["kawara", "thatch", "tin", "kawara", "tin", "kawara", "thatch", "kawara", "kura-house", "tin", "kawara"]
@@ -236,10 +238,10 @@ def place_houses():
             k += 1
             yaw = math.atan2(float(road_x(z + 1) - road_x(z - 1)), 2.0)
             # Houses face south or the road, with a little individual skew.
-            face = (yaw + (math.pi / 2 if side < 0 else -math.pi / 2)) * 0.55 + rng.normal(0, 0.12)
-            w = rng.uniform(10.5, 15.0) if kind != "kura-house" else 8.5
-            d = rng.uniform(7.5, 10.5)
-            houses.append(dict(x=x, z=z, kind=kind, yaw=face, w=w, d=d, side=int(side), variant=int(rng.integers(0, 4))))
+            face = (yaw + (math.pi / 2 if side < 0 else -math.pi / 2)) * 0.55 + rng.normal(0, 0.22)
+            variant = int(rng.integers(0, 4))
+            pre = PRESETS[{"kawara": "minka-kawara", "thatch": "minka-kayabuki", "tin": "minka-totan", "kura-house": "minka-kura"}[kind]][variant]
+            houses.append(dict(x=x, z=z, kind=kind, yaw=face, w=pre["W"], d=pre["D"], side=int(side), variant=variant, wing=pre.get("wing"), storeys=pre["storeys"]))
             placed += 1
 
 place_houses()
@@ -265,13 +267,13 @@ mountain_factor = mountains(X, Z)
 slope_ok = mountain_factor < 1.6
 house_clear = np.ones_like(h, bool)
 for hs in houses:
-    house_clear &= np.hypot(X - hs["x"], Z - hs["z"]) > 24
+    house_clear &= np.hypot(X - hs["x"], Z - hs["z"]) > 17
 paddy_region = (
     slope_ok & house_clear
     & (np.abs(X - rx) > rw / 2 + 7)
     & (road_d > 7.5)
     & (np.abs(X) < 575) & (Z > -520) & (Z < 575)
-    & ~((X > 85) & (np.abs(Z - STAIR_Z) < 70))
+    & ~((X > road_at_stair - 6) & (X < STAIR_X0 + 4) & (np.abs(Z - STAIR_Z) < 13))
     & (shrine_spur(X, Z) < 3)
 )
 # Strip coordinates following the valley: t across the valley, s along it.
@@ -403,11 +405,11 @@ gravel = pre * (1 - smoothstep(-3.0, 1.0, edge))  # the whole precinct floor is 
 forest_density = np.maximum(forest_density, pre * smoothstep(-6, 0, edge) * 0.5)
 rice = interior & (field_type == 1)
 paddy_mud = rice.astype(np.float64)
-dirt = np.maximum(dirt, (interior & (field_type == 2)) * 1.0)
+furrows = ((field_type == 2) & is_paddy).astype(np.float64)
 forest_floor = forest_density
 grass = np.ones_like(h)
-layers = dict(grass=grass, forest=forest_floor, dirt=dirt, rock=rock, paddy=paddy_mud, riverbed=riverbed, gravel=gravel, asphalt=asphalt)
-order = ["grass", "forest", "dirt", "rock", "paddy", "riverbed", "gravel", "asphalt"]
+layers = dict(grass=grass, forest=forest_floor, dirt=dirt, rock=rock, paddy=paddy_mud, riverbed=riverbed, gravel=gravel, asphalt=asphalt, furrows=furrows)
+order = ["grass", "forest", "dirt", "rock", "paddy", "riverbed", "gravel", "asphalt", "furrows"]
 # Paint with priorities: later layers cover earlier ones.
 wgt = {k: np.zeros_like(h) for k in order}
 remaining = np.ones_like(h)
@@ -415,8 +417,8 @@ for k in reversed(order):
     v = np.clip(layers[k], 0, 1) * remaining if k != "grass" else remaining
     wgt[k] = v
     remaining = remaining - v
-for idx, group in enumerate([order[:4], order[4:]]):
-    rgba = np.stack([wgt[k] for k in group], -1)
+for idx, group in enumerate([order[:4], order[4:8], order[8:]]):
+    rgba = np.stack([wgt[k] for k in group] + [np.zeros_like(h)] * (4 - len(group)), -1)
     Image.fromarray(np.uint8(np.rint(np.clip(rgba, 0, 1) * 255)), "RGBA").save(OUT / f"splat{idx}.png")
 # Vegetation/paddy auxiliary map: R=forest density, G=paddy id hash, B=paddy interior, A=grass density
 grass_density = np.clip(wgt["grass"] * (1 - 0.6 * forest_density) + wgt["forest"] * 0.25 + aze * 0.8, 0, 1)
@@ -435,7 +437,7 @@ def on_approach(x, z, margin=0.0):
     """Village road -> foot torii branch path and the stone forecourt."""
     return road_at_stair - 4 < x < STAIR_X0 + 1 and abs(z - STAIR_Z) < 5.5 + margin
 
-def blocked(x, z):
+def blocked(x, z, top=None):
     if abs(z - STAIR_Z) < STAIR_W / 2 + 1.6 and STAIR_X0 - 26 < x < STAIR_X1 + 2:
         return True
     if on_approach(x, z, 1.0):
@@ -451,12 +453,19 @@ def blocked(x, z):
     dist = math.hypot(dx, dz_)
     if dist < 14:
         return True
-    if dist < 190:
+    if dist < 230:
         az = math.atan2(dx, -dz_) % (2 * math.pi)
-        if abs((az - LOOK_DIR + math.pi) % (2 * math.pi) - math.pi) < math.radians(38):
-            return True
+        in_view = dist < 190 and abs((az - LOOK_DIR + math.pi) % (2 * math.pi) - math.pi) < math.radians(38)
+        # second sector towards the 17:30-18:30 sun (azimuth 281-290 deg): the sunset stays visible
+        in_sun = abs((az - SUN_AZ + math.pi) % (2 * math.pi) - math.pi) < math.radians(17)
+        if in_view or in_sun:
+            # trees may grow in the view cone if their crowns stay below the sight line
+            sight = LOOKOUT[1] + 1.62 - 2.0 - dist * math.tan(math.radians(13.0))
+            if top is None or top > sight:
+                return True
     for hs in houses:
-        if math.hypot(x - hs["x"], z - hs["z"]) < max(hs["w"], hs["d"]) / 2 + 5:
+        reach = max(hs["w"], hs["d"]) / 2 + 5 + (5 if hs.get("wing") else 0)
+        if math.hypot(x - hs["x"], z - hs["z"]) < reach:
             return True
     return False
 
@@ -502,9 +511,9 @@ for gz in np.arange(-596, 596, spacing):
         fd = cell(forest_density, x, z)
         if fd <= 0.05 or rv.random() > min(1.0, fd * 1.25):
             continue
-        if blocked(x, z):
-            continue
         y = sample(x, z)
+        if blocked(x, z, top=y + 13.0):
+            continue
         sl = cell(slope, x, z)
         if sl > 62:
             continue
@@ -518,6 +527,10 @@ for gz in np.arange(-596, 596, spacing):
         else:
             kind = "broadleaf" if r < 0.8 else ("akamatsu" if r < 0.9 else "hinoki")
         scale = rv.uniform(0.75, 1.15) * (1.0 if kind != "broadleaf" else rv.uniform(0.8, 1.15))
+        if blocked(x, z):
+            # inside the lookout's view cone: only low broadleaf scrub whose crowns stay below the sight line
+            kind = "broadleaf"
+            scale = rv.uniform(0.45, 0.7)
         add_tree(kind, x, z, scale)
 
 # Bamboo groves on foothills behind the village.
@@ -550,7 +563,7 @@ for z in np.arange(-500, 560, 9):
             add_tree("broadleaf", x, z, rv.uniform(0.45, 0.8))
 
 # ---- Ground clutter (near the walkable core only) -------------------------------
-clutter = {k: [] for k in ["fern", "shrub", "weed", "rock_moss", "boulder", "river_stone", "stump", "log", "susuki"]}
+clutter = {k: [] for k in ["fern", "shrub", "weed", "rock_moss", "boulder", "river_stone", "stump", "log", "susuki", "crop"]}
 def add_clutter(kind, x, z, scale, variant=0, sink=0.0):
     # keep the stair treads, landings and the forecourt clear
     reach = {"rock_moss": 1.1, "boulder": 1.4, "log": 2.5, "stump": 0.6}.get(kind, 0.35) * scale
@@ -561,7 +574,7 @@ def add_clutter(kind, x, z, scale, variant=0, sink=0.0):
     clutter[kind].append([round(x, 2), round(sample(x, z) - sink, 3), round(z, 2), round(scale, 3), round(float(rv.random() * math.tau), 3), int(variant)])
 
 core = lambda x, z: (60 < x < 300 and -120 < z < 40) or (-220 < x < 140 and -200 < z < 420)
-for i in range(9000):
+for i in range(22000):
     x, z = rv.uniform(-260, 300), rv.uniform(-220, 420)
     if not core(x, z):
         continue
@@ -582,7 +595,7 @@ for i in range(9000):
         elif r < 0.5: add_clutter("susuki", x, z, rv.uniform(0.8, 1.3))
         elif r < 0.56: add_clutter("shrub", x, z, rv.uniform(0.5, 1.0), int(rv.integers(0, 3)))
 # Ferns and moss rocks hugging the stair edges.
-for i in range(700):
+for i in range(1700):
     x = rv.uniform(STAIR_X0 - 4, STAIR_X1)
     side = rv.choice([-1, 1])
     z = STAIR_Z + side * rv.uniform(STAIR_W / 2 + 0.9, STAIR_W / 2 + 8)
@@ -591,6 +604,26 @@ for i in range(700):
     elif r < 0.8: add_clutter("rock_moss", x, z, rv.uniform(0.3, 0.7), int(rv.integers(0, 2)), sink=0.2)
     elif r < 0.92: add_clutter("shrub", x, z, rv.uniform(0.6, 1.1), int(rv.integers(0, 3)))
     else: add_clutter("weed", x, z, rv.uniform(0.5, 1.0), int(rv.integers(0, 2)))
+# Vegetable rows on the hatake, on the ridges of the farm_furrows texture
+# (tile 4.2 m, 7 ridges per tile, ridge phase measured from the albedo: z = 0.6 * (n + 0.4722)).
+FURROW_PITCH, FURROW_PHASE = 4.2 / 7, 0.4722
+hat = (field_type == 2) & interior
+for f in fields:
+    if f.get("type") != "hatake":
+        continue
+    x0b, z0b, x1b, z1b = f["bounds"]
+    crop = int(rv.integers(0, 4))           # one crop per field: eggplant/edamame/taro/greens
+    n0 = math.ceil(z0b / FURROW_PITCH - FURROW_PHASE)
+    zr = (n0 + FURROW_PHASE) * FURROW_PITCH
+    while zr < z1b:
+        x = x0b + rv.uniform(0, 0.4)
+        step_ = [0.55, 0.4, 0.7, 0.3][crop]
+        while x < x1b:
+            if cell(hat.astype(float), x, zr) > 0.5 and cell(hat.astype(float), x + 0.6, zr) > 0.5 and cell(hat.astype(float), x - 0.6, zr) > 0.5:
+                clutter["crop"].append([round(x, 2), round(sample(x, zr) + 0.04, 3), round(zr, 2), round(float([0.75, 0.55, 0.95, 0.42][crop] * rv.uniform(0.8, 1.2)), 3), round(float(rv.random() * math.tau), 3), crop])
+            x += step_ * rv.uniform(0.85, 1.15)
+        zr += FURROW_PITCH
+
 # River stones and boulders.
 for z in np.arange(-260, 470, 1.6):
     for k in range(3):
@@ -656,7 +689,8 @@ obj("fence-lookout", px0 + 12.0, TOP_Y - 0.05, pz1 + 1.0, 0.0, 1.0)
 for i, hs in enumerate(houses):
     asset = {"kawara": "minka-kawara", "thatch": "minka-kayabuki", "tin": "minka-totan", "kura-house": "minka-kura"}[hs["kind"]]
     obj(asset, hs["x"], hs["y"], hs["z"], hs["yaw"], 1.0, variant=hs["variant"], size=[round(hs["w"], 2), round(hs["d"], 2)],
-        collider={"type": "box", "halfExtents": [hs["w"] / 2 + 0.3, 3.0, hs["d"] / 2 + 0.3]})
+        collider={"type": "box", "halfExtents": [hs["w"] / 2 + 0.3, 3.0 * hs["storeys"], hs["d"] / 2 + 0.3]},
+        **({"wing": {"offset": hs["wing"][:2], "halfExtents": [hs["wing"][2] / 2 + 0.3, 2.6, hs["wing"][3] / 2 + 0.3]}} if hs.get("wing") else {}))
     c, s_ = math.cos(hs["yaw"]), math.sin(hs["yaw"])
     def local(lx, lz):
         return hs["x"] + lx * c + lz * s_, hs["z"] - lx * s_ + lz * c
@@ -688,6 +722,9 @@ while zp < 380:
 # Road mirror / bus stop / jizo at junction.
 obj("jizo", float(road_at_stair) + 4.0, sample(road_at_stair + 4, STAIR_Z - 5), STAIR_Z - 5.0, FACE_WEST, 1.0)
 obj("bus-stop", float(road_x(60)) + 3.2, sample(road_x(60) + 3.2, 60), 60.0, -math.pi / 2, 1.0)
+# drinks vending machines (lit at dusk): by the bus stop and at the shrine road junction, facing the road
+for vx, vz, vv in [(float(road_x(56)) + 3.6, 56.0, 0), (road_at_stair + 4.6, STAIR_Z + 6.5, 1), (float(road_x(-215)) + 3.8, -215.0, 0)]:
+    obj("jihanki", vx, sample(vx, vz), vz, -math.pi / 2, 1.0, variant=vv, collider={"type": "box", "halfExtents": [0.55, 0.95, 0.4]})
 
 # Bridge where a farm track crosses the stream.
 BRIDGE_Z = 140.0
@@ -729,9 +766,9 @@ meta = {
     "resolution": N,
     "heightEncoding": {"file": "heightmap.r16", "format": "uint16-le", "minHeight": H_MIN, "range": H_RANGE,
                        "row0": "z=-600", "column0": "x=-600", "formula": "y = raw/65535*range + minHeight"},
-    "splat": {"files": ["splat0.png", "splat1.png"], "layers": order,
+    "splat": {"files": ["splat0.png", "splat1.png", "splat2.png"], "layers": order,
               "materials": {"grass": "leafy_grass", "forest": "forest_leaves_02", "dirt": "stony_dirt_path", "rock": "mossy_rock",
-                            "paddy": "brown_mud_leaves_01", "riverbed": "river_small_rocks", "gravel": "gravel_floor_02", "asphalt": "worn_asphalt"}},
+                            "paddy": "brown_mud_leaves_01", "riverbed": "river_small_rocks", "gravel": "gravel_floor_02", "asphalt": "worn_asphalt", "furrows": "farm_furrows"}},
     "vegetationMask": {"file": "vegetation-mask.png", "channels": ["forestDensity", "paddyIdHash", "paddyInterior", "grassDensity"]},
     "paddyLevel": {"file": "paddy-level.png", "encoding": "same as heightEncoding, uint16 PNG"},
     "environment": {"date": "1994-08-08", "latitude": 38.32, "longitude": 141.02, "timezone": 9, "defaultTime": 18.0,

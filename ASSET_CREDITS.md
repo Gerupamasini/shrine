@@ -1,6 +1,6 @@
 # 使用素材と出典
 
-このファイルは `python3 tools/assets/catalog.py` が生成します。全ファイルのパス・サイズ・SHA-256・出典は [`docs/asset-manifest.json`](docs/asset-manifest.json)（198ファイル、計76.2MB）にあります。
+このファイルは `python3 tools/assets/catalog.py` が生成します。全ファイルのパス・サイズ・SHA-256・出典は [`docs/asset-manifest.json`](docs/asset-manifest.json)（205ファイル、計83.5MB）にあります。
 
 ## 外部素材
 
@@ -45,6 +45,7 @@
 | テクスチャ | [metasequoia_bark](https://polyhaven.com/a/metasequoia_bark) | Charlotte Baglioni | hinoki trunks (similar fibrous strip bark) |
 | テクスチャ | [pine_bark](https://polyhaven.com/a/pine_bark) | Dimitrios Savva | akamatsu lower trunk |
 | テクスチャ | [japanese_zelkova_bark](https://polyhaven.com/a/japanese_zelkova_bark) | Charlotte Baglioni | broadleaf trunks |
+| テクスチャ | [farm_furrows](https://polyhaven.com/a/farm_furrows) | Amal Kumar | terrain: vegetable field ridges (hatake) |
 | 3Dモデル | [fern_02](https://polyhaven.com/a/fern_02) | Rico Cilliers, Rob Tuytel | fern clutter |
 | 3Dモデル | [shrub_02](https://polyhaven.com/a/shrub_02) | Rico Cilliers | undergrowth shrub |
 | 3Dモデル | [shrub_03](https://polyhaven.com/a/shrub_03) | Rico Cilliers | undergrowth shrub |
@@ -54,7 +55,6 @@
 | 3Dモデル | [rock_moss_set_01](https://polyhaven.com/a/rock_moss_set_01) | Kless Gyzen | mossy rocks |
 | 3Dモデル | [rock_moss_set_02](https://polyhaven.com/a/rock_moss_set_02) | Kless Gyzen | mossy rocks |
 | 3Dモデル | [rock_07](https://polyhaven.com/a/rock_07) | Jenelle van Heerden | river boulder |
-| 3Dモデル | [rock_09](https://polyhaven.com/a/rock_09) | Jenelle van Heerden | river boulder |
 | 3Dモデル | [stone_01](https://polyhaven.com/a/stone_01) | Dario Barresi, Rico Cilliers | river stones |
 | 3Dモデル | [tree_stump_01](https://polyhaven.com/a/tree_stump_01) | Rob Tuytel | forest stump |
 | 3Dモデル | [dead_tree_trunk](https://polyhaven.com/a/dead_tree_trunk) | Rob Tuytel | fallen trunk |
@@ -63,7 +63,6 @@
 | 3Dモデル | [wooden_crate_01](https://polyhaven.com/a/wooden_crate_01) | James Ray Cock | village prop |
 | 3Dモデル | [wicker_basket_01](https://polyhaven.com/a/wicker_basket_01) | Kuutti Siitonen | village prop |
 | 3Dモデル | [wooden_ladder](https://polyhaven.com/a/wooden_ladder) | Miroslav Turura | village prop |
-| 3Dモデル | [wooden_broom](https://polyhaven.com/a/wooden_broom) | Balen | shrine prop |
 | 葉カード・草株の原本 | [fir_sapling](https://polyhaven.com/a/fir_sapling) | Rico Cilliers, Rob Tuytel | baked into conifer spray cards (sugi/hinoki tint) |
 | 葉カード・草株の原本 | [pine_sapling_small](https://polyhaven.com/a/pine_sapling_small) | Rico Cilliers, Rob Tuytel | baked into pine needle cards (akamatsu) |
 | 葉カード・草株の原本 | [tree_small_02](https://polyhaven.com/a/tree_small_02) | Rico Cilliers | baked into broadleaf leaf cluster cards |

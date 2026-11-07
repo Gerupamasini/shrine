@@ -18,6 +18,7 @@ type Inst = { file: string; matrix: T.Matrix4 };
 /** Places every built object from scene.json as instanced GLB parts. */
 export class Architecture implements System {
   materials = new Map<string, T.Material>();
+  dusk: { m: T.MeshStandardMaterial; base: number; ramp: number[] }[] = [];
   meshes: { mesh: T.InstancedMesh; centers: T.Vector3[]; far: number; matrices: T.Matrix4[] }[] = [];
   constructor(public land: Landscape) {}
   material(src: T.Material): T.Material {
@@ -30,6 +31,8 @@ export class Architecture implements System {
       if (def.emissive) {
         std.emissive.set(def.emissive);
         std.emissiveIntensity = def.emissiveIntensity ?? 1;
+        const dusk = (def as { dusk?: number[] }).dusk;
+        if (dusk) this.dusk.push({ m: std, base: def.emissiveIntensity ?? 0, ramp: dusk });
       }
       m = std;
     } else {
@@ -47,6 +50,7 @@ export class Architecture implements System {
     if (a === "naya") return [`architecture/naya_${i % 2}`];
     if (a === "toro") return [`architecture/${i % 3 === 0 ? "toro_1" : "toro"}`];
     if (a === "komainu") return [`architecture/komainu-${v}`];
+    if (a === "jihanki") return [`architecture/jihanki_${v}`];
     if (a === "denchu") return [`architecture/${i % 3 === 1 ? "denchu-trans" : "denchu"}`];
     if (PROPS[a]) return [PROPS[a]];
     return [`architecture/${a}`];
@@ -67,6 +71,8 @@ export class Architecture implements System {
         const hgt = (o.height as number) ?? 1;
         for (let k = 0; k < n; k++) {
           const off = (k - (n - 1) / 2) * 2;
+          // block walls leave a 4 m entrance in front of the house (gateway to the yard)
+          if (o.asset === "block-wall" && Math.abs(off) < 2.1) continue;
           const local = new T.Matrix4().makeTranslation(off, 0, 0);
           if (o.asset === "ishigaki") local.multiply(new T.Matrix4().makeScale(1, hgt, 1));
           const m = base.clone().multiply(local);
@@ -114,15 +120,25 @@ export class Architecture implements System {
     );
     this.buildWires();
   }
+  /** Lit windows, vending machines and street lamps brighten as the evening darkens. */
+  setTime(h: number) {
+    for (const d of this.dusk) {
+      const [a, b, full] = d.ramp;
+      d.m.emissiveIntensity = d.base + (full - d.base) * T.MathUtils.smoothstep(h, a, b);
+    }
+  }
   /** Sagging power lines between consecutive poles (three conductors). */
   buildWires() {
     const poles = this.land.world.data.powerLine.poles;
     const pos: number[] = [];
     for (let i = 0; i < poles.length - 1; i++) {
       const a = poles[i], b = poles[i + 1];
+      // conductors sit across the road on the cross-arm, i.e. offset perpendicular to the span
+      const sdx = b[0] - a[0], sdz = b[2] - a[2], sl = Math.hypot(sdx, sdz) || 1;
+      const px = sdz / sl, pz = -sdx / sl;
       for (const off of [-0.75, 0, 0.75]) {
         const N = 16;
-        const ax = a[0], az = a[2] + off, bx = b[0], bz = b[2] + off;
+        const ax = a[0] + px * off, az = a[2] + pz * off, bx = b[0] + px * off, bz = b[2] + pz * off;
         const ay = a[1] + 9.55, by = b[1] + 9.55;
         for (let k = 0; k < N; k++) {
           const t0 = k / N, t1 = (k + 1) / N;

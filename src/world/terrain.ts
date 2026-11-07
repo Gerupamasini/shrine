@@ -4,7 +4,7 @@ import type { Library } from "../engine/library";
 import { addHook } from "../engine/hooks";
 import type { Heightfield, WorldData } from "./data";
 
-/** Terrain layers in splat order (splat0 RGBA, splat1 RGBA) and their tile size in metres. */
+/** Terrain layers in splat order (splat0..2 RGBA) and their tile size in metres. `fixed` = sample without the anti-tiling rotation (directional textures). */
 export const TERRAIN_LAYERS = [
   { id: "leafy_grass", size: 3.2, tint: [0.62, 0.78, 0.5] },
   { id: "forest_leaves_02", size: 3.0, tint: [0.52, 0.56, 0.42] },
@@ -13,8 +13,10 @@ export const TERRAIN_LAYERS = [
   { id: "brown_mud_leaves_01", size: 2.4, tint: [0.8, 0.78, 0.72] },
   { id: "river_small_rocks", size: 2.2, tint: [0.9, 0.9, 0.88] },
   { id: "gravel_floor_02", size: 1.6, tint: [0.56, 0.54, 0.5] },
-  { id: "worn_asphalt", size: 3.5, tint: [0.9, 0.9, 0.9] },
+  { id: "worn_asphalt", size: 3.5, tint: [1.5, 1.75, 2.0] },
+  { id: "farm_furrows", size: 4.2, tint: [0.78, 0.72, 0.66], fixed: true },
 ];
+const NL = 12; // shader capacity (3 splat textures)
 
 async function loadImage(url: string) {
   const img = new Image();
@@ -101,13 +103,14 @@ export class Terrain {
   async build(quality: string) {
     const size = quality === "low" ? 512 : 1024;
     const base = (f: string) => TERRAIN_LAYERS.map((l) => `assets/textures/${l.id}/${f}`);
-    const [albedo, normal, arm, splat0, splat1, veg] = await Promise.all([
+    const [albedo, normal, arm, splat0, splat1, veg, splat2] = await Promise.all([
       textureArray(base("albedo.jpg"), size, true),
       textureArray(base("normal.jpg"), size, false),
       textureArray(base("arm.jpg"), size, false),
       loadImage("world/splat0.png"),
       loadImage("world/splat1.png"),
       loadImage("world/vegetation-mask.png"),
+      loadImage("world/splat2.png"),
     ]);
     const u = (this.uniforms = {
       tAlbedo: { value: albedo },
@@ -115,11 +118,13 @@ export class Terrain {
       tArm: { value: arm },
       tSplat0: { value: dataTexture(splat0) },
       tSplat1: { value: dataTexture(splat1) },
+      tSplat2: { value: dataTexture(splat2) },
       tVeg: { value: dataTexture(veg) },
       tTerrainNormal: { value: this.normalMap },
       uExtent: { value: this.data.extent },
-      uLayerScale: { value: TERRAIN_LAYERS.map((l) => 1 / l.size) },
-      uLayerTint: { value: TERRAIN_LAYERS.map((l) => new T.Color(...(l.tint as [number, number, number]))) },
+      uLayerScale: { value: [...TERRAIN_LAYERS.map((l) => 1 / l.size), ...Array(NL - TERRAIN_LAYERS.length).fill(1)] },
+      uLayerTint: { value: [...TERRAIN_LAYERS.map((l) => new T.Color(...(l.tint as [number, number, number]))), ...Array(NL - TERRAIN_LAYERS.length).fill(new T.Color(1, 1, 1))] },
+      uLayerFixed: { value: [...TERRAIN_LAYERS.map((l) => ("fixed" in l && l.fixed ? 1 : 0)), ...Array(NL - TERRAIN_LAYERS.length).fill(0)] },
       uWet: { value: 0.0 },
     });
     const m = (this.material = new T.MeshStandardMaterial({ roughness: 1, metalness: 0 }));
@@ -134,12 +139,14 @@ export class Terrain {
           "#include <common>",
           /* glsl */ `#include <common>
           precision highp sampler2DArray;
+          #define LAYERS ${TERRAIN_LAYERS.length}
           varying vec3 vTW;
           uniform sampler2DArray tAlbedo, tNormal, tArm;
-          uniform sampler2D tSplat0, tSplat1, tVeg, tTerrainNormal;
+          uniform sampler2D tSplat0, tSplat1, tSplat2, tVeg, tTerrainNormal;
           uniform float uExtent, uWet;
-          uniform float uLayerScale[8];
-          uniform vec3 uLayerTint[8];
+          uniform float uLayerScale[12];
+          uniform float uLayerFixed[12];
+          uniform vec3 uLayerTint[12];
           vec3 tAlb; vec3 tNrm; vec3 tArmV; vec3 tWorldN;
           float hash12(vec2 p){ vec3 p3 = fract(vec3(p.xyx) * .1031); p3 += dot(p3, p3.yzx + 33.33); return fract((p3.x + p3.y) * p3.z); }
           float vnoise(vec2 p){ vec2 i=floor(p), f=fract(p); f=f*f*(3.-2.*f);
@@ -148,11 +155,11 @@ export class Terrain {
           void sampleLayer(int i, vec2 xz, float w, inout vec3 alb, inout vec3 nrm, inout vec3 armv, inout float hsum) {
             float s = uLayerScale[i];
             vec2 uv1 = xz * s;
-            vec2 uv2 = mat2(0.8, -0.6, 0.6, 0.8) * xz * s * 0.63 + 0.37;
+            vec2 uv2 = uLayerFixed[i] > 0.5 ? uv1 + vec2(0.37, 0.0) : mat2(0.8, -0.6, 0.6, 0.8) * xz * s * 0.63 + 0.37;
             float b = smoothstep(0.35, 0.65, vnoise(xz * 0.045 + float(i) * 7.1));
             vec4 a1 = texture(tAlbedo, vec3(uv1, float(i))), a2 = texture(tAlbedo, vec3(uv2, float(i)));
             vec3 n1 = texture(tNormal, vec3(uv1, float(i))).xyz * 2. - 1., n2 = texture(tNormal, vec3(uv2, float(i))).xyz * 2. - 1.;
-            n2.xy = mat2(0.8, 0.6, -0.6, 0.8) * n2.xy;
+            if (uLayerFixed[i] < 0.5) n2.xy = mat2(0.8, 0.6, -0.6, 0.8) * n2.xy;
             vec3 r1 = texture(tArm, vec3(uv1, float(i))).xyz, r2 = texture(tArm, vec3(uv2, float(i))).xyz;
             alb += mix(a1.rgb, a2.rgb, b) * uLayerTint[i] * w;
             nrm += mix(n1, n2, b) * w;
@@ -161,14 +168,14 @@ export class Terrain {
           }
           void terrainSample() {
             vec2 tuv = vTW.xz / uExtent + 0.5;
-            vec4 s0 = texture2D(tSplat0, tuv), s1 = texture2D(tSplat1, tuv);
-            float wts[8] = float[8](s0.r, s0.g, s0.b, s0.a, s1.r, s1.g, s1.b, s1.a);
+            vec4 s0 = texture2D(tSplat0, tuv), s1 = texture2D(tSplat1, tuv), s2 = texture2D(tSplat2, tuv);
+            float wts[12] = float[12](s0.r, s0.g, s0.b, s0.a, s1.r, s1.g, s1.b, s1.a, s2.r, s2.g, s2.b, s2.a);
             // height-aware sharpening: noise breaks the blurred splat edges
             float nz = vnoise(vTW.xz * 0.35) * 0.6 + vnoise(vTW.xz * 1.7) * 0.4;
             float total = 0.0;
-            for (int i = 0; i < 8; i++) { float w = wts[i]; w = w * (0.55 + nz * 0.9); w = pow(max(w, 0.0), 2.2); wts[i] = w; total += w; }
+            for (int i = 0; i < 12; i++) { float w = wts[i]; w = w * (0.55 + nz * 0.9); w = pow(max(w, 0.0), 2.2); wts[i] = w; total += w; }
             vec3 alb = vec3(0.), nrm = vec3(0.), armv = vec3(0.); float hs = 0.;
-            for (int i = 0; i < 8; i++) { float w = wts[i] / max(total, 1e-4); if (w > 0.02) sampleLayer(i, vTW.xz, w, alb, nrm, armv, hs); }
+            for (int i = 0; i < 12; i++) { float w = wts[i] / max(total, 1e-4); if (w > 0.02 && i < LAYERS) sampleLayer(i, vTW.xz, w, alb, nrm, armv, hs); }
             alb /= max(hs, 1e-4); nrm /= max(hs, 1e-4); armv /= max(hs, 1e-4);
             // macro variation (sun-bleached patches, damp hollows, forest shade)
             vec4 veg = texture2D(tVeg, tuv);
