@@ -23,7 +23,18 @@ export type WorldData = {
   steps: Step[];
   objects: Placement[];
   fields: { id: string; level: number; bounds: number[]; type: string; tint: number; growth: number }[];
-  river: { points: [number, number, number, number][]; bridgeZ: number };
+  river: {
+    /** water surface rows [x, waterY, z, widthX, fall] (cross-sections along X over the bed) */
+    points: number[][];
+    /** [xCentre, z, halfWidth, bankTopY, toeYWest, toeYEast, earthWest, earthEast, blockFacing] */
+    bed: { points: number[][]; wallRun: number; capWidth: number; pathWidth: number };
+    drops: { z: number; kind: string; x: number; halfWidth: number; crestY: number; waterAbove: number; waterBelow: number; apron: number }[];
+    intake: { z: number; side: string; sillY: number; waterY: number };
+    canal: { points: number[][]; culvert: number[]; depth: number; wallTop: number };
+    washSteps: { z: number; side: string; topY: number; toeY: number }[];
+    bridgeZ: number;
+    bridgeDeckY: number;
+  };
   roads: { id: string; width: number; surface: string; points: [number, number, number][] }[];
   powerLine: { poles: [number, number, number][]; wires: number; sag: number };
   budgets: Record<string, { triangles: number; drawCalls: number; pixelRatio: number }>;

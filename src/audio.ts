@@ -210,19 +210,22 @@ export class Soundscape {
       }
     }
     this.bed.gain.setTargetAtTime((0.1 + 0.12 * forest) * hig, now, 1.5);
-    // stream: nearest river points
-    const pts = w.data.river.points;
-    let best = 0, bd = 1e9;
-    for (let i = 0; i < pts.length; i += 2) {
-      const d = Math.hypot(pts[i][0] - p.x, pts[i][2] - p.z);
-      if (d < bd) (bd = d), (best = i);
-    }
+    // stream: the two drops (overfalls) nearest to the listener and the riffle closest to them
+    const R = w.data.river, bed = R.bed.points;
+    const near = [...R.drops].sort((a, b) => Math.abs(a.z - p.z) - Math.abs(b.z - p.z));
+    const bi = T.MathUtils.clamp(Math.round((p.z - bed[0][1]) / (bed[1][1] - bed[0][1])), 0, bed.length - 1);
+    const here = bed[bi];
+    const srcs: [number, number, number, number][] = [
+      ...near.slice(0, 2).map((d) => [d.x, d.waterBelow + 0.3, d.z + 0.6, d.kind === "weir" ? 1.0 : 0.75 * Math.min(1, (d.waterAbove - d.waterBelow) / 0.45)] as [number, number, number, number]),
+      [here[0], here[3] - 1.4, here[1], 0.35],
+    ];
+    const bd = Math.abs(p.x - here[0]);
     this.stream.forEach((s, i) => {
-      const q = pts[T.MathUtils.clamp(best + (i - 1) * 6, 0, pts.length - 1)];
-      s.pan.positionX.setTargetAtTime(q[0], now, 0.3);
-      s.pan.positionY.setTargetAtTime(q[1], now, 0.3);
-      s.pan.positionZ.setTargetAtTime(q[2], now, 0.3);
-      s.gain.gain.setTargetAtTime(bd < 160 ? 0.55 : 0.0, now, 1.0);
+      const [x, y, z, g] = srcs[i];
+      s.pan.positionX.setTargetAtTime(x, now, 0.3);
+      s.pan.positionY.setTargetAtTime(y, now, 0.3);
+      s.pan.positionZ.setTargetAtTime(z, now, 0.3);
+      s.gain.gain.setTargetAtTime(bd < 180 ? 0.7 * g : 0.0, now, 1.0);
     });
     // wind: gusts, stronger and broader on the shrine height and in the trees
     const gust = 0.55 + 0.3 * Math.sin(this.t * 0.21) + 0.15 * Math.sin(this.t * 0.73 + 1.3);

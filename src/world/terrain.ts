@@ -15,6 +15,7 @@ export const TERRAIN_LAYERS = [
   { id: "gravel_floor_02", size: 1.6, tint: [0.56, 0.54, 0.5] },
   { id: "worn_asphalt", size: 3.5, tint: [1.5, 1.75, 2.0] },
   { id: "farm_furrows", size: 4.2, tint: [0.78, 0.72, 0.66], fixed: true },
+  { id: "ganges_river_pebbles", size: 3.0, tint: [0.88, 0.88, 0.86] },
 ];
 const NL = 12; // shader capacity (3 splat textures)
 

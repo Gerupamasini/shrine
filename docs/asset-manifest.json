@@ -236,8 +236,8 @@
  },
  {
   "path": "assets/models/architecture/bridge.glb",
-  "bytes": 6960,
-  "sha256": "a72663a8e84d842ee6006467a0020810dad58db065a7991c59fef4cb49746705",
+  "bytes": 29920,
+  "sha256": "427ee7dc230cd7623f0df93715c5ee15d530b7d23caf51762aeb584b3ebd928d",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/architecture/build.mjs"
@@ -300,8 +300,8 @@
  },
  {
   "path": "assets/models/architecture/index.json",
-  "bytes": 15598,
-  "sha256": "859c0cf6721d253708726dc6cf7b4bab94f4b0652b0e35d25f557b2c7b9c2fb5",
+  "bytes": 16181,
+  "sha256": "dfb924f1776bed3c0ef0c1d5b246b789c8a0a3c07493905119e9732b905f85b0",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/architecture/build.mjs"
@@ -507,9 +507,17 @@
   "tool": "tools/architecture/build.mjs"
  },
  {
+  "path": "assets/models/architecture/river-works.glb",
+  "bytes": 1204380,
+  "sha256": "4b8246032074e76996bebf08d2559c2c339c9adbab454b41292a79703996db83",
+  "origin": "original (this repo)",
+  "licence": "CC0 1.0",
+  "tool": "tools/architecture/build.mjs"
+ },
+ {
   "path": "assets/models/architecture/road-ditch.glb",
-  "bytes": 1748232,
-  "sha256": "e286445743d9470ff894a550b5311c29cd4fd5fe4309706f3fc551b29f75f71e",
+  "bytes": 1750824,
+  "sha256": "af77ca1154c349189a05ff229fc7d70aeb7b87f6516d3690f7ffc0f801165d2d",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/architecture/build.mjs"
@@ -1255,6 +1263,42 @@
   "page": "https://polyhaven.com/a/forest_leaves_02",
   "authors": [
    "Rob Tuytel"
+  ],
+  "licence": "CC0 1.0",
+  "processing": "resized/re-encoded, ARM packed (tools/assets/process_textures.py)"
+ },
+ {
+  "path": "assets/textures/ganges_river_pebbles/albedo.jpg",
+  "bytes": 318622,
+  "sha256": "72bd3c6dd1becf7560f27950424dc9ed2ecb0523614950c6d86abc9eb38859da",
+  "origin": "Poly Haven",
+  "page": "https://polyhaven.com/a/ganges_river_pebbles",
+  "authors": [
+   "Amal Kumar"
+  ],
+  "licence": "CC0 1.0",
+  "processing": "resized/re-encoded, ARM packed (tools/assets/process_textures.py)"
+ },
+ {
+  "path": "assets/textures/ganges_river_pebbles/arm.jpg",
+  "bytes": 269534,
+  "sha256": "1ef557ba4cb5acb482eea728fb9080e1a3f7d4f0e8961ac600ec15ad6d13122d",
+  "origin": "Poly Haven",
+  "page": "https://polyhaven.com/a/ganges_river_pebbles",
+  "authors": [
+   "Amal Kumar"
+  ],
+  "licence": "CC0 1.0",
+  "processing": "resized/re-encoded, ARM packed (tools/assets/process_textures.py)"
+ },
+ {
+  "path": "assets/textures/ganges_river_pebbles/normal.jpg",
+  "bytes": 554200,
+  "sha256": "e12da935d43dacd958884e5a6842b473cfe4ed811bf8591c2584f1ea6b67c442",
+  "origin": "Poly Haven",
+  "page": "https://polyhaven.com/a/ganges_river_pebbles",
+  "authors": [
+   "Amal Kumar"
   ],
   "licence": "CC0 1.0",
   "processing": "resized/re-encoded, ARM packed (tools/assets/process_textures.py)"
@@ -2062,8 +2106,8 @@
  },
  {
   "path": "world/clutter.json",
-  "bytes": 2180425,
-  "sha256": "eeddacaf98ac4ac8c3b9956493bcb95c12473869dc947a709f837acc46dd2776",
+  "bytes": 2872401,
+  "sha256": "9a70fe43ca9cbcb625c403c1f88af4a44be218234e0e94fc3990135af9eaa9ff",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/world/generate_world.py"
@@ -2086,8 +2130,8 @@
  },
  {
   "path": "world/heightmap.png",
-  "bytes": 975576,
-  "sha256": "202640d84ca3ac4cad457786de66a496db66d3f8027138da6887078707721701",
+  "bytes": 967570,
+  "sha256": "a3d4922a3c3681cff6ee53de96ec279d2d9a217d19106783dbf911ec934d77cc",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/world/generate_world.py"
@@ -2095,71 +2139,71 @@
  {
   "path": "world/heightmap.r16",
   "bytes": 2101250,
-  "sha256": "2299323bd7a45b98cf93145e0a6258e0e5b5484da9829968219f1a346c047e52",
+  "sha256": "35be12e079e250daf6b5d26dd7e2ee853c7072d499c8fba57cecb2658c57d715",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/world/generate_world.py"
  },
  {
   "path": "world/materials.json",
-  "bytes": 8662,
-  "sha256": "dd06b421aa73138fbe9ea40e12d1112bced0c46ca3e127a6da555ee1e04ca209",
+  "bytes": 10235,
+  "sha256": "8286dd0cb00a035a23cb78ccfee7dd144f18b815b804da19e1056daafe11b516",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/world/generate_world.py"
  },
  {
   "path": "world/paddy-level.png",
-  "bytes": 13689,
-  "sha256": "047e1265c1b1386c6fbbbb47b4a938dc18bb8a3da46e89c954dfa5d382724237",
+  "bytes": 13608,
+  "sha256": "12c31394b0b02a371e19b7822cdbf2073415f8c0a9bc942b5980508cd2db9e21",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/world/generate_world.py"
  },
  {
   "path": "world/scene.json",
-  "bytes": 229223,
-  "sha256": "e346f017862b958965a453b338f72de67895d59c7d7df8a99a1778a5602bede5",
+  "bytes": 397852,
+  "sha256": "17cf52c5fe453df257429a023be5e79f1595a3bb33bb42197b171efdefa877fc",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/world/generate_world.py"
  },
  {
   "path": "world/splat0.png",
-  "bytes": 326428,
-  "sha256": "d44765dfb7e500f35e97fbd122795ceb885a1fdf4487c1a523283fbdf6f0f2e6",
+  "bytes": 327233,
+  "sha256": "13d72494ce6e33f5e81c549788ebd77ef58730f4443249fa402a02a5caddd03b",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/world/generate_world.py"
  },
  {
   "path": "world/splat1.png",
-  "bytes": 33111,
-  "sha256": "eed2b1429a6f0b0a52988371c3c489a884b65cfa6041d4b241fdb36503366412",
+  "bytes": 28448,
+  "sha256": "fd78577c9ca463fd9afa8ff91cd5dff9f14123f7c53585fbe43f6210e9b77121",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/world/generate_world.py"
  },
  {
   "path": "world/splat2.png",
-  "bytes": 7017,
-  "sha256": "8f931c1bd4c00171c5fe45bac87b565cac58a00dfbccc83729f1923453643908",
+  "bytes": 17192,
+  "sha256": "90824f3edd8ca5e8ef671631720cc21b4c312c70816154344e14759ed54e663c",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/world/generate_world.py"
  },
  {
   "path": "world/vegetation-mask.png",
-  "bytes": 314953,
-  "sha256": "525db8422c4fee79fbd7921caae5e05ee4f5a3fb0bf29cc3e2e3de3b6cd6798a",
+  "bytes": 315516,
+  "sha256": "664c67f79a7b3637c0584f05e8515c407d9837c23f00dfec4477f708eeab906c",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/world/generate_world.py"
  },
  {
   "path": "world/vegetation.json",
-  "bytes": 1712232,
-  "sha256": "101cc35934dee056c5c8765ad0ac3b612ad9736926feb508d7b8bd694cd9fde1",
+  "bytes": 1740611,
+  "sha256": "032736eb6bc423a5ecf1bd6f728d56b276df693701c33ba2f8cc505565953a9e",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/world/generate_world.py"

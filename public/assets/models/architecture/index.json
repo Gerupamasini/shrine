@@ -103,7 +103,7 @@
  },
  "assets": {
   "road-ditch": {
-   "triangles": 32340,
+   "triangles": 32388,
    "min": [
     32.434,
     2.715,
@@ -1173,19 +1173,54 @@
    ]
   },
   "bridge": {
-   "triangles": 108,
+   "triangles": 532,
    "min": [
-    -5.875,
-    -1.8,
-    -1.6
+    -7.46,
+    -3.3,
+    -1.685
    ],
    "max": [
-    5.875,
-    0.7,
-    1.6
+    7.46,
+    1.48,
+    1.685
    ],
    "materials": [
-    "concrete"
+    "concrete",
+    "concrete_dark",
+    "concrete_cap",
+    "metal_dark",
+    "concrete_old"
+   ]
+  },
+  "river-works": {
+   "triangles": 20546,
+   "min": [
+    -215.001,
+    0.266,
+    -455.6
+   ],
+   "max": [
+    -117.182,
+    8.391,
+    517.9
+   ],
+   "materials": [
+    "revet_stone_wet",
+    "revet_stone",
+    "concrete_cap",
+    "revet_block_wet",
+    "revet_block",
+    "revet_kenchi",
+    "revet_kenchi_wet",
+    "concrete_wet",
+    "interior_dark",
+    "steel_red",
+    "steel_gate",
+    "metal_grey",
+    "concrete_dark",
+    "stone_paving_moss",
+    "stone_step_b",
+    "stone_old"
    ]
   },
   "stairs": {
