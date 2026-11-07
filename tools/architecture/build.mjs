@@ -682,14 +682,28 @@ function jihanki(v) {
   m.box(body, 1.06, 0.06, 0.76, 0, 1.86, 0);
   return m;
 }
-function bridge(span) {
+/** Farm-road bridge: concrete slab on a mid-stream pier, low parapets, end posts with name plates.
+ *  Local frame: span along X, deck top at y = 0.4 (the object sits 0.4 m below the deck). */
+function bridge(span, width, skew) {
   const m = new Model("bridge");
-  m.box("concrete", span, 0.35, 3.0, 0, -0.175, 0);
+  const top = 0.4;
+  m.box("concrete", span, 0.5, width, 0, top - 0.25, 0);
+  m.box("concrete_dark", span, 0.03, width - 0.5, 0, top + 0.012, 0);           // worn wheel tracks / grime
   for (const s of [-1, 1]) {
-    m.box("concrete", span, 0.5, 0.18, 0, 0.25, s * 1.45);
-    for (const x of [-span / 2, span / 2]) m.box("concrete", 0.3, 0.7, 0.25, x, 0.35, s * 1.45);
+    const zc = s * (width / 2 - 0.1);
+    m.box("concrete", span - 0.8, 0.6, 0.2, 0, top + 0.3, zc);                  // parapet
+    m.box("concrete_cap", span - 0.8, 0.07, 0.26, 0, top + 0.635, zc);
+    for (let x = -span / 2 + 1.5; x < span / 2 - 1.2; x += 1.6) m.box("concrete_dark", 0.3, 0.06, 0.21, x, top + 0.03, zc);   // drain slots
+    for (const x of [-span / 2 + 0.2, span / 2 - 0.2]) {
+      m.box("concrete", 0.38, 1.0, 0.38, x, top + 0.5, s * (width / 2 - 0.16));  // end post (oyabashira)
+      m.box("concrete_cap", 0.44, 0.08, 0.44, x, top + 1.04, s * (width / 2 - 0.16));
+      m.box("metal_dark", 0.02, 0.26, 0.3, x - Math.sign(x) * 0.2, top + 0.66, s * (width / 2 - 0.16));  // name plate
+    }
   }
-  for (const x of [-span / 2 + 0.6, span / 2 - 0.6]) m.box("concrete", 0.8, 1.6, 3.2, x, -1.0, 0);
+  // pier: a wall along the stream (skewed to the deck), down into the bed
+  const ph = 3.2;
+  m.box("concrete_old", 0.6, ph, 2.8, 0, top - 0.5 - ph / 2, 0, { ry: skew });
+  for (const s of [-1, 1]) m.cyl("concrete_old", 0.3, 0.3, ph, Math.sin(skew) * s * 1.4, top - 0.5 - ph, Math.cos(skew) * s * 1.4, 14);
   return m;
 }
 
@@ -794,8 +808,219 @@ function ditches() {
       // two walls, floor (inner faces stained), and a concrete lid on some segments
       for (const ws of [-1, 1]) m.box("concrete_old", L, dep + 0.35, wall, cx + nx * ws * (w / 2 + wall / 2), y - (dep + 0.35) / 2 + 0.03, cz + nz * ws * (w / 2 + wall / 2), { ry: yaw + Math.PI / 2 });
       m.box("concrete_dark", L, 0.06, w, cx, y - dep, cz, { ry: yaw + Math.PI / 2 });
-      if (r() < 0.22) m.box("concrete_old", L * 0.96, 0.08, w + 0.16, cx, y + 0.01, cz, { ry: yaw + Math.PI / 2 });
+      const crossing = (dd.crossings ?? []).some((zc) => Math.abs(cz - zc) < 2.6);   // farm road over the ditch
+      if (crossing || r() < 0.22) m.box("concrete_old", L * 0.96 + (crossing ? 0.1 : 0), crossing ? 0.14 : 0.08, w + 0.16, cx, y + 0.01, cz, { ry: yaw + Math.PI / 2 });
     }
+  }
+  return m;
+}
+
+// ---------------------------------------------------------------- river works (world coordinates)
+/** Flip triangles of a non-indexed geometry so that their normals agree with dir(centroid). */
+function orientTo(g, dir) {
+  const p = g.attributes.position;
+  const a = new THREE.Vector3(), b = new THREE.Vector3(), c = new THREE.Vector3(), n = new THREE.Vector3(), e = new THREE.Vector3();
+  for (let i = 0; i < p.count; i += 3) {
+    a.fromBufferAttribute(p, i); b.fromBufferAttribute(p, i + 1); c.fromBufferAttribute(p, i + 2);
+    n.subVectors(b, a).cross(e.subVectors(c, a));
+    if (n.dot(dir(a.clone().add(b).add(c).divideScalar(3))) < 0)
+      for (const attr of Object.values(g.attributes)) {
+        const s = attr.itemSize;
+        for (let k = 0; k < s; k++) { const t = attr.array[(i + 1) * s + k]; attr.array[(i + 1) * s + k] = attr.array[(i + 2) * s + k]; attr.array[(i + 2) * s + k] = t; }
+      }
+  }
+  g.computeVertexNormals();
+  return g;
+}
+/** UVs turned 45 degrees: concrete kenchi blocks are laid diagonally (tanizumi). */
+const diagonalUV = (g) => {
+  const uv = g.attributes.uv;
+  for (let i = 0; i < uv.count; i++) { const u = uv.getX(i), v = uv.getY(i); uv.setXY(i, (u + v) * Math.SQRT1_2, (v - u) * Math.SQRT1_2); }
+};
+
+function riverWorks() {
+  const m = new Model("river-works");
+  const R = scene.river, bedPts = R.bed.points, RUN = R.bed.wallRun, CAP = R.bed.capWidth, rr = rng(91);
+  const wpts = R.points;
+  const lerpRow = (pts, zi, z) => {
+    // pts sorted by z (column zi); linear interpolation of every numeric column
+    let lo = 0, hi = pts.length - 1;
+    while (hi - lo > 1) { const mid = (lo + hi) >> 1; if (pts[mid][zi] <= z) lo = mid; else hi = mid; }
+    const a = pts[lo], b = pts[hi], t = THREE.MathUtils.clamp((z - a[zi]) / (b[zi] - a[zi] || 1), 0, 1);
+    return a.map((v, k) => v + (b[k] - v) * t);
+  };
+  const bedAt = (z) => { const [xc, , B, top, toeW, toeE, eW, eE, blk] = lerpRow(bedPts, 1, z); return { xc, z, B, top, toeW, toeE, eW, eE, blk }; };
+  const waterAt = (z) => lerpRow(wpts, 2, z)[1];
+  const dirAt = (z) => { const a = bedAt(z - 1), b = bedAt(z + 1); const l = Math.hypot(b.xc - a.xc, 2); return [(b.xc - a.xc) / l, 2 / l]; };
+  const gaps = R.washSteps.map((s) => [s.z - 0.85, s.z + 0.85]);
+  const inGap = (z, side) => side > 0 && gaps.some(([a, b]) => z > a + 1e-3 && z < b - 1e-3);
+
+  // --- revetments: one face per contiguous masonry run and bank side
+  const zs = [...new Set([...bedPts.map((p) => p[1]), ...gaps.flat()])].sort((a, b) => a - b);
+  const faceMat = (z, blk, wet) => (blk > 0.5 ? (wet ? "revet_block_wet" : "revet_block") : z > 212 ? (wet ? "revet_kenchi_wet" : "revet_kenchi") : wet ? "revet_stone_wet" : "revet_stone");
+  for (const side of [-1, 1]) {
+    let run = [];
+    const flush = () => {
+      if (run.length >= 2) wallRun(run, side);
+      run = [];
+    };
+    for (const z of zs) {
+      const b = bedAt(z);
+      const earth = side < 0 ? b.eW : b.eE;
+      if (earth < 0.5 && !inGap(z, side)) run.push(b);
+      else flush();
+    }
+    flush();
+  }
+  function section(b, side) {
+    const toe = side < 0 ? b.toeW : b.toeE, H = b.top - toe;
+    const ys = THREE.MathUtils.clamp(waterAt(b.z) + 0.35, toe + 0.06, b.top - 0.3);
+    const P = (a, y) => V(b.xc + side * a, y, b.z);
+    return {
+      wet: [P(b.B - 0.2, toe - 0.45), P(b.B, toe), P(b.B + (RUN * (ys - toe)) / H, ys)],
+      dry: [P(b.B + (RUN * (ys - toe)) / H, ys), P(b.B + RUN, b.top)],
+      back: (y) => P(b.B + RUN + CAP, y),
+      cap: P(b.B + RUN + CAP, b.top),
+      toe,
+    };
+  }
+  function wallRun(rows, side) {
+    // split into pieces of one facing material so a reach changes texture cleanly
+    let i0 = 0;
+    for (let i = 1; i <= rows.length; i++) {
+      const key = (r) => faceMat(r.z, r.blk, false);
+      if (i < rows.length && key(rows[i]) === key(rows[i0])) continue;
+      const piece = rows.slice(Math.max(i0 - (i0 > 0 ? 1 : 0), 0), i);
+      if (piece.length >= 2) {
+        const secs = piece.map((r) => section(r, side));
+        const towardRiver = (c) => { const b = bedAt(c.z); return V(Math.sign(b.xc - c.x) || -side, 0.35, 0); };
+        for (const [part, wet] of [["wet", true], ["dry", false]]) {
+          const g = orientTo(gridSurface(secs.map((s) => s[part]), 1, 1).toNonIndexed(), towardRiver);
+          const blk = piece[0].blk > 0.5;
+          if (blk) diagonalUV(g);
+          m.add(faceMat(piece[0].z, piece[0].blk, wet), g, { uv: "keep" });
+        }
+      }
+      i0 = i;
+    }
+    // concrete cap (tenba) over the whole crest, cast in segments: the wall is a closed solid
+    // over the sunken ground behind it
+    const cw = CAP + 0.1, off = RUN - 0.06 + cw / 2;
+    for (let i = 0; i < rows.length - 1; i++) {
+      const a = rows[i], b = rows[i + 1];
+      const ax = a.xc + side * (a.B + off), bx = b.xc + side * (b.B + off);
+      const L = Math.hypot(bx - ax, b.z - a.z), yaw = Math.atan2(bx - ax, b.z - a.z);
+      m.box("concrete_cap", L + 0.012, 0.24, cw, (ax + bx) / 2, (a.top + b.top) / 2 - 0.05, (a.z + b.z) / 2, { ry: yaw + Math.PI / 2 });
+    }
+    // end walls (wing) where the masonry stops (earth bank, washing steps)
+    for (const [r, dz] of [[rows[0], -1], [rows[rows.length - 1], 1]]) {
+      const s = section(r, side);
+      const face = [...s.wet, s.dry[1], s.cap];
+      const back = face.map((p) => s.back(p.y));
+      const g = orientTo(gridSurface([face, back], 1, 1).toNonIndexed(), () => V(0, 0, dz));
+      m.add(faceMat(r.z, r.blk, false), g, { uv: "box" });
+    }
+  }
+
+  // --- drop structures and the weir: concrete sill + apron, set along X like the terrain
+  for (const d of R.drops) {
+    const weir = d.kind === "weir";
+    const b0 = bedAt(d.z);
+    const half = b0.B + 0.45, body = weir ? 1.4 : 0.6;
+    const bottom = d.waterBelow - 0.5;
+    m.box("concrete_wet", 2 * half, d.crestY - bottom, body, b0.xc, (d.crestY + bottom) / 2, d.z - body / 2);
+    // crest edge lighter where the water thins over it
+    m.box("concrete_cap", 2 * half, 0.04, 0.16, b0.xc, d.crestY - 0.015, d.z - 0.08);
+    if (weir) {
+      // sloping downstream face of the fixed weir
+      const f0 = bedAt(d.z), f1 = bedAt(d.z + 0.45);
+      const rowA = [V(f0.xc - half, d.crestY, d.z), V(f0.xc + half, d.crestY, d.z)];
+      const rowB = [V(f1.xc - half, d.waterBelow - 0.12, d.z + 0.45), V(f1.xc + half, d.waterBelow - 0.12, d.z + 0.45)];
+      m.add("concrete_wet", orientTo(gridSurface([rowA, rowB]).toNonIndexed(), () => V(0, 1, 1)), { uv: "box" });
+    }
+    // apron (mizutataki) following the bed between the walls
+    const rows = [];
+    const z0 = d.z + (weir ? 0.45 : 0.0), z1 = d.z + d.apron;
+    for (let k = 0; k <= 4; k++) {
+      const z = z0 + ((z1 - z0) * k) / 4, b = bedAt(z);
+      rows.push([V(b.xc - b.B - 0.3, d.waterBelow - 0.1, z), V(b.xc + b.B + 0.3, d.waterBelow - 0.1, z)]);
+    }
+    m.add("concrete_wet", orientTo(gridSurface(rows).toNonIndexed(), () => V(0, 1, 0)), { uv: "box" });
+    const be = bedAt(z1);
+    const edge = [[V(be.xc - be.B - 0.3, d.waterBelow - 0.1, z1), V(be.xc + be.B + 0.3, d.waterBelow - 0.1, z1)], [V(be.xc - be.B - 0.3, d.waterBelow - 0.5, z1), V(be.xc + be.B + 0.3, d.waterBelow - 0.5, z1)]];
+    m.add("concrete_wet", orientTo(gridSurface(edge).toNonIndexed(), () => V(0, 0, 1)), { uv: "box" });
+    if (weir) m.box("concrete_wet", 2 * (be.B + 0.3), 0.16, 0.3, be.xc, d.waterBelow - 0.04, z1 - 0.15);   // end sill
+  }
+
+  // --- irrigation intake on the east wall, just above the weir: headwall, sluice gate, hoist
+  {
+    const it = R.intake, b = bedAt(it.z), [dx, dz] = dirAt(it.z), yaw = Math.atan2(dx, dz);
+    const y0 = b.toeE - 0.3, y1 = b.top + 0.35;
+    const a0 = b.B - 0.38, a1 = b.B + RUN + 0.35;
+    m.box("concrete_cap", a1 - a0, y1 - y0, 2.6, b.xc + (a0 + a1) / 2, (y0 + y1) / 2, it.z, { ry: yaw });
+    const fx = b.xc + a0 - 0.02;                                     // river face of the headwall
+    const at = (ox, y, oz) => V(fx - ox * Math.cos(yaw) + oz * Math.sin(yaw), y, it.z + ox * Math.sin(yaw) + oz * Math.cos(yaw));
+    const put = (mat, w, h, d, ox, y, oz) => { const p = at(ox, y, oz); m.box(mat, w, h, d, p.x, p.y, p.z, { ry: yaw }); };
+    put("interior_dark", 0.06, 0.75, 1.0, 0.0, it.sillY + 0.37, 0);                 // culvert mouth
+    for (const s of [-1, 1]) put("steel_red", 0.12, b.top + 2.05 - it.sillY, 0.12, 0.08, (it.sillY + b.top + 2.05) / 2, s * 0.6);
+    put("steel_gate", 0.07, 0.86, 1.1, 0.1, it.sillY + 0.3 + 0.43, 0);              // gate leaf, opened 0.3 m
+    for (const y of [it.sillY + 0.55, it.sillY + 0.95]) put("steel_red", 0.09, 0.07, 1.12, 0.12, y, 0);
+    put("steel_red", 0.16, 0.16, 1.45, 0.08, b.top + 2.05, 0);                      // hoist beam
+    put("steel_red", 0.3, 0.32, 0.3, 0.08, b.top + 2.29, 0);                        // gearbox
+    const sp = at(0.1, 0, 0);
+    m.cyl("metal_grey", 0.025, 0.025, b.top + 2.75 - (it.sillY + 1.16), sp.x, it.sillY + 1.16, sp.z, 8);  // threaded spindle
+    const hw = at(0.08, 0, 0);
+    const wheel = new THREE.TorusGeometry(0.27, 0.018, 6, 28);
+    wheel.rotateX(Math.PI / 2);
+    m.add("steel_red", wheel, { uv: "box", matrix: new THREE.Matrix4().makeTranslation(hw.x, b.top + 2.52, hw.z) });
+    for (let k = 0; k < 3; k++) m.box("steel_red", 0.54, 0.02, 0.03, hw.x, b.top + 2.52, hw.z, { ry: (k * Math.PI) / 3 });
+    // concrete box where the buried culvert opens into the canal
+    const c0 = R.canal.points[0], cw = c0[3] + 0.56;
+    m.box("concrete_cap", cw, 0.12, 0.9, c0[0], c0[1] + 0.28, c0[2] - 0.75);                     // cover slab over the inlet
+    for (const [w, d, ox, oz] of [[cw, 0.14, 0, -1.33], [0.14, 1.4, -cw / 2 + 0.07, -0.6], [0.14, 1.4, cw / 2 - 0.07, -0.6]]) m.box("concrete_cap", w, 0.9, d, c0[0] + ox, c0[1] - 0.15, c0[2] + oz);
+    m.box("concrete_dark", cw, 0.1, 1.4, c0[0], c0[1] - R.canal.depth - 0.05, c0[2] - 0.6);
+  }
+
+  // --- canal: precast U-channel segments (2 m), culvert headwalls under the farm road
+  {
+    const cp = R.canal.points, cul = R.canal.culvert;
+    for (let i = 0; i < cp.length - 1; i++) {
+      const [ax, ay, az, w] = cp[i], [bx, by, bz] = cp[i + 1];
+      const mz = (az + bz) / 2;
+      if (mz > cul[0] && mz < cul[1]) continue;
+      const L = Math.hypot(bx - ax, bz - az), dirx = (bx - ax) / L, dirz = (bz - az) / L, yaw = Math.atan2(dirx, dirz);
+      const nx = -dirz, nz = dirx, cx = (ax + bx) / 2, cz = mz, wy = (ay + by) / 2;
+      const o = { ry: yaw + Math.PI / 2 };
+      const D = R.canal.depth, Tp = R.canal.wallTop;
+      m.box("concrete_dark", L - 0.01, 0.1, w + 0.28, cx, wy - D - 0.05, cz, o);
+      for (const s of [-1, 1]) m.box("concrete_cap", L - 0.01, D + Tp + 0.1, 0.14, cx + nx * s * (w / 2 + 0.07), wy + (Tp - D - 0.1) / 2, cz + nz * s * (w / 2 + 0.07), o);
+    }
+    for (const zc of cul) {
+      const i = cp.findIndex((p) => p[2] >= zc);
+      const p = cp[Math.max(i, 0)];
+      const hy0 = p[1] - R.canal.depth - 0.2, hy1 = R.bridgeDeckY - 0.1;                         // up to the farm road
+      m.box("concrete_cap", p[3] + 1.4, hy1 - hy0, 0.25, p[0], (hy0 + hy1) / 2, zc);
+      const pipe = new THREE.CylinderGeometry(0.42, 0.42, 0.27, 18);
+      pipe.rotateX(Math.PI / 2);
+      m.add("interior_dark", pipe, { uv: "box", matrix: new THREE.Matrix4().makeTranslation(p[0], p[1] - 0.12, zc) });
+    }
+    const e = cp[cp.length - 1];
+    m.box("concrete_cap", e[3] + 0.3, R.canal.depth + R.canal.wallTop + 0.1, 0.14, e[0], e[1] + (R.canal.wallTop - R.canal.depth - 0.1) / 2, e[2] + 0.05);
+  }
+
+  // --- washing steps (kawato): stone blocks down through the east wall
+  for (const s of R.washSteps) {
+    const b = bedAt(s.z);
+    const n = 8, A0 = b.B - 0.6, A1 = b.B + RUN + R.bed.capWidth;
+    const tread = (A1 - A0) / n, rise = (s.topY - s.toeY + 0.05) / n;
+    for (let k = 1; k <= n; k++) {
+      const a = A1 - k * tread, y = s.topY - k * rise;
+      for (const [w, oz] of [[0.86, -0.4], [0.74, 0.43]]) {
+        const hh = 0.32 + rr() * 0.04;
+        m.box(rr() < 0.5 ? "stone_step_b" : "stone_paving_moss", tread + 0.06, hh, w - 0.02, b.xc + a + tread / 2, y - hh / 2 + (rr() - 0.5) * 0.012, s.z + oz + (rr() - 0.5) * 0.03);
+      }
+    }
+    m.box("stone_old", 1.1, 0.2, 1.5, b.xc + A0 - 0.45, Math.max(s.toeY, waterAt(s.z) - 0.04) + 0.06, s.z);   // washing stone
   }
   return m;
 }
@@ -832,9 +1057,14 @@ await save("denchu-trans", denchu(true));
 await save("kei-truck", keiTruck());
 await save("bus-stop", busStop());
 for (let v = 0; v < 2; v++) await save(`jihanki_${v}`, jihanki(v));
-const bz = scene.river.bridgeZ;
 const bo = scene.objects.find((o) => o.asset === "bridge");
-await save("bridge", bridge(bo?.span ?? 11));
+{
+  // skew: stream direction at the bridge relative to the deck's local frame
+  const bp = scene.river.bed.points, i = bp.findIndex((p) => p[1] >= scene.river.bridgeZ);
+  const skew = Math.atan2(bp[i + 1][0] - bp[i - 1][0], bp[i + 1][1] - bp[i - 1][1]) - (bo?.rotation[1] ?? 0);
+  await save("bridge", bridge(bo?.span ?? 11, bo?.width ?? 3.2, skew));
+}
+await save("river-works", riverWorks());
 await save("stairs", stairs());
 fs.writeFileSync(path.join(OUT, "index.json"), JSON.stringify({ presets: HOUSE_PRESETS, assets: index }, null, 1));
 // weld + quantize every GLB (KHR_mesh_quantization: supported by three.js and glTFast)
@@ -850,4 +1080,3 @@ for (const f of fs.readdirSync(OUT).filter((f) => f.endsWith(".glb"))) {
   total += fs.statSync(path.join(OUT, f)).size;
 }
 console.log("architecture bytes", total);
-void bz;

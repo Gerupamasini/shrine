@@ -55,14 +55,56 @@ test("shrine precinct overlooks the village from 30-50 m", () => {
   assert.ok(Math.abs(H((p.x0 + p.x1) / 2, (p.z0 + p.z1) / 2) - p.y) < 0.05);
 });
 
-test("the stream falls monotonically and stays 3-6 m wide", () => {
-  const pts = data.river.points;
-  for (let i = 1; i < pts.length; i++) assert.ok(pts[i][1] <= pts[i - 1][1] + 1e-6);
-  for (const p of pts) assert.ok(p[3] >= 3 && p[3] <= 6);
-  // water lies above its bed where the channel is inside the valley
-  const inner = pts.filter((p) => p[2] > -200 && p[2] < 450);
-  const wet = inner.filter((p) => H(p[0], p[2]) < p[1]).length;
-  assert.ok(wet / inner.length > 0.95);
+test("the river falls downstream through drops, with a 3-6 m low-flow channel between gravel bars", () => {
+  const R = data.river, pts = R.points;
+  for (let i = 1; i < pts.length; i++) {
+    assert.ok(pts[i][2] > pts[i - 1][2], `rows sorted by z at ${pts[i][2]}`);
+    assert.ok(pts[i][1] <= pts[i - 1][1] + 1e-6, `water rises at z=${pts[i][2]}`);
+  }
+  // drop structures every ~100 m and a weir holding a pool
+  assert.ok(R.drops.length >= 8);
+  for (const d of R.drops) assert.ok(d.waterAbove - d.waterBelow >= (d.kind === "weir" ? 0.6 : 0.2), `drop at ${d.z}`);
+  const weir = R.drops.find((d) => d.kind === "weir");
+  assert.ok(weir);
+  const atSill = (z) => R.drops.some((d) => z > d.z - 2.5 && z < d.z + 3) || (z > weir.z - 100 && z < weir.z);
+  const nearDrop = (z) => R.drops.some((d) => z > d.z - 14 && z < d.z + 12) || (z > weir.z - 135 && z < weir.z);
+  // wetted width: where the water surface is above the bed, sampled across the bed
+  let ok = 0, n = 0;
+  for (const [x, y, z, w, fall] of pts) {
+    assert.ok(pts[0].length === 6);
+    if (fall || z < -440 || z > 560) continue;
+    let wet = 0;
+    for (let u = -w / 2; u <= w / 2; u += 0.2) if (H(x + u, z) < y) wet += 0.2;
+    n++;
+    // wall to wall at the sills and in the weir pool; a low-flow channel between bars elsewhere
+    if (atSill(z) ? wet > 0.8 * w : wet >= 2.5 && (nearDrop(z) || wet <= 7.5)) ok++;
+  }
+  assert.ok(ok / n > 0.93, `${ok}/${n} rows with a plausible wetted width`);
+  // revetments stand 1.0-2.5 m above the water (lowest beside the weir pool)
+  for (const [xc, z, B, top] of R.bed.points) {
+    if (z < -440 || z > 560) continue;
+    const y = pts.reduce((best, p) => (Math.abs(p[2] - z) < Math.abs(best[2] - z) ? p : best))[1];
+    assert.ok(top - y > 1.0 && top - y < 2.5, `bank height ${top - y} at z=${z}`);
+    assert.ok(B > 3 && B < 8.5);
+    void xc;
+  }
+});
+
+test("the weir intake feeds a canal that runs gently downhill above the river", () => {
+  const R = data.river, cp = R.canal.points;
+  assert.ok(cp.length > 50);
+  for (let i = 1; i < cp.length; i++) assert.ok(cp[i][1] <= cp[i - 1][1] + 1e-6);
+  const slope = (cp[0][1] - cp[cp.length - 1][1]) / (cp[cp.length - 1][2] - cp[0][2]);
+  assert.ok(slope > 0.0005 && slope < 0.002, `canal slope ${slope}`);
+  const weir = R.drops.find((d) => d.kind === "weir");
+  // fed by gravity from the weir pool, then higher than the river below the weir
+  assert.ok(R.intake.z < weir.z && cp[0][1] < weir.waterAbove && R.intake.sillY < cp[0][1]);
+  for (const [, y, z] of cp) {
+    if (z < weir.z + 1) continue;
+    const rw = R.points.reduce((best, p) => (Math.abs(p[2] - z) < Math.abs(best[2] - z) ? p : best))[1];
+    assert.ok(y > rw, `canal water above the river at z=${z}`);
+  }
+  for (const s of R.washSteps) assert.ok(s.topY - s.toeY > 1.0);
 });
 
 test("rice paddies are level fields with levees", () => {

@@ -42,6 +42,12 @@
         "use": "terrain: river bed"
       },
       {
+        "id": "ganges_river_pebbles",
+        "res": "2k",
+        "out": 1024,
+        "use": "terrain: dry gravel bars (kawara) in the stream bed"
+      },
+      {
         "id": "mossy_rock",
         "res": "1k",
         "out": 1024,

@@ -166,12 +166,12 @@ const PLACES: [string, string, (p: T.Vector3) => boolean][] = [
   ["山上の神社", "杉木立に包まれた、静かな境内。", (p) => p.y > 40],
   ["表参道の石段", "", (p) => p.x > 120 && p.x < 205 && Math.abs(p.z + 40) < 6],
   ["麓の鳥居", "山へと続く、二百段。", (p) => p.x > 92 && p.x <= 124 && Math.abs(p.z + 40) < 14],
-  ["小川のほとり", "水音をたどる、夕暮れの道。", (p) => Math.abs(p.x - riverX(p.z)) < 14],
+  ["川のほとり", "堰の水音と、土手の道。", (p) => Math.abs(p.x - riverX(p.z)) < 16],
   ["山里の集落", "田んぼを渡る、晩夏の風。", () => true],
 ];
 function riverX(z: number) {
-  const pts = land.world.data.river.points;
-  const i = T.MathUtils.clamp(Math.round((z + 600) / 2.5), 0, pts.length - 1);
+  const pts = land.world.data.river.bed.points;
+  const i = T.MathUtils.clamp(Math.round((z - pts[0][1]) / (pts[1][1] - pts[0][1])), 0, pts.length - 1);
   return pts[i][0];
 }
 function placeName(): [string, string] {

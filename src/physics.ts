@@ -89,11 +89,43 @@ export class Walker {
           box(x + ox * cs + oz * sn, y + wing.halfExtents[1], z - ox * sn + oz * cs, wing.halfExtents[0], wing.halfExtents[1], wing.halfExtents[2], yaw);
         }
       }
+      if (o.asset === "bridge") {
+        // parapets along both edges of the deck (deck top = object y + 0.4)
+        const span = (o.span as number) ?? 12, wd = (o.width as number) ?? 3.2;
+        for (const side of [-1, 1]) box(x, y + 0.4 + 0.35, z + side * (wd / 2 - 0.1), span / 2, 0.35, 0.12, yaw);
+      }
       if (o.asset.startsWith("torii"))
         for (const side of [-1, 1]) {
           const off = 2.55 * s * side;
           box(x + Math.sin(yaw + Math.PI / 2) * off, y + 2.5, z + Math.cos(yaw + Math.PI / 2) * off, 0.32 * s, 2.5, 0.32 * s);
         }
+    }
+    // River revetments: the ground under a masonry wall and its cap is sunk out of sight (the
+    // heightfield cannot hold a 1:0.4 wall), so each wall gets box colliders with their top flush
+    // with the bank; earth banks and the washing-step ramps are ordinary terrain.
+    {
+      const rb = data.river.bed, rp = rb.points, w = rb.wallRun + rb.capWidth;
+      const gaps = data.river.washSteps.map((s) => [s.z - 0.85, s.z + 0.85]);
+      for (let i = 0; i < rp.length - 1; i++) {
+        const a = rp[i], b = rp[i + 1];
+        for (const [side, ei, ti] of [[-1, 6, 4], [1, 7, 5]] as const) {
+          if (a[ei] >= 0.5 || b[ei] >= 0.5) continue;
+          // pieces of this segment outside the washing-step openings (east bank only)
+          let pieces: [number, number][] = [[0, 1]];
+          if (side > 0)
+            for (const [g0, g1] of gaps) {
+              const t0 = (g0 - a[1]) / (b[1] - a[1]), t1 = (g1 - a[1]) / (b[1] - a[1]);
+              pieces = pieces.flatMap(([p0, p1]) => [[p0, Math.min(p1, t0)], [Math.max(p0, t1), p1]] as [number, number][]).filter(([p0, p1]) => p1 - p0 > 0.03);
+            }
+          for (const [p0, p1] of pieces) {
+            const at = (t: number) => ({ x: a[0] + (b[0] - a[0]) * t + side * (a[2] + (b[2] - a[2]) * t + w / 2), z: a[1] + (b[1] - a[1]) * t });
+            const q0 = at(p0), q1 = at(p1);
+            const top = (a[3] + b[3]) / 2 + 0.02, low = Math.min(a[ti], b[ti]) - 0.4;
+            const len = Math.hypot(q1.x - q0.x, q1.z - q0.z);
+            box((q0.x + q1.x) / 2, (top + low) / 2, (q0.z + q1.z) / 2, w / 2, (top - low) / 2, len / 2 + 0.02, Math.atan2(q1.x - q0.x, q1.z - q0.z));
+          }
+        }
+      }
     }
     // Lookout fence (low rail, the view stays open).
     const lk = data.landmarks.lookout;

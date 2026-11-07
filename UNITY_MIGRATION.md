@@ -25,8 +25,8 @@
 2. `heightmap.r16` を読む。ヘッダーなし、uint16 little-endian、行優先、1行目がz=−600（北端）、1列目がx=−600。
    - 高さは `y = raw / 65535 × 420 − 20`、Unityに入れる値は `raw / 65535f`。
 3. Z反転のため、`heights[row, col]` に入れる際に行を逆順にする（Unityの行0は南端になる）。
-4. `splat0.png`・`splat1.png`・`splat2.png`（RGBA×3、うち9層を使用）をAlphamapにする。層の順番と使うテクスチャは `materials.json` の `terrainLayers` にある。
-   - 順番：grass / forest / dirt / rock / paddy / riverbed / gravel / asphalt / furrows
+4. `splat0.png`・`splat1.png`・`splat2.png`（RGBA×3、うち10層を使用）をAlphamapにする。層の順番と使うテクスチャは `materials.json` の `terrainLayers` にある。
+   - 順番：grass / forest / dirt / rock / paddy / riverbed / gravel / asphalt / furrows / bar（砂州の乾いた礫）
    - 画像も同じく上下反転する。各層の `size` がTerrainLayerの `tileSize` に当たる。
    - `fixed: true` の層（furrows＝畑の畝）は回転させずに貼る。畝は世界のX方向に走り、作物の列（`clutter.json` の `crop`）と揃っている。
 5. `vegetation-mask.png` を植生・Detailの密度に使う。
@@ -46,7 +46,10 @@
 | `scene.json` の `stair` | 石段の全体寸法 | |
 | `vegetation.json` | 樹木（樹種ごと） | `[x, y, z, scale, yaw, variant, lean]` |
 | `clutter.json` | 下草・岩・畑の作物（`crop`、variantは作物の種類）など | `[x, y, z, scale, yaw, variant]` |
-| `scene.json` の `river.points` | 川の中心線 | `[x, waterY, z, width]` |
+| `scene.json` の `river.points` | 川の水面。河床の中心を通るX方向の断面 | `[x, waterY, z, widthX, fall, riffle]`。`fall=1` の2行は越流の頂部と下端 |
+| `scene.json` の `river.bed` | 河床と護岸 | `[xCentre, z, halfWidth, bankTopY, toeYWest, toeYEast, earthWest, earthEast, blockFacing]` |
+| `scene.json` の `river.drops` | 落差工と固定堰 | 位置・天端高・上下流の水位・水叩きの長さ |
+| `scene.json` の `river.canal`・`intake`・`washSteps` | 用水路・取水口・洗い場 | 用水路は `[x, waterY, z, width]`、管渠の区間 |
 | `scene.json` の `roads` | 道 | |
 | `scene.json` の `powerLine` | 電柱の位置 | 電線は3本、たわみ0.65m |
 
@@ -60,7 +63,13 @@
 - `prop-*` → `props/` 内のPoly Havenモデル
 - `block-wall` と `ishigaki` → 2mのモジュールを `length` に沿って並べる（`ishigaki` は高さ方向に `height` 倍）
 
-石段・石畳・境内の石垣は `architecture/stairs.glb` に**ワールド座標のまま**入っています。原点に置いてください。
+次の3つは**ワールド座標のまま**入っています。原点に置いてください。
+
+- `architecture/stairs.glb`：石段・石畳・境内の石垣
+- `architecture/road-ditch.glb`：道の側溝と蓋
+- `architecture/river-works.glb`：川の護岸・天端・落差工・堰・取水口・用水路・洗い場
+
+石積みの護岸と天端の下は、高さマップでは地面を沈めてあります（1:0.4の壁を1.17m格子で表せないため）。Unityでは `river-works.glb` にMeshColliderを付けるか、`river.bed` から護岸に沿った箱コライダーを作ってください（Three.js版は後者）。
 
 ## モデル
 

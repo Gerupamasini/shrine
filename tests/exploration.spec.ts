@@ -55,3 +55,46 @@ test("foot torii → 200-step climb → precinct → lookout; collisions, settin
   void g;
   expect(errors).toEqual([]);
 });
+
+// River banks: the ground under a masonry revetment is sunk and covered by the river-works
+// mesh, so the walkable cap, the washing steps and the bridge parapets come from colliders.
+test("river: revetment cap, washing steps and bridge are walkable", async ({ page }) => {
+  await page.goto("/?capture&quality=low");
+  await page.waitForFunction(() => (window as any).__satoyama?.ready, null, { timeout: 600000 });
+  const r = await page.evaluate(() => {
+    const g = (window as any).__satoyama, R = g.world.river, bp = R.bed.points as number[][];
+    const row = (z: number) => bp.reduce((a, b) => (Math.abs(b[1] - z) < Math.abs(a[1] - z) ? b : a));
+    const out: Record<string, number> = {};
+    // east levee path at a masonry reach: walking over the cap never drops into the sunken ground
+    const [xc, z, B, top] = row(-150);
+    g.place(xc + B + 3.5, top + 3, z);
+    g.walk(0, 0, 90);
+    let minCap = 1e9;
+    for (let i = 0; i < 60; i++) {
+      const p = g.walk(-1, 0, 2);
+      if (p[0] - xc > B + 0.3 && p[0] - xc < B + 1.9) minCap = Math.min(minCap, p[1] - top);
+    }
+    out.capEye = minCap;
+    // washing steps: down into the bed and back up to the path
+    const s = R.washSteps[0], w = row(s.z);
+    g.place(w[0] + w[2] + 3.2, s.topY + 3, s.z);
+    g.walk(0, 0, 90);
+    const down = g.walk(-1, 0, 240);
+    out.stepsDown = down[1] - s.topY;
+    const up = g.walk(1, 0, 320);
+    out.stepsUp = up[1] - s.topY;
+    // bridge deck: rest height, parapet, crossing onto the farm road
+    const b = g.world.objects.find((o: any) => o.asset === "bridge");
+    g.place(b.position[0], b.position[1] + 4, b.position[2]);
+    out.deckEye = g.walk(0, 0, 120)[1] - b.position[1] - 0.4;
+    out.parapet = Math.abs(g.walk(0, -1, 240)[2] - b.position[2]);
+    out.across = g.walk(1, 0, 400)[0] - (b.position[0] + b.span / 2);
+    return out;
+  });
+  expect(r.capEye).toBeGreaterThan(1.5);
+  expect(r.stepsDown).toBeLessThan(0.5);
+  expect(r.stepsUp).toBeGreaterThan(1.5);
+  expect(Math.abs(r.deckEye - 1.65)).toBeLessThan(0.1);
+  expect(r.parapet).toBeLessThan(1.4);
+  expect(r.across).toBeGreaterThan(0);
+});

@@ -5,6 +5,9 @@ import type { Landscape, System } from "./landscape";
 import type { InstanceRow } from "./data";
 import type { Quality } from "../engine/lighting";
 import { windHook } from "./vegetation";
+import { addHook } from "../engine/hooks";
+
+const THREE_clamp = (v: number) => Math.min(Math.max(v, 0), 1);
 
 /**
  * clutter.json kind -> Poly Haven CC0 models.
@@ -14,22 +17,26 @@ import { windHook } from "./vegetation";
  *  - fit:   metres per unit of row scale: the specimen is sized so its largest dimension = row scale × fit
  *  - byVariant: row variant selects the file (crops: one crop per field)
  */
-type KindDef = { files: string[]; far: number; plant?: boolean; shadow?: boolean; scale?: number; fit?: number; byVariant?: boolean };
+type KindDef = { files: string[]; far: number; plant?: boolean; shadow?: boolean; scale?: number; fit?: number; byVariant?: boolean; grass?: { tint: string; stretch: number } };
 const KINDS: Record<string, KindDef> = {
   fern: { files: ["fern_02"], far: 36, plant: true, scale: 1.6 },
   shrub: { files: ["shrub_02", "shrub_03", "shrub_04"], far: 62, plant: true, shadow: true, scale: 1.4 },
   weed: { files: ["weed_plant_02", "nettle_plant"], far: 30, plant: true, scale: 2.2 },
   rock_moss: { files: ["rock_moss_set_01", "rock_moss_set_02"], far: 75, shadow: true },
   boulder: { files: ["rock_07", "rock_moss_set_02"], far: 140, shadow: true, fit: 1.9 },
-  river_stone: { files: ["stone_01", "rock_07"], far: 60, fit: 0.55 },
+  river_stone: { files: ["rock_07", "rock_07", "stone_01"], far: 48, fit: 0.55 },
   stump: { files: ["tree_stump_01"], far: 70, shadow: true },
   log: { files: ["dead_tree_trunk"], far: 80, shadow: true },
   // vegetable rows: aubergine, edamame (bushy), taro (big leaves), leafy greens (rosettes)
   crop: { files: ["crop-bush", "crop-bush", "crop-leafy", "crop-low"], far: 22, plant: true, fit: 1, byVariant: true },
+  // tall grasses from the photographed clump (grass_medium_01), stretched: reed (tsuruyoshi) on the
+  // gravel bars, susuki (not yet in flower in early August) on the earth banks and levees
+  reed: { files: ["@grass"], far: 50, plant: true, fit: 1.6, grass: { tint: "#c4d0a0", stretch: 0.75 } },
+  susuki: { files: ["@grass"], far: 56, plant: true, fit: 1.35, grass: { tint: "#a9b894", stretch: 0.7 } },
 };
 
 type Specimen = { parts: { geometry: T.BufferGeometry; material: T.Material; local: T.Matrix4 }[]; size: number };
-type Batch = { rows: InstanceRow[]; meshes: { mesh: T.InstancedMesh; local: T.Matrix4 }[]; far: number; mul: number };
+type Batch = { rows: InstanceRow[]; meshes: { mesh: T.InstancedMesh; local: T.Matrix4 }[]; far: number; mul: number; stretch: number };
 
 export class Clutter implements System {
   batches: Batch[] = [];
@@ -52,8 +59,53 @@ export class Clutter implements System {
     }
     m = this.land.lib.finish(src);
     if (plant) windHook(m, 0.0);
+    // Poly Haven stone_01 / rock_07 are warm sandstone; the river stones here are grey andesite and granite
+    const grey = /stone_01|rock_07/.test(src.name) ? (/stone_01/.test(src.name) ? 0.85 : 0.6) : 0;
+    if (grey)
+      addHook(m, "grey" + grey, (sh) => {
+        sh.fragmentShader = sh.fragmentShader.replace(
+          "#include <map_fragment>",
+          `#include <map_fragment>
+          { float l = dot(diffuseColor.rgb, vec3(0.3, 0.59, 0.11)); diffuseColor.rgb = mix(diffuseColor.rgb, vec3(l) * vec3(0.96, 0.98, 1.02), ${grey.toFixed(2)}); }`,
+        );
+      });
     this.mats.set(src.name, m);
     return m;
+  }
+  private grassMats = new Map<string, T.Material>();
+  /** Photographed grass clumps as specimens for the tall grasses (one material per tint). */
+  private async grassSpecimens(loader: GLTFLoader, tint: string): Promise<Specimen[]> {
+    const g = await loader.loadAsync(publicUrl("assets/foliage/grass-clumps.glb"));
+    let mat = this.grassMats.get(tint);
+    if (!mat) {
+      const map = this.land.lib.texture("assets/foliage/grass-clump-albedo.png", true, false);
+      map.flipY = false;
+      const src = new T.MeshStandardMaterial({ map, color: tint, roughness: 0.85, alphaTest: 0.5, side: T.DoubleSide, alphaToCoverage: true });
+      (src as unknown as { defines: Record<string, string> }).defines = { FOLIAGE: "" };
+      mat = this.land.lib.finish(src);
+      windHook(mat, 0.9);
+      this.grassMats.set(tint, mat);
+    }
+    const out: Specimen[] = [];
+    g.scene.updateMatrixWorld(true);
+    g.scene.traverse((o) => {
+      if (!(o instanceof T.Mesh)) return;
+      const geo = (o.geometry as T.BufferGeometry).clone();
+      geo.computeBoundingBox();
+      const bb = geo.boundingBox!, hgt = Math.max(bb.max.y - bb.min.y, 0.01);
+      // wind weights: sway grows towards the blade tips
+      const p = geo.attributes.position, col = new Float32Array(p.count * 3);
+      for (let i = 0; i < p.count; i++) {
+        const t = THREE_clamp((p.getY(i) - bb.min.y) / hgt);
+        col[i * 3] = t * t;
+        col[i * 3 + 1] = t;
+        col[i * 3 + 2] = (Math.sin(p.getX(i) * 91.7 + p.getZ(i) * 47.3) * 0.5 + 0.5);
+      }
+      geo.setAttribute("color", new T.BufferAttribute(col, 3));
+      geo.translate(-(bb.min.x + bb.max.x) / 2, -bb.min.y, -(bb.min.z + bb.max.z) / 2);
+      out.push({ parts: [{ geometry: geo, material: mat!, local: new T.Matrix4() }], size: hgt });
+    });
+    return out;
   }
   /** Load a props GLB and return its specimens (plant_* nodes, or the whole model as one). */
   private async specimens(loader: GLTFLoader, file: string, plant: boolean): Promise<Specimen[]> {
@@ -86,7 +138,7 @@ export class Clutter implements System {
         (async () => {
           const unique = [...new Set(def.files)];
           const loaded = new Map<string, Specimen[]>();
-          await Promise.all(unique.map(async (f) => loaded.set(f, await this.specimens(loader, f, !!def.plant))));
+          await Promise.all(unique.map(async (f) => loaded.set(f, f === "@grass" ? await this.grassSpecimens(loader, def.grass!.tint) : await this.specimens(loader, f, !!def.plant))));
           // assign each row to (file, specimen)
           const buckets = new Map<string, { spec: Specimen; rows: InstanceRow[] }>();
           for (const r of rows) {
@@ -108,7 +160,7 @@ export class Clutter implements System {
               this.land.scene.add(mesh);
               return { mesh, local: p.local };
             });
-            this.batches.push({ rows: mine, meshes, far: def.far, mul: def.fit ? def.fit / spec.size : def.scale ?? 1 });
+            this.batches.push({ rows: mine, meshes, far: def.far, mul: def.fit ? def.fit / spec.size : def.scale ?? 1, stretch: def.grass?.stretch ?? 1 });
           }
         })(),
       );
@@ -136,7 +188,8 @@ export class Clutter implements System {
         const dx = r[0] - cam.position.x, dz = r[2] - cam.position.z;
         if (dx * dx + dz * dz > far * far) continue;
         this.q.setFromAxisAngle(up, r[4]);
-        this.m.compose(this.v.set(r[0], r[1], r[2]), this.q, this.s.setScalar(r[3] * b.mul));
+        const sc = r[3] * b.mul;
+        this.m.compose(this.v.set(r[0], r[1], r[2]), this.q, this.s.set(sc * b.stretch, sc, sc * b.stretch));
         for (const p of b.meshes) p.mesh.setMatrixAt(n, this.tmp.copy(this.m).multiply(p.local));
         n++;
       }

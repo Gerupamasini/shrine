@@ -1,6 +1,6 @@
 # 使用素材と出典
 
-このファイルは `python3 tools/assets/catalog.py` が生成します。全ファイルのパス・サイズ・SHA-256・出典は [`docs/asset-manifest.json`](docs/asset-manifest.json)（205ファイル、計83.5MB）にあります。
+このファイルは `python3 tools/assets/catalog.py` が生成します。全ファイルのパス・サイズ・SHA-256・出典は [`docs/asset-manifest.json`](docs/asset-manifest.json)（209ファイル、計86.8MB）にあります。
 
 ## 外部素材
 
@@ -25,6 +25,7 @@
 | テクスチャ | [stony_dirt_path](https://polyhaven.com/a/stony_dirt_path) | eye-candy.xyz | terrain: footpaths, farm tracks |
 | テクスチャ | [brown_mud_leaves_01](https://polyhaven.com/a/brown_mud_leaves_01) | Rob Tuytel | terrain: paddy mud, wet soil |
 | テクスチャ | [river_small_rocks](https://polyhaven.com/a/river_small_rocks) | Rico Cilliers, Rob Tuytel | terrain: river bed |
+| テクスチャ | [ganges_river_pebbles](https://polyhaven.com/a/ganges_river_pebbles) | Amal Kumar | terrain: dry gravel bars (kawara) in the stream bed |
 | テクスチャ | [mossy_rock](https://polyhaven.com/a/mossy_rock) | Rob Tuytel | terrain: steep rock |
 | テクスチャ | [gravel_floor_02](https://polyhaven.com/a/gravel_floor_02) | Dimitrios Savva, Jenelle van Heerden | shrine precinct gravel |
 | テクスチャ | [worn_asphalt](https://polyhaven.com/a/worn_asphalt) | Amal Kumar | village road |
