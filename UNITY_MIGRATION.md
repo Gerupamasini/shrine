@@ -50,7 +50,9 @@
 | `scene.json` の `river.bed` | 河床と護岸 | `[xCentre, z, halfWidth, bankTopY, toeYWest, toeYEast, earthWest, earthEast, blockFacing]` |
 | `scene.json` の `river.drops` | 落差工と固定堰 | 位置・天端高・上下流の水位・水叩きの長さ |
 | `scene.json` の `river.canal`・`intake`・`washSteps` | 用水路・取水口・洗い場 | 用水路は `[x, waterY, z, width]`、管渠の区間 |
-| `scene.json` の `roads` | 道 | |
+| `scene.json` の `roads` | 道。`lane-*` は家から道路への小道（未舗装） | 各点 `[x, y, z]` |
+| `scene.json` の `hamlets` | 集落の名前と範囲 | 中心z・道沿いの半長 |
+| `scene.json` の `objects` の `smoke: true` | 煙を出す家 | 煙の出る位置は `architecture/index.json` の各モデルの `smoke`（ローカル座標） |
 | `scene.json` の `powerLine` | 電柱の位置 | 電線は3本、たわみ0.65m |
 
 `asset` 名からGLBへの対応は `src/world/architecture.ts` の `resolve()` と同じ規則です。
@@ -109,6 +111,6 @@
 
 ## 作り直す必要があるもの
 
-草と稲のGPU生成、田の遠景面、川の水面、葉の透過光、風、霞、空のドーム、ポストエフェクト、立体音響は、Three.jsのシェーダーとWeb Audioの実装です。Unity側で同等の表現を作り直してください（Terrain Detail・VFX Graph・水のシェーダー・Audio Mixer）。
+草と稲のGPU生成、田の遠景面、川の水面、煙、とんぼ、夕方のチャイム、葉の透過光、風、霞、空のドーム、ポストエフェクト、立体音響は、Three.jsのシェーダーとWeb Audioの実装です。Unity側で同等の表現を作り直してください（Terrain Detail・VFX Graph・水のシェーダー・Audio Mixer）。
 
 Unity化の際も、ヒグラシの録音（CC BY 4.0）のクレジットは必ず表記してください。

@@ -581,7 +581,20 @@ function minka(type, v) {
     m.cyl("bamboo_green", 0.025, 0.025, 2.6, W / 2 - 2.7, 1.85, front + 3.2, 8, { rz: Math.PI / 2 });
   }
   m.box("stone_granite", 0.8, 0.25, 0.5, -W / 2 + bayW / 2, 0.125, front + 0.5);
-  return { m, W, D };
+  // where evening smoke rises: the bath-stove chimney at the back (a galvanised pipe with a rain
+  // cap) on tiled and tin houses, the smoke vent (kemudashi) at the ridge of a thatched house
+  let smoke;
+  if (type === "minka-kayabuki") {
+    smoke = [0, F + wallH + 0.15 + (D / 2 + 1.15) * 1.25 + 0.2, 0];
+  } else {
+    const cx = W / 2 - 1.1, cz = -D / 2 - 0.45;
+    const top = F + wallH + (storeys === 2 ? 3.9 : 1.9);
+    m.cyl("metal_grey", 0.075, 0.075, top, cx, 0.2, cz, 10);
+    m.cyl("metal_grey", 0.24, 0.02, 0.16, cx, top + 0.22, cz, 10);
+    for (const y of [F + 1.2, F + wallH - 0.2]) m.box("metal_dark", 0.04, 0.04, 0.42, cx, y, cz + 0.22);
+    smoke = [cx, top + 0.3, cz];
+  }
+  return { m, W, D, smoke };
 }
 function naya(v) {
   const r = rng(500 + v);
@@ -815,6 +828,98 @@ function ditches() {
   return m;
 }
 
+// ---------------------------------------------------------------- village landmarks
+/** Thin box from a to b (a steel angle or rod). */
+function strut(m, mat, a, b, t) {
+  const d = new THREE.Vector3().subVectors(b, a), L = d.length();
+  const g = new THREE.BoxGeometry(t, L, t);
+  const q = new THREE.Quaternion().setFromUnitVectors(V(0, 1, 0), d.clone().normalize());
+  m.add(mat, g, { matrix: new THREE.Matrix4().compose(a.clone().add(b).multiplyScalar(0.5), q, V(1, 1, 1)) });
+}
+/** Hinomi-yagura: a 12 m steel fire lookout with its alarm bell (hansho) and the PA horns of the
+ *  village radio (bosai-musen). Local +Z is the ladder side. */
+function hinomi() {
+  const m = new Model("hinomi");
+  const H = 9.0, b0 = 1.5, b1 = 0.6, half = (y) => b0 + (b1 - b0) * (y / H);
+  const corners = [[-1, -1], [1, -1], [1, 1], [-1, 1]];
+  for (const [sx, sz] of corners) {
+    strut(m, "steel_red", V(sx * b0, 0, sz * b0), V(sx * b1, H, sz * b1), 0.11);
+    m.box("concrete_old", 0.5, 0.35, 0.5, sx * b0, 0.12, sz * b0);
+  }
+  const levels = [0.3, 2.1, 3.9, 5.6, 7.3, H];
+  for (let li = 0; li < levels.length; li++) {
+    const y = levels[li], hw = half(y);
+    for (let k = 0; k < 4; k++) {
+      const [ax, az] = corners[k], [bx, bz] = corners[(k + 1) % 4];
+      strut(m, "steel_red", V(ax * hw, y, az * hw), V(bx * hw, y, bz * hw), 0.07);
+      if (li < levels.length - 1) {
+        const y2 = levels[li + 1], hw2 = half(y2);
+        strut(m, "steel_red", V(ax * hw, y, az * hw), V(bx * hw2, y2, bz * hw2), 0.035);
+        strut(m, "steel_red", V(bx * hw, y, bz * hw), V(ax * hw2, y2, az * hw2), 0.035);
+      }
+    }
+  }
+  // platform with a railing, posts carrying the little roof
+  m.box("wood_old", 2.0, 0.06, 2.0, 0, H + 0.03, 0);
+  for (const [sx, sz] of corners) {
+    m.cyl("steel_red", 0.03, 0.03, 0.95, sx * 0.98, H, sz * 0.98, 6);
+    strut(m, "steel_red", V(sx * 0.98, H + 0.9, sz * 0.98), V(sx * 0.55, H + 1.75, sz * 0.55), 0.05);
+  }
+  for (let k = 0; k < 4; k++) {
+    const [ax, az] = corners[k], [bx, bz] = corners[(k + 1) % 4];
+    for (const y of [H + 0.5, H + 0.95]) strut(m, "steel_red", V(ax * 0.98, y, az * 0.98), V(bx * 0.98, y, bz * 0.98), 0.035);
+  }
+  const roof = new THREE.ConeGeometry(1.25, 1.1, 4, 1, true);
+  roof.rotateY(Math.PI / 4);
+  m.add("steel_red", roof, { matrix: new THREE.Matrix4().makeTranslation(0, H + 2.3, 0) });
+  m.cyl("steel_red", 0.02, 0.02, 0.9, 0, H + 2.85, 0, 6);
+  // the bell
+  m.add("bronze_dark", lathe([[0.001, 0.0], [0.17, 0.0], [0.15, 0.08], [0.12, 0.3], [0.1, 0.38], [0.04, 0.42], [0.001, 0.43]], 16), { uv: "box", matrix: new THREE.Matrix4().makeTranslation(0, H + 1.15, 0) });
+  m.cyl("metal_dark", 0.012, 0.012, 0.18, 0, H + 1.58, 0, 4);
+  // PA horn speakers pointing over the valley
+  for (const a of [0, (2 * Math.PI) / 3, (4 * Math.PI) / 3]) {
+    const g = new THREE.CylinderGeometry(0.24, 0.05, 0.55, 14, 1, true);
+    g.rotateX(Math.PI / 2);
+    g.translate(0, 0, 0.42);
+    g.rotateY(a + 0.5);
+    m.add("metal_grey", g, { uv: "box", matrix: new THREE.Matrix4().makeTranslation(0, H + 1.95, 0) });
+  }
+  // ladder on the +Z face
+  for (const x of [-0.22, 0.22]) strut(m, "steel_red", V(x, 0, b0 + 0.12), V(x, H, b1 + 0.12), 0.04);
+  for (let y = 0.35; y < H; y += 0.32) { const z = half(y) + 0.12; strut(m, "steel_red", V(-0.22, y, z), V(0.22, y, z), 0.025); }
+  return m;
+}
+/** Fire brigade equipment shed: block walls, tin roof, a red shutter facing +Z. */
+function shoboShed() {
+  const m = new Model("shobo-shed");
+  const W = 4.4, D = 3.4, Hw = 2.7;
+  m.box("concrete", W + 0.2, 0.15, D + 0.2, 0, 0.075, 0);
+  m.box("concrete_block", W, Hw, 0.15, 0, Hw / 2, -D / 2);
+  for (const sx of [-1, 1]) m.box("concrete_block", 0.15, Hw, D, sx * W / 2, Hw / 2, 0);
+  m.box("concrete_block", 0.6, Hw, 0.15, -W / 2 + 0.3, Hw / 2, D / 2);
+  m.box("concrete_block", 0.6, Hw, 0.15, W / 2 - 0.3, Hw / 2, D / 2);
+  m.box("steel_red", W - 1.2, 2.3, 0.08, 0, 1.15, D / 2 + 0.02);
+  for (let y = 0.15; y < 2.3; y += 0.12) m.box("steel_gate", W - 1.22, 0.012, 0.012, 0, y, D / 2 + 0.07);
+  m.box("concrete", W - 1.0, 0.42, 0.06, 0, Hw - 0.15, D / 2 + 0.04);
+  m.box("porcelain", 1.2, 0.22, 0.02, 0, Hw - 0.15, D / 2 + 0.08);
+  gableRoof(m, "roof_tin", { W: W + 0.3, over: 0.25, eaveY: Hw, ridgeY: Hw + 0.6, frontRun: D / 2 + 0.35, backRun: D / 2 + 0.35, thick: 0.06 });
+  return m;
+}
+/** Pillar post box (marugata posuto), a red cylinder with a domed cap; slot facing +Z. */
+function postBox() {
+  const m = new Model("post");
+  m.cyl("concrete", 0.3, 0.3, 0.12, 0, 0, 0, 16);
+  m.cyl("post_red", 0.2, 0.2, 1.0, 0, 0.12, 0, 20);
+  m.cyl("post_red", 0.235, 0.235, 0.06, 0, 1.1, 0, 20);
+  const dome = new THREE.SphereGeometry(0.23, 20, 8, 0, Math.PI * 2, 0, Math.PI / 2);
+  dome.scale(1, 0.55, 1);
+  m.add("post_red", dome, { uv: "box", matrix: new THREE.Matrix4().makeTranslation(0, 1.16, 0) });
+  m.box("interior_dark", 0.2, 0.035, 0.03, 0, 0.98, 0.2);
+  m.box("post_red", 0.24, 0.025, 0.05, 0, 1.005, 0.205);
+  m.box("porcelain", 0.16, 0.12, 0.01, 0, 0.72, 0.2);
+  return m;
+}
+
 // ---------------------------------------------------------------- river works (world coordinates)
 /** Flip triangles of a non-indexed geometry so that their normals agree with dir(centroid). */
 function orientTo(g, dir) {
@@ -1044,9 +1149,10 @@ await save("fence-lookout", fenceLookout());
 await save("sekihi", sekihi());
 await save("jizo", jizo());
 for (const type of Object.keys(HOUSE_PRESETS)) for (let v = 0; v < 4; v++) {
-  const { m, W, D } = minka(type, v);
+  const { m, W, D, smoke } = minka(type, v);
   await save(`${type}_${v}`, m);
   index[`${type}_${v}`].footprint = [W, D];
+  if (smoke) index[`${type}_${v}`].smoke = smoke.map((x) => +x.toFixed(3));
   index[`${type}_${v}`].storeys = HOUSE_PRESETS[type][v].storeys;
 }
 for (let v = 0; v < 2; v++) await save(`naya_${v}`, naya(v));
@@ -1066,6 +1172,9 @@ const bo = scene.objects.find((o) => o.asset === "bridge");
 }
 await save("river-works", riverWorks());
 await save("stairs", stairs());
+await save("hinomi", hinomi());
+await save("shobo-shed", shoboShed());
+await save("post", postBox());
 fs.writeFileSync(path.join(OUT, "index.json"), JSON.stringify({ presets: HOUSE_PRESETS, assets: index }, null, 1));
 // weld + quantize every GLB (KHR_mesh_quantization: supported by three.js and glTFast)
 const { NodeIO, PropertyType } = await import("@gltf-transform/core");

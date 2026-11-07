@@ -79,7 +79,14 @@ enter.onclick = () => {
   $("welcome").hidden = true;
   document.body.classList.add("exploring");
   requestLook();
-  audio.start().then(audioLabel).catch(console.error);
+  audio
+    .start()
+    .then(() => {
+      audioLabel();
+      // arriving at six o'clock: the chime sounds a little after the walk begins
+      if (timeOfDay >= 17.98 && timeOfDay < 18.3) audio.chime(towerPoint(), 16);
+    })
+    .catch(console.error);
 };
 canvas.onclick = () => started && !settingsOpen && requestLook();
 $("settings-button").onclick = () => setSettings(!settingsOpen);
@@ -126,7 +133,13 @@ function clockLabel(h: number) {
   const m = Math.round(h * 60);
   return `${Math.floor(m / 60)}:${String(m % 60).padStart(2, "0")}`;
 }
+// the village radio plays its evening chime at 18:00 (from the PA horns on the fire lookout)
+function towerPoint() {
+  const o = land?.world.data.objects.find((x) => x.asset === "hinomi");
+  return o ? new T.Vector3(o.position[0], o.position[1] + 11, o.position[2]) : new T.Vector3(90, 18, 70);
+}
 function setTime(h: number) {
+  if (timeOfDay < 18 && h >= 18 && h < 18.4) audio.chime(towerPoint(), 1.5);
   timeOfDay = h;
   land.setTime(h);
   $("time-value").textContent = clockLabel(h);
@@ -332,6 +345,9 @@ async function boot() {
     },
     setFree: (v: boolean) => setFree(v),
     setTime,
+    /** test hooks for the soundscape (headless checks) */
+    startAudio: () => audio.start(),
+    chime: () => audio.chime(towerPoint(), 0),
     setQuality,
     renderFrames: (n: number) => {
       for (let i = 0; i < n; i++) {
