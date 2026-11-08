@@ -227,8 +227,8 @@
  },
  {
   "path": "assets/fonts/signs-noto-serif-jp.ttf",
-  "bytes": 24140,
-  "sha256": "544dc82d39c5b59435c3d0ffab45e31811dc0fa99e4f2304dfa1ca8d2ff4b088",
+  "bytes": 26436,
+  "sha256": "765f22fecbe0e0b819fdd630c2d28fca1ad952d9fd6d8523e43d43de71027627",
   "origin": "Google Fonts",
   "page": "https://fonts.google.com/noto/specimen/Noto+Serif+JP",
   "authors": [
@@ -350,8 +350,8 @@
  },
  {
   "path": "assets/models/architecture/index.json",
-  "bytes": 22597,
-  "sha256": "739b180a706b717c4d70302164c1eb13f1a5cb3c58c2c1590c13c205fabc8397",
+  "bytes": 23965,
+  "sha256": "9db781ad417d7ac2ee3aa92eccff399302f758870f06259103cd71a92a304493",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/architecture/build.mjs"
@@ -422,64 +422,64 @@
  },
  {
   "path": "assets/models/architecture/minka-kawara_0.glb",
-  "bytes": 181228,
-  "sha256": "3ede2da696948b826f492333b259b62a8905cc648707340d6ad9a3b688522747",
+  "bytes": 198684,
+  "sha256": "47d84e82f3011e5a93cba87a1550674b8653962e252a5f9baae8ca6ec25512e3",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/architecture/build.mjs"
  },
  {
   "path": "assets/models/architecture/minka-kawara_1.glb",
-  "bytes": 260292,
-  "sha256": "e3983625ed1949d76b92ae62a7a10afc6a6f3c79940e3e04b5b48b9883e14f89",
+  "bytes": 275128,
+  "sha256": "0c6ffe7e3bffcd59091a307bb3aa472b6f1370ae56c8939fe9ce4b41935e824a",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/architecture/build.mjs"
  },
  {
   "path": "assets/models/architecture/minka-kawara_2.glb",
-  "bytes": 154208,
-  "sha256": "f0c417696f08bdef2d2d8622b940c2b1257c08fa000e4dc5f65c62809d8d698a",
+  "bytes": 169036,
+  "sha256": "aea9d49e7e74c297416fdaba50e9a35c7bcfcd509a3bef5d2c2d5e0859405f5c",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/architecture/build.mjs"
  },
  {
   "path": "assets/models/architecture/minka-kawara_3.glb",
-  "bytes": 261096,
-  "sha256": "53523a7b6274603c29b296bc145442212fc7420e3450ab55fca887fbf3196cc3",
+  "bytes": 275216,
+  "sha256": "6cd53d8ce3963238a56b76ddaefbb215f6a24860d8412a883143fbe3ca6e8cfa",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/architecture/build.mjs"
  },
  {
   "path": "assets/models/architecture/minka-kayabuki_0.glb",
-  "bytes": 158572,
-  "sha256": "77145370b014c9b2222448b53e0b0a229d3e3c94d47a30a2a0707f607af28b64",
+  "bytes": 171608,
+  "sha256": "7f5990a721c83d098ff4584974c3ca038d111aa26686c89bccb518fe23394979",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/architecture/build.mjs"
  },
  {
   "path": "assets/models/architecture/minka-kayabuki_1.glb",
-  "bytes": 173972,
-  "sha256": "96309b3b40bd8d3807da9cf9aa80092a0d6bde3644162414ad1a8e5b4b7720a3",
+  "bytes": 188080,
+  "sha256": "b01555af17449d8718476594bc6ab15264f7f9a49a3eda5ac4f50a5204e8290a",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/architecture/build.mjs"
  },
  {
   "path": "assets/models/architecture/minka-kayabuki_2.glb",
-  "bytes": 200292,
-  "sha256": "8bfc7043750c420ce4e4dbf17b019c00f3fcd07c681a6d715cf98fb704fbb128",
+  "bytes": 212684,
+  "sha256": "8f43a8e8e2438e5530f52bd82e6bab0affd81cbb15c5a8b244ba3758c4459e16",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/architecture/build.mjs"
  },
  {
   "path": "assets/models/architecture/minka-kayabuki_3.glb",
-  "bytes": 151824,
-  "sha256": "1c129f177a0220b1a3b70ed475813d96ace38e90f8edb4ccf8b4231d4735e751",
+  "bytes": 167208,
+  "sha256": "dcd911b470ff982ab57c8cff95444bedcf635052a6d454cfca0d336069a0a6d3",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/architecture/build.mjs"
@@ -518,32 +518,40 @@
  },
  {
   "path": "assets/models/architecture/minka-totan_0.glb",
-  "bytes": 160248,
-  "sha256": "b6da3b0d17fd0923c7f8535ff3d10e69b1251144313f5d9516b3e97a2b8f2d00",
+  "bytes": 177696,
+  "sha256": "cfffe66544bf5417ae293d2714dc7589d9324420d2571f2e775b6870e0e7ceaa",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/architecture/build.mjs"
  },
  {
   "path": "assets/models/architecture/minka-totan_1.glb",
-  "bytes": 178792,
-  "sha256": "3a0c0d4016508ad594915fb4ee2f7945a2e586fc7aa55a01d177443eb6433624",
+  "bytes": 196244,
+  "sha256": "6a58249554609a6679e28299a0d15233b9c23a5ea77369b33bc21098e7620183",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/architecture/build.mjs"
  },
  {
   "path": "assets/models/architecture/minka-totan_2.glb",
-  "bytes": 154180,
-  "sha256": "17a8692ec9f2aca79932c3985d37583cdeaf553ab348813ca539100d6eef07da",
+  "bytes": 168296,
+  "sha256": "e9660ed8795e42b23515a793da993a60a96bd1b1f3e5277ffdd71683c6a29384",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/architecture/build.mjs"
  },
  {
   "path": "assets/models/architecture/minka-totan_3.glb",
-  "bytes": 157172,
-  "sha256": "08d54c7b238add1c5748ab04890da96625928b80e341d3ffdcc4c0e29910d7b8",
+  "bytes": 172000,
+  "sha256": "e35f5814d80a31b8a76bee06ae660bdfb469ff986a04202b6d85395aa1a94a82",
+  "origin": "original (this repo)",
+  "licence": "CC0 1.0",
+  "tool": "tools/architecture/build.mjs"
+ },
+ {
+  "path": "assets/models/architecture/monohoshi.glb",
+  "bytes": 13076,
+  "sha256": "f82e9bfff3e6d3aa8fa24c58f65f10122afb3721a0f4a2306b48cde0b51c39c0",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/architecture/build.mjs"
@@ -614,16 +622,16 @@
  },
  {
   "path": "assets/models/architecture/road-ditch.glb",
-  "bytes": 1824696,
-  "sha256": "ed879ed32163022cd92ab6dfe3828660d3f48ce71130216b42bb2aeaad06360a",
+  "bytes": 1611488,
+  "sha256": "15fe5cd23fe9d5bce57d9cee3573286c1f2e01fab0ea7dc42c4318329413cb51",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/architecture/build.mjs"
  },
  {
   "path": "assets/models/architecture/road-markings.glb",
-  "bytes": 737364,
-  "sha256": "a49a9351990fbd17fc14fb3b2c595c163c1ad0a690841eae798b9f3ba0fde08c",
+  "bytes": 596748,
+  "sha256": "b59f00e84cec7d04d6f2ea2462bdd1bdaadbc50608a8a4b67345e2941502f0c7",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/architecture/build.mjs"
@@ -702,8 +710,8 @@
  },
  {
   "path": "assets/models/architecture/temizuya.glb",
-  "bytes": 42160,
-  "sha256": "decfecb1045cd203d877f3755fbc2527904cfd90ba0a549bb1ca3fd6698ab702",
+  "bytes": 42168,
+  "sha256": "3f7496850f362b6fa3d3e7803662740bebd45de892ef3a1ea29c854213b3ffec",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/architecture/build.mjs"
@@ -736,6 +744,14 @@
   "path": "assets/models/architecture/toro_1.glb",
   "bytes": 32856,
   "sha256": "8bfed0590799b3e3f6d0c33aea7d16180562d2799b38f15f30ac532cd18c12b6",
+  "origin": "original (this repo)",
+  "licence": "CC0 1.0",
+  "tool": "tools/architecture/build.mjs"
+ },
+ {
+  "path": "assets/models/architecture/tunnel.glb",
+  "bytes": 143136,
+  "sha256": "27e52e382c1513f04758e30a24bf40efdde586f6f711e6719bf1cd290224fbb0",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/architecture/build.mjs"
@@ -1224,6 +1240,81 @@
   ],
   "licence": "CC0 1.0",
   "processing": "4k HDR -> LDR backdrop + original 1k HDR (tools/assets/process_textures.py)"
+ },
+ {
+  "path": "assets/textures/asphalt_01/albedo.jpg",
+  "bytes": 242296,
+  "sha256": "98bf9ebe406d2cb2df55528b713502963a2498e994d306f6c494bddd795d106a",
+  "origin": "Poly Haven",
+  "page": "https://polyhaven.com/a/asphalt_01",
+  "authors": [
+   "Charlotte Baglioni",
+   "Dario Barresi"
+  ],
+  "licence": "CC0 1.0",
+  "processing": "resized/re-encoded, ARM packed (tools/assets/process_textures.py)"
+ },
+ {
+  "path": "assets/textures/asphalt_01/arm.jpg",
+  "bytes": 376891,
+  "sha256": "2eb4bc6f12cfecdde2ffd44d785fb66f6d8d49d6ea24d26c300c4e57a558a2ad",
+  "origin": "Poly Haven",
+  "page": "https://polyhaven.com/a/asphalt_01",
+  "authors": [
+   "Charlotte Baglioni",
+   "Dario Barresi"
+  ],
+  "licence": "CC0 1.0",
+  "processing": "resized/re-encoded, ARM packed (tools/assets/process_textures.py)"
+ },
+ {
+  "path": "assets/textures/asphalt_01/normal.jpg",
+  "bytes": 529685,
+  "sha256": "7fdd365f817b49d322de46c0eea2f579bb6c507cdc60c39356691197fc5c17c8",
+  "origin": "Poly Haven",
+  "page": "https://polyhaven.com/a/asphalt_01",
+  "authors": [
+   "Charlotte Baglioni",
+   "Dario Barresi"
+  ],
+  "licence": "CC0 1.0",
+  "processing": "resized/re-encoded, ARM packed (tools/assets/process_textures.py)"
+ },
+ {
+  "path": "assets/textures/asphalt_06/albedo.jpg",
+  "bytes": 262324,
+  "sha256": "ae71c33e5ceee12d88f1e79b9b9d5bb1037757efe2841b7e4c869f46a1b977fc",
+  "origin": "Poly Haven",
+  "page": "https://polyhaven.com/a/asphalt_06",
+  "authors": [
+   "Jan Martens"
+  ],
+  "licence": "CC0 1.0",
+  "processing": "resized/re-encoded, ARM packed (tools/assets/process_textures.py)"
+ },
+ {
+  "path": "assets/textures/asphalt_06/arm.jpg",
+  "bytes": 70981,
+  "sha256": "11dd26a87680322249e04ba25b340e3c3a542205eee9115f477e4644a1bf4e3f",
+  "origin": "Poly Haven",
+  "page": "https://polyhaven.com/a/asphalt_06",
+  "authors": [
+   "Jan Martens"
+  ],
+  "licence": "CC0 1.0",
+  "processing": "resized/re-encoded, ARM packed (tools/assets/process_textures.py)"
+ },
+ {
+  "path": "assets/textures/asphalt_06/normal.jpg",
+  "bytes": 280562,
+  "sha256": "9695c8c761a52c72d819986c3210a18de191377e9e45226724cad39493c7817d",
+  "origin": "Poly Haven",
+  "page": "https://polyhaven.com/a/asphalt_06",
+  "authors": [
+   "Jan Martens"
+  ],
+  "licence": "CC0 1.0",
+  "processing": "resized/re-encoded, ARM packed (tools/assets/process_textures.py)"
  },
  {
   "path": "assets/textures/brown_mud_leaves_01/albedo.jpg",
@@ -2207,45 +2298,9 @@
   "processing": "resized/re-encoded, ARM packed (tools/assets/process_textures.py)"
  },
  {
-  "path": "assets/textures/worn_asphalt/albedo.jpg",
-  "bytes": 305533,
-  "sha256": "10064e6e400507708a6cc09950f9feed056fafb5101db8ad2122f032051c0de3",
-  "origin": "Poly Haven",
-  "page": "https://polyhaven.com/a/worn_asphalt",
-  "authors": [
-   "Amal Kumar"
-  ],
-  "licence": "CC0 1.0",
-  "processing": "resized/re-encoded, ARM packed (tools/assets/process_textures.py)"
- },
- {
-  "path": "assets/textures/worn_asphalt/arm.jpg",
-  "bytes": 440468,
-  "sha256": "4afccd3212c9baa2df78e14a9d9befa78378c47d8718654ea49f653d9358ee6d",
-  "origin": "Poly Haven",
-  "page": "https://polyhaven.com/a/worn_asphalt",
-  "authors": [
-   "Amal Kumar"
-  ],
-  "licence": "CC0 1.0",
-  "processing": "resized/re-encoded, ARM packed (tools/assets/process_textures.py)"
- },
- {
-  "path": "assets/textures/worn_asphalt/normal.jpg",
-  "bytes": 695609,
-  "sha256": "b2d8a35644e9af94ed646af435bb58e85da96b85534b7d9b29c33022d4149397",
-  "origin": "Poly Haven",
-  "page": "https://polyhaven.com/a/worn_asphalt",
-  "authors": [
-   "Amal Kumar"
-  ],
-  "licence": "CC0 1.0",
-  "processing": "resized/re-encoded, ARM packed (tools/assets/process_textures.py)"
- },
- {
   "path": "world/clutter.json",
-  "bytes": 1826320,
-  "sha256": "1f09cf9e94ef88244945b0b8721167a4e8d96c6a85e601339561d23f4bac0f3d",
+  "bytes": 2158633,
+  "sha256": "32a11f77a5bde9b503f3184ddc2f013ec89d62f6a78621576aadcabd2cd1781d",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/world/generate_world.py"
@@ -2268,8 +2323,8 @@
  },
  {
   "path": "world/heightmap.png",
-  "bytes": 969700,
-  "sha256": "cf0b8792282d8233b7539a6bb1fff4280c40eb507295d5951eab3ce3ced7f8c9",
+  "bytes": 965125,
+  "sha256": "f820fa70da83074770fc1ad7a7021b78521cafc79d9563d4cbe6534d9e01041f",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/world/generate_world.py"
@@ -2277,71 +2332,87 @@
  {
   "path": "world/heightmap.r16",
   "bytes": 2101250,
-  "sha256": "735878d9e35453ee73d8ee3e34f41d463f926d5bbe3bbd74b9446d9eaf3899f8",
+  "sha256": "4d373c5dc1b71928d7d9817833ca07af29f7aedfa72a26c8923937a917400ecc",
+  "origin": "original (this repo)",
+  "licence": "CC0 1.0",
+  "tool": "tools/world/generate_world.py"
+ },
+ {
+  "path": "world/map.json",
+  "bytes": 2440,
+  "sha256": "d0a600df874dc8c9fdb8bbccdec2f00f4ad945ca8a9391b3361e6109ded6980e",
+  "origin": "original (this repo)",
+  "licence": "CC0 1.0",
+  "tool": "tools/world/generate_world.py"
+ },
+ {
+  "path": "world/map.webp",
+  "bytes": 768024,
+  "sha256": "9c918513a04d7044ee26dac61b53bd9605d79907cf89674713acd54b19fe4d80",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/world/generate_world.py"
  },
  {
   "path": "world/materials.json",
-  "bytes": 10993,
-  "sha256": "2ca1ecdc8fe180233aa324e0bb3f7892b885e647fcd37b3769ae0eda111f21f2",
+  "bytes": 11933,
+  "sha256": "36f31efb800e1f0cf64bfce3ba161a50a60d220b853d8e9624db59393e9ff6ef",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/world/generate_world.py"
  },
  {
   "path": "world/paddy-level.png",
-  "bytes": 17303,
-  "sha256": "0d2102ce9cc052f12c3ac1bfd0f6c8499fc4d50a75c0f405848c0b4179d354c9",
+  "bytes": 17169,
+  "sha256": "099d8d392e1679ae3e4972801e445d098c79416936dd320a6c2c687bd568e71b",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/world/generate_world.py"
  },
  {
   "path": "world/scene.json",
-  "bytes": 442363,
-  "sha256": "812f89023465166b1f563e310f36fd1a5c1aef31db4b001bd3d072c519595bd3",
+  "bytes": 447119,
+  "sha256": "193efb542a3649668e146324f9800d3595b9bb8ca210e1172b1eb503a57d6e47",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/world/generate_world.py"
  },
  {
   "path": "world/splat0.png",
-  "bytes": 324347,
-  "sha256": "118337926ab7499e354b36c50a0873f20f847a6d4abb540de0715350cd566ce6",
+  "bytes": 321421,
+  "sha256": "5c806ffb283b907a0dddf4222b298373f420c26f2f3e471564754394f9b9d5d5",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/world/generate_world.py"
  },
  {
   "path": "world/splat1.png",
-  "bytes": 30969,
-  "sha256": "5412ecf829899eccc44002be9392f1362e0abe3110b12044838a2dc3b9d4987d",
+  "bytes": 28632,
+  "sha256": "edb141c1137ad65fc528776deb2baa904c8860d089b815d25d9c75b632d1bf30",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/world/generate_world.py"
  },
  {
   "path": "world/splat2.png",
-  "bytes": 16852,
-  "sha256": "6f584b4d841eb89fc98d98b4173c333dd665813d22d422b7063f3f92a4c0b073",
+  "bytes": 19101,
+  "sha256": "6e73ce2037104ca11adf309d0886e623eff2c9cf20493021c5c739f61168f870",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/world/generate_world.py"
  },
  {
   "path": "world/vegetation-mask.png",
-  "bytes": 307571,
-  "sha256": "55e77525092d7db698e9c79a8baaa2908fb44d1153e218d22e2cc000d70bf79a",
+  "bytes": 306085,
+  "sha256": "60e6356df6f6357ad3504ee1511db9b2f46e5c8cd84aea53bf8c0fdec9a35ac3",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/world/generate_world.py"
  },
  {
   "path": "world/vegetation.json",
-  "bytes": 1769743,
-  "sha256": "1ea027bd61c458e590d399ef14e107d5d85730d9a932a76610ef6ef8a85fb5eb",
+  "bytes": 1779089,
+  "sha256": "8a63c896e351d3c4c665a5ac92e86e397f1baabfd51e19cb50ac31aac347e7a2",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/world/generate_world.py"

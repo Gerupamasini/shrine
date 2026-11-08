@@ -14,6 +14,7 @@ type SignSpec = { text: string; style: string };
  *  - plate:  white vertical enamel plate (police box)
  *  - wood:   vertical wooden board, ink lettering (community hall)
  *  - tabako: the red tobacco plate
+ *  - stone:  engraved granite plaque (the tunnel's name over the portal)
  */
 export class Signs {
   async load(land: Landscape) {
@@ -38,7 +39,7 @@ export class Signs {
         const tex = drawSign(spec, w, h, !!vertical, rng(Math.floor(Math.abs(o.position[0] * 131 + o.position[2] * 17 + i * 7)) + 11));
         tex.colorSpace = T.SRGBColorSpace;
         tex.anisotropy = 4;
-        const mat = land.lib.finish(new T.MeshStandardMaterial({ map: tex, roughness: spec.style === "tabako" ? 0.45 : 0.7, metalness: 0.0 }));
+        const mat = land.lib.finish(new T.MeshStandardMaterial({ map: tex, roughness: spec.style === "tabako" ? 0.45 : spec.style === "stone" ? 0.85 : 0.7, metalness: 0.0 }));
         const mesh = new T.Mesh(new T.PlaneGeometry(w, h), mat);
         const yaw = o.rotation[1], c = Math.cos(yaw), s = Math.sin(yaw);
         mesh.position.set(o.position[0] + lx * c + lz * s, o.position[1] + ly, o.position[2] - lx * s + lz * c);
@@ -63,6 +64,7 @@ function drawSign(spec: SignSpec, w: number, h: number, vertical: boolean, rnd: 
     plate: { bg: "#eeeee8", ink: "#141414", border: "#5a5a5a" },
     wood: { bg: "#9a7a55", ink: "#2a1a0e", border: "#5b432c" },
     tabako: { bg: "#c4241b", ink: "#f6f1e6", border: "#f6f1e6" },
+    stone: { bg: "#8d8a84", ink: "#2b2925", border: "#77746e" },
   };
   const st = styles[spec.style] ?? styles.board;
   g.fillStyle = st.bg;

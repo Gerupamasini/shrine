@@ -35,7 +35,12 @@ export type WorldData = {
     bridgeZ: number;
     bridgeDeckY: number;
   };
-  roads: { id: string; width: number; surface: string; points: [number, number, number][] }[];
+  roads: { id: string; class?: string; width: number; surface: string; points: [number, number, number][] }[];
+  hamlets?: { name: string; z: number; halfLength: number }[];
+  /** roadside ditches: centre offset from the road axis, inner width, z range, farm-road crossings */
+  ditch?: { offset: number; width: number; depth: number; zRange: [number, number]; crossings: number[] };
+  /** road tunnel portal: face front at (x, y, z), bore heading dx/dz = slope, opening half width and height */
+  tunnel?: { x: number; y: number; z: number; slope: number; halfWidth: number; height: number; faceHalfWidth: number; faceTop: number };
   powerLine: { poles: [number, number, number][]; wires: number; sag: number };
   budgets: Record<string, { triangles: number; drawCalls: number; pixelRatio: number }>;
 };

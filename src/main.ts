@@ -8,6 +8,7 @@ import { Landscape } from "./world/landscape";
 import { populate } from "./world/populate";
 import { Walker } from "./physics";
 import { Soundscape } from "./audio";
+import { VillageMap } from "./map";
 
 installAtmosphere();
 const $ = <E extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as E;
@@ -20,7 +21,10 @@ const camera = new T.PerspectiveCamera(55, innerWidth / innerHeight, 0.1, 9000);
 camera.rotation.order = "YXZ";
 const audio = new Soundscape();
 let renderer: T.WebGLRenderer, land: Landscape, walker: Walker, post: Post;
-let yaw = Math.PI / 2, pitch = 0, started = false, locked = false, settingsOpen = false, ready = false;
+let yaw = Math.PI / 2, pitch = 0, started = false, locked = false, settingsOpen = false, mapOpen = false, ready = false;
+/** the walk is on hold while the settings panel or the map sheet is open */
+const paused = () => settingsOpen || mapOpen;
+let villageMap: VillageMap | null = null;
 let elapsed = 0, fps = 0, frames = 0, measure = 0, acc = 0, timeOfDay = 18;
 const keys = new Set<string>();
 
@@ -88,7 +92,7 @@ enter.onclick = () => {
     })
     .catch(console.error);
 };
-canvas.onclick = () => started && !settingsOpen && requestLook();
+canvas.onclick = () => started && !paused() && requestLook();
 $("settings-button").onclick = () => setSettings(!settingsOpen);
 $("close-settings").onclick = () => setSettings(false);
 addEventListener("pointerlockchange", () => {
@@ -104,9 +108,9 @@ let dragging = false;
 const hover = { x: 0.5, y: 0.5, inside: false };
 canvas.addEventListener("pointerdown", () => (dragging = true));
 addEventListener("pointerup", () => (dragging = false));
-const overUi = (t: EventTarget | null) => !!(t as HTMLElement | null)?.closest?.("#settings, #welcome, button, input, select, a, label");
+const overUi = (t: EventTarget | null) => !!(t as HTMLElement | null)?.closest?.("#settings, #welcome, #map, #minimap, button, input, select, a, label");
 addEventListener("mousemove", (e) => {
-  if (!started || settingsOpen) return;
+  if (!started || paused()) return;
   hover.x = e.clientX / innerWidth;
   hover.y = e.clientY / innerHeight;
   hover.inside = !overUi(e.target);
@@ -118,7 +122,7 @@ addEventListener("mousemove", (e) => {
 document.addEventListener("mouseleave", () => (hover.inside = false));
 addEventListener("blur", () => (hover.inside = false));
 function edgeTurn(dt: number) {
-  if (locked || !hover.inside || !started || settingsOpen) return;
+  if (locked || !hover.inside || !started || paused()) return;
   const EDGE = 0.06;
   const l = 1 - Math.min(hover.x / EDGE, 1), r = 1 - Math.min((1 - hover.x) / EDGE, 1);
   yaw += (l * l - r * r) * 1.7 * dt;
@@ -136,11 +140,13 @@ addEventListener("keydown", (e) => {
   keys.add(e.code);
   if (e.repeat) return;
   if (e.code === "KeyF" && ready) setFree(!walker.free);
-  if (e.code === "Space" && ready && started && !walker.free && !settingsOpen) walker.jump();
+  if (e.code === "Space" && ready && started && !walker.free && !paused()) walker.jump();
+  if (e.code === "KeyM" && ready && started && !settingsOpen) villageMap?.toggle();
   if (e.code === "KeyH") document.body.classList.toggle("hide-ui");
   if (e.code === "Escape") {
     keys.clear();
-    if (settingsOpen) setSettings(false);
+    if (mapOpen) villageMap?.toggle(false);
+    else if (settingsOpen) setSettings(false);
   }
 });
 addEventListener("keyup", (e) => keys.delete(e.code));
@@ -173,6 +179,24 @@ function setQuality(q: Quality) {
 }
 $<HTMLSelectElement>("quality").onchange = (e) => setQuality((e.target as HTMLSelectElement).value as Quality);
 $<HTMLInputElement>("diagnostics").onchange = (e) => ($("stats").hidden = !(e.target as HTMLInputElement).checked);
+$("open-map").onclick = () => started && villageMap?.toggle(true);
+// minimap on/off, remembered in this browser (storage may be unavailable: then it just defaults to on)
+const miniBox = $<HTMLInputElement>("show-minimap");
+const setMini = (on: boolean) => {
+  miniBox.checked = on;
+  document.body.classList.toggle("no-minimap", !on);
+  try {
+    localStorage.setItem("natsukage.minimap", on ? "1" : "0");
+  } catch {
+    /* private mode */
+  }
+};
+try {
+  if (localStorage.getItem("natsukage.minimap") === "0") setMini(false);
+} catch {
+  /* private mode */
+}
+miniBox.onchange = () => setMini(miniBox.checked);
 function goto(name: string) {
   const l = land.world.data.landmarks[name];
   if (!l) return;
@@ -234,13 +258,14 @@ function frame(dt: number, wall: number) {
   elapsed += dt;
   if (!ready) return;
   acc = Math.min(acc + dt, 0.2);
-  const dir = started && !settingsOpen ? intent() : new T.Vector3();
+  const dir = started && !paused() ? intent() : new T.Vector3();
   const run = keys.has("ShiftLeft") || keys.has("ShiftRight");
   while (acc >= 1 / 60) {
     walker.move(dir, 1 / 60, run);
     acc -= 1 / 60;
   }
   updateCamera(dt);
+  villageMap?.update(walker.position.x, walker.position.z, yaw, performance.now());
   land.update(dt, elapsed);
   audio.update(camera, land.world, timeOfDay);
   post.updateRays(camera, land.lighting.sunDir, land.lighting.elevation, quality);
@@ -308,6 +333,20 @@ async function boot() {
   // compile shaders before the first visible frame
   land.update(0, 0);
   renderer.compile(land.scene, camera);
+  // the village map: places to go are the destinations of the settings panel
+  const places = Array.from(document.querySelectorAll<HTMLButtonElement>("[data-place]"))
+    .map((b) => ({ key: b.dataset.place!, name: b.textContent!.trim(), l: world.data.landmarks[b.dataset.place!] }))
+    .filter((p) => p.l)
+    .map((p) => ({ key: p.key, name: p.name, x: p.l[0], z: p.l[2] }));
+  villageMap = new VillageMap(places, (key) => goto(key), (open) => {
+    mapOpen = open;
+    keys.clear();
+    if (open) {
+      document.exitPointerLock();
+      setSettings(false);
+    }
+  });
+  villageMap.load().catch((e) => console.warn("map unavailable", e));
   ready = true;
   enter.disabled = false;
   $("loading").textContent = "準備ができました";
@@ -376,6 +415,7 @@ async function boot() {
         renderer.info.reset();
         post.draw(1 / 60);
       }
+      villageMap?.update(walker.position.x, walker.position.z, yaw, performance.now(), true);
       return renderer.info.render.triangles;
     },
     /** main-pass triangle estimate per system (before frustum culling), shadow casters separately */

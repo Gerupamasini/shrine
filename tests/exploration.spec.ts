@@ -52,6 +52,28 @@ test("foot torii → 200-step climb → precinct → lookout; collisions, settin
     }, [place, az, pitch]);
     await page.screenshot({ path: `artifacts/test-${name}.png`, timeout: 600000 });
   }
+  // the village map: M opens the sheet over the paused walk; a place marker takes you there
+  await page.locator("#enter").click();
+  await page.waitForFunction(() => !(document.getElementById("minimap-wrap") as HTMLElement).hidden, null, { timeout: 60000 });
+  await page.keyboard.press("m");
+  await expect(page.locator("#map")).toBeVisible();
+  const sheet = await page.evaluate(() => {
+    const c = document.getElementById("map-canvas") as HTMLCanvasElement;
+    const px = c.getContext("2d")!.getImageData(Math.round(c.width / 2), Math.round(c.height / 2), 1, 1).data;
+    return { w: c.clientWidth, h: c.clientHeight, alpha: px[3] };
+  });
+  expect(sheet.alpha).toBeGreaterThan(0);
+  await page.screenshot({ path: "artifacts/test-map.png", timeout: 600000 });
+  const ppm = (Math.min(sheet.w, sheet.h) * 0.9) / 1200;
+  const lk = await page.evaluate(() => (window as any).__satoyama.world.landmarks.lookout);
+  await page.mouse.click(sheet.w / 2 + lk[0] * ppm, sheet.h / 2 + lk[2] * ppm);
+  await expect(page.locator("#map")).toBeHidden();
+  const there = await page.evaluate(() => (window as any).__satoyama.state);
+  expect(there.place).toBe("見晴らし");
+  await page.keyboard.press("m");
+  await expect(page.locator("#map")).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(page.locator("#map")).toBeHidden();
   void g;
   expect(errors).toEqual([]);
 });

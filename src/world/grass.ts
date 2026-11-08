@@ -287,7 +287,7 @@ export class GrassField implements System {
             float groundY = fetchPaddy(wxz) + 0.03;
             float scl = (0.9 + hsh * 0.25) * dens * fade * uBaseScale;
           #else
-            float bare = s0.b + s0.a + s1.r + s1.g + s1.b + s1.a + s2.r;
+            float bare = s0.b + s0.a + s1.r + s1.g + s1.b + s1.a + s2.r + s2.b;   // dirt..asphalt, furrows, concrete
             float dens = clamp(veg.a * 1.4, 0.0, 1.0) * (1.0 - smoothstep(0.25, 0.6, bare));
             dens *= step(hsh * 0.85, dens * uDensity);
             float groundY = fetchH(tHeight, wxz);
@@ -379,7 +379,7 @@ export class RiceCanopy implements System {
       return g;
     };
     this.uniforms = { ...wt.uniforms(), uNearFade: { value: new T.Vector2(1.5, 3.5) } };
-    const shellFade = { uNearFade: { value: new T.Vector2(9.5, 14.5) } };
+    const shellFade = { uNearFade: { value: new T.Vector2(4.5, 8.0) } };
     const make = (shell: boolean) => {
       const u = shell ? { ...this.uniforms, ...shellFade } : this.uniforms;
       const mat = new T.MeshStandardMaterial({ roughness: 0.95, color: 0xffffff, envMapIntensity: 0.9, side: shell ? T.DoubleSide : T.FrontSide });
@@ -407,7 +407,7 @@ export class RiceCanopy implements System {
               float hgt = 0.82 * (0.45 + 0.55 * aShell / 3.0);
             #else
               vShell = 0.0;
-              float hgt = 0.36;                      // base layer: closed, dark lower canopy
+              float hgt = 0.46;                      // base layer: closed, dark lower canopy
             #endif
             transformed.y = isRice > 0.5 ? lvl + hgt : fetchH(tHeight, position.xz) - 2.0;
             vRxz = position.xz; vRice = isRice;`,

@@ -60,10 +60,16 @@
         "use": "shrine precinct gravel"
       },
       {
-        "id": "worn_asphalt",
+        "id": "asphalt_01",
         "res": "1k",
         "out": 1024,
-        "use": "village road"
+        "use": "prefectural and town roads"
+      },
+      {
+        "id": "asphalt_06",
+        "res": "1k",
+        "out": 1024,
+        "use": "concrete forecourts of the shops"
       },
       {
         "id": "rock_surface",

@@ -1,6 +1,6 @@
 # 使用素材と出典
 
-このファイルは `python3 tools/assets/catalog.py` が生成します。全ファイルのパス・サイズ・SHA-256・出典は [`docs/asset-manifest.json`](docs/asset-manifest.json)（225ファイル、計87.6MB）にあります。
+このファイルは `python3 tools/assets/catalog.py` が生成します。全ファイルのパス・サイズ・SHA-256・出典は [`docs/asset-manifest.json`](docs/asset-manifest.json)（232ファイル、計89.0MB）にあります。
 
 ## 外部素材
 
@@ -34,7 +34,8 @@
 | テクスチャ | [ganges_river_pebbles](https://polyhaven.com/a/ganges_river_pebbles) | Amal Kumar | terrain: dry gravel bars (kawara) in the stream bed |
 | テクスチャ | [mossy_rock](https://polyhaven.com/a/mossy_rock) | Rob Tuytel | terrain: steep rock |
 | テクスチャ | [gravel_floor_02](https://polyhaven.com/a/gravel_floor_02) | Dimitrios Savva, Jenelle van Heerden | shrine precinct gravel |
-| テクスチャ | [worn_asphalt](https://polyhaven.com/a/worn_asphalt) | Amal Kumar | village road |
+| テクスチャ | [asphalt_01](https://polyhaven.com/a/asphalt_01) | Charlotte Baglioni, Dario Barresi | prefectural and town roads |
+| テクスチャ | [asphalt_06](https://polyhaven.com/a/asphalt_06) | Jan Martens | concrete forecourts of the shops |
 | テクスチャ | [rock_surface](https://polyhaven.com/a/rock_surface) | Amal Kumar | stone steps, lanterns, komainu |
 | テクスチャ | [japanese_stone_wall](https://polyhaven.com/a/japanese_stone_wall) | Charlotte Baglioni, Dario Barresi, Rico Cilliers | ishigaki retaining walls |
 | テクスチャ | [mossy_stone_wall](https://polyhaven.com/a/mossy_stone_wall) | Amal Kumar | mossy walls, step risers |

@@ -25,7 +25,7 @@
 2. `heightmap.r16` を読む。ヘッダーなし、uint16 little-endian、行優先、1行目がz=−600（北端）、1列目がx=−600。
    - 高さは `y = raw / 65535 × 420 − 20`、Unityに入れる値は `raw / 65535f`。
 3. Z反転のため、`heights[row, col]` に入れる際に行を逆順にする（Unityの行0は南端になる）。
-4. `splat0.png`・`splat1.png`・`splat2.png`（RGBA×3、うち10層を使用）をAlphamapにする。層の順番と使うテクスチャは `materials.json` の `terrainLayers` にある。
+4. `splat0.png`・`splat1.png`・`splat2.png`（RGBA×3、うち11層を使用）をAlphamapにする。層の順番と使うテクスチャは `materials.json` の `terrainLayers` にある。
    - 順番：grass / forest / dirt / rock / paddy / riverbed / gravel / asphalt / furrows / bar（砂州の乾いた礫）
    - 画像も同じく上下反転する。各層の `size` がTerrainLayerの `tileSize` に当たる。
    - `fixed: true` の層（furrows＝畑の畝）は回転させずに貼る。畝は世界のX方向に走り、作物の列（`clutter.json` の `crop`）と揃っている。
@@ -36,6 +36,7 @@
    - A：草の密度
 6. `paddy-level.png` は稲がある区画の田面高さ（16-bit、高さマップと同じ変換式）。稲以外のセルは−20（最小値）。
 7. `far-heightmap.png`（257²、14km四方、0〜1600m）は遠景の山並み。別のTerrain、またはLODを粗くしたメッシュとして配置する。
+8. 側溝の開口とトンネルの坑口は、地形を掘らずに地形シェーダーで地面を描かないことで見せている（`scene.json` の `ditch` と `tunnel`）。UnityではTerrainのHoles（`TerrainData.SetHoles`）か、地形の上に置くメッシュで同じ形を作る。地図は `map.webp` と `map.json`（地名と位置）をUIに使う。
 
 ## 配置
 
