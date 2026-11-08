@@ -48,6 +48,7 @@ export class Landscape {
   }
   setQuality(q: Quality) {
     this.quality = q;
+    this.lib.setCoverage(q !== "low");
     this.lighting.setShadowQuality(q);
     for (const s of this.systems) s.setQuality?.(q);
   }

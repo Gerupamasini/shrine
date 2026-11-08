@@ -2,6 +2,7 @@ import * as T from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { publicUrl } from "../urls";
 import { addHook } from "../engine/hooks";
+import { darkenFringe } from "../engine/library";
 import type { Landscape, System } from "./landscape";
 import type { InstanceRow } from "./data";
 import type { Quality } from "../engine/lighting";
@@ -84,6 +85,8 @@ export class Vegetation implements System {
     };
     if (bark[name]) {
       m = lib.pbr({ tex: bark[name][0], color: bark[name][1], size: 1 });
+      // double-sided: open branch ends and a camera brushing a trunk show bark, not a hole
+      m.side = T.DoubleSide;
       windHook(m, 0.6);
     } else if (name === "bamboo_culm") {
       const mm = new T.MeshStandardMaterial({ map: lib.texture("assets/foliage/bamboo-culm-albedo.jpg", true), roughness: 0.55 });
@@ -113,6 +116,7 @@ export class Vegetation implements System {
       mm.normalScale.set(0.6, 0.6);
       (mm as unknown as { defines: Record<string, string> }).defines = { FOLIAGE: "" };
       m = lib.finish(mm);
+      darkenFringe(m);
       windHook(m, name === "bamboo_leaf" ? 1.6 : 1.0);
     }
     this.materials.set(name, m);

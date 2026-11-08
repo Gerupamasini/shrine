@@ -1,4 +1,5 @@
 import * as T from "three";
+import { addHook } from "./hooks";
 import { publicUrl } from "../urls";
 import { patchAtmosphere } from "./atmosphere";
 
@@ -90,12 +91,39 @@ export class Library {
     if (def.envIntensity !== undefined) m.envMapIntensity = def.envIntensity;
     return this.finish(m);
   }
+  /** Materials that want alpha-to-coverage. It only works with MSAA: without it three.js keeps the
+   *  fractional alpha of cut-out edges and skips its opaque path, which leaves light, see-through
+   *  rims on leaves. Those materials fall back to a plain alpha test when MSAA is off. */
+  coverage = new Set<T.Material>();
+  coverageOn = true;
+  setCoverage(on: boolean) {
+    this.coverageOn = on;
+    for (const m of this.coverage) {
+      m.alphaToCoverage = on;
+      m.needsUpdate = true;
+    }
+  }
   finish<M extends T.Material>(m: M): M {
     for (const f of this.finishers) f(m);
     patchAtmosphere(m);
+    if (m.alphaToCoverage) {
+      this.coverage.add(m);
+      m.alphaToCoverage = this.coverageOn;
+    }
     return m;
   }
   async ready() {
     await Promise.all(this.pending);
   }
+}
+
+/** Leaf atlases are lighter at their cut-out edges than inside the leaf; darken the fringe so card
+ *  edges do not read as pale, translucent rims. */
+export function darkenFringe(m: T.Material) {
+  addHook(m, "fringe", (s) => {
+    s.fragmentShader = s.fragmentShader.replace(
+      "#include <alphatest_fragment>",
+      "diffuseColor.rgb *= mix(0.7, 1.0, smoothstep(0.5, 0.95, diffuseColor.a));\n#include <alphatest_fragment>",
+    );
+  });
 }

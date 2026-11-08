@@ -8,9 +8,10 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview --host 0.0.0.0",
     "test": "node tests/world.test.mjs",
-    "assets": "python tools/generate_world.py && python tools/generate_foliage.py && python tools/generate_audio.py && node tools/build-models.mjs && node tools/build-trees.mjs && node tools/generate-canopy.mjs && python tools/catalog-assets.py",
+    "assets": "python3 tools/assets/fetch.py && python3 tools/assets/process_textures.py && node tools/assets/process_models.mjs && tools/assets/process_audio.sh && npm run world && node tools/trees/build-trees.mjs && node tools/bake/bake-cards.mjs && python3 tools/bake/compose_atlases.py && python3 tools/assets/catalog.py",
     "test:browser": "playwright test",
-    "build:pages": "tsc --noEmit && vite build --base=/shrine/"
+    "build:pages": "tsc --noEmit && vite build --base=/shrine/",
+    "world": "python3 tools/world/generate_world.py && node tools/architecture/build.mjs"
   },
   "dependencies": {
     "three": "^0.180.0",
