@@ -920,6 +920,215 @@ function postBox() {
   return m;
 }
 
+// ---------------------------------------------------------------- village centre: shops and public buildings
+// Local frame for all of them: front (+Z) on the road, frontage along X. `signs` are the anchors
+// [x, y, z, w, h, vertical] where the runtime draws the sign texts (index.json, "signs").
+const SIGN_ANCHORS = {};
+/** Shop-house (machiya-style, hirairi): shopfront, tin awning, sign board, living floor above. */
+function shopHouse(name, { W, D, storeys = 2, roof = "roof_kawara", front = "glass", lit = true, upper = "plaster_white", extras }) {
+  const m = new Model(name);
+  const F = 0.25, H1 = 3.0, H2 = storeys === 2 ? 2.6 : 0;
+  m.box("concrete", W + 0.2, F, D + 0.2, 0, F / 2, 0);
+  // side and back walls: board siding below, plaster or mortar above
+  for (const s of [-1, 1]) {
+    m.box("wood_siding", 0.12, 1.1, D, s * W / 2, F + 0.55, 0);
+    m.box(upper, 0.12, H1 + H2 - 1.1, D, s * W / 2, F + 1.1 + (H1 + H2 - 1.1) / 2, 0);
+  }
+  m.box("wood_siding", W, 1.1, 0.12, 0, F + 0.55, -D / 2);
+  m.box(upper, W, H1 + H2 - 1.1, 0.12, 0, F + 1.1 + (H1 + H2 - 1.1) / 2, -D / 2);
+  // shopfront
+  const fz = D / 2;
+  for (const s of [-1, 1]) m.box("wood_frame", 0.18, H1, 0.2, s * (W / 2 - 0.09), F + H1 / 2, fz);
+  m.box("wood_frame", W, 0.22, 0.22, 0, F + H1 - 0.11, fz);
+  const bays = Math.max(2, Math.round((W - 0.4) / 1.8)), bw = (W - 0.4) / bays;
+  for (let i = 0; i < bays; i++) {
+    const cx = -W / 2 + 0.2 + (i + 0.5) * bw;
+    if (front === "shutter" || (front === "mixed" && i === bays - 1)) {
+      m.box("steel_gate", bw - 0.04, 2.3, 0.05, cx, F + 1.15, fz - 0.05);
+      for (let y = F + 0.1; y < F + 2.3; y += 0.1) m.box("metal_grey", bw - 0.05, 0.012, 0.012, cx, y, fz - 0.02);
+    } else {
+      m.box(lit ? "interior_shop" : "interior_dark", bw - 0.08, 2.2, 0.05, cx, F + 1.15, fz - 1.4);
+      // shelves of goods seen through the glass
+      m.box("wood_dark", bw - 0.2, 1.7, 0.04, cx, F + 0.85, fz - 1.15);
+      for (let k = 0; k < 3; k++) {
+        m.box("wood_old", bw - 0.2, 0.03, 0.32, cx, F + 0.35 + k * 0.5, fz - 1.0);
+        for (let j = 0; j < 5; j++) {
+          const gw = 0.12 + ((i * 7 + j * 3 + k) % 4) * 0.04;
+          m.box(["vend_red", "sign_blue", "porcelain", "wood_light", "phone_green"][(i + j * 2 + k) % 5], gw, 0.18 + ((j + k) % 3) * 0.06, 0.2, cx - (bw - 0.5) / 2 + j * (bw - 0.5) / 4, F + 0.47 + k * 0.5, fz - 1.0);
+        }
+      }
+      m.box("glass", bw - 0.08, 2.15, 0.02, cx, F + 1.12, fz - 0.03);
+      for (const dx of [-bw / 2 + 0.03, bw / 2 - 0.03]) m.box("aluminium", 0.05, 2.25, 0.06, cx + dx, F + 1.12, fz - 0.02);
+      for (const y of [F + 0.05, F + 2.22, F + 0.95]) m.box("aluminium", bw - 0.04, 0.05, 0.06, cx, y, fz - 0.02);
+    }
+  }
+  // tin awning on brackets, the sign board above it
+  const aw = new Model("awning");
+  gableRoof(aw, "roof_tin", { W: W + 0.2, over: 0.0, eaveY: F + H1 - 0.35, ridgeY: F + H1 - 0.12, frontRun: 1.15, backRun: 0.01, thick: 0.04 });
+  m.merge(aw, new THREE.Matrix4().makeTranslation(0, 0, fz));
+  for (const x of [-W / 2 + 0.4, 0, W / 2 - 0.4]) strut(m, "metal_dark", V(x, F + H1 - 0.85, fz), V(x, F + H1 - 0.3, fz + 1.05), 0.04);
+  const sy = F + H1 + (storeys === 2 ? 0.42 : 0.38);
+  m.box("wood_dark", W - 0.9, 0.78, 0.08, 0, sy, fz + 0.04);
+  const signs = [[0, sy, fz + 0.09, W - 1.2, 0.62, 0]];
+  if (storeys === 2) {
+    // living floor: two windows with a rail, the roof along the road
+    for (const s of [-1, 1]) {
+      const x = s * W / 4, ww = W / 2 - 1.2;
+      // sliding windows: glass in wooden frames, lace curtains behind (lit at dusk in some rooms)
+      m.box(s > 0 ? "interior_lit" : "paper", ww, 1.0, 0.03, x, F + H1 + 1.35, fz - 0.2);
+      m.box("glass", ww, 1.05, 0.02, x, F + H1 + 1.35, fz - 0.05);
+      for (let k = 0; k <= 4; k++) m.box("wood_frame", 0.05, 1.1, 0.06, x - ww / 2 + (k * ww) / 4, F + H1 + 1.35, fz - 0.03);
+      m.box("wood_frame", ww + 0.1, 0.06, 0.08, x, F + H1 + 0.8, fz);
+      m.box("wood_frame", ww + 0.1, 0.06, 0.08, x, F + H1 + 1.9, fz);
+      m.box("metal_grey", ww + 0.2, 0.04, 0.04, x, F + H1 + 1.15, fz + 0.18);
+    }
+    m.box(upper, W, H2 - 1.1, 0.1, 0, F + H1 + 0.55 + (H2 - 1.1) / 2 + 0.55, fz - 0.07);
+  }
+  gableRoof(m, roof, { W: W + 0.5, over: 0.45, eaveY: F + H1 + H2 + 0.05, ridgeY: F + H1 + H2 + 0.05 + (D / 2 + 0.45) * 0.5, frontRun: D / 2 + 0.45, backRun: D / 2 + 0.45, thick: roof === "roof_kawara" ? 0.2 : 0.06 });
+  extras?.(m, { F, H1, H2, fz, signs });
+  SIGN_ANCHORS[name] = signs.map((a) => a.map((v) => +(+v).toFixed(3)));
+  return m;
+}
+function barberPole(m, x, y, z) {
+  m.cyl("metal_grey", 0.1, 0.1, 0.06, x, y, z, 14);
+  for (let i = 0; i < 12; i++) m.cyl(["post_red", "porcelain", "sign_blue"][i % 3], 0.075, 0.075, 0.075, x, y + 0.06 + i * 0.075, z, 14);
+  m.cyl("glass", 0.085, 0.085, 0.92, x, y + 0.04, z, 14);
+  m.cyl("metal_grey", 0.1, 0.06, 0.08, x, y + 0.96, z, 14);
+}
+/** Post office: a small flat-roofed concrete building, red band, glass doors. */
+function postOffice() {
+  const m = new Model("post-office");
+  const W = 9, D = 8, F = 0.3, H = 3.4;
+  m.box("concrete", W + 0.3, F, D + 0.3, 0, F / 2, 0);
+  for (const s of [-1, 1]) m.box("plaster_white", 0.2, H, D, s * W / 2, F + H / 2, 0);
+  m.box("plaster_white", W, H, 0.2, 0, F + H / 2, -D / 2);
+  m.box("plaster_white", W, 0.9, 0.22, 0, F + H - 0.45, D / 2);
+  for (const s of [-1, 1]) m.box("plaster_white", 1.4, H - 0.9, 0.22, s * (W / 2 - 0.7), F + (H - 0.9) / 2, D / 2);
+  m.box("interior_shop", W - 2.9, 2.4, 0.05, 0, F + 1.2, D / 2 - 0.8);
+  m.box("glass", W - 2.9, 2.4, 0.02, 0, F + 1.2, D / 2 - 0.02);
+  for (const dx of [-(W - 2.9) / 2, -(W - 2.9) / 6, (W - 2.9) / 6, (W - 2.9) / 2]) m.box("aluminium", 0.06, 2.45, 0.06, dx, F + 1.22, D / 2);
+  m.box("post_red", W + 0.02, 0.14, 0.24, 0, F + H - 0.95, D / 2 + 0.01);
+  m.box("concrete_cap", W + 0.4, 0.3, D + 0.4, 0, F + H + 0.15, 0);
+  m.box("concrete", W + 1.6, 0.12, 1.6, 0, F + 2.75, D / 2 + 0.8);          // canopy over the door
+  m.box("concrete", 3.0, 0.15, 1.5, 0, 0.08, D / 2 + 0.9);                   // step
+  SIGN_ANCHORS["post-office"] = [[0, F + H - 0.42, D / 2 + 0.13, W - 1.0, 0.62, 0]];
+  return m;
+}
+/** Police box (chuzaisho): office in front, residence behind, red lamp over the door. */
+function chuzaisho() {
+  const m = new Model("chuzaisho");
+  const W = 8, D = 7.5, F = 0.3, H = 2.9;
+  m.box("concrete", W + 0.2, F, D + 0.2, 0, F / 2, 0);
+  for (const s of [-1, 1]) m.box("plaster_white", 0.15, H, D, s * W / 2, F + H / 2, 0);
+  m.box("plaster_white", W, H, 0.15, 0, F + H / 2, -D / 2);
+  m.box("plaster_white", W - 3.4, H, 0.15, 1.7, F + H / 2, D / 2);
+  m.box("interior_shop", 2.4, 2.2, 0.05, -W / 2 + 1.75, F + 1.1, D / 2 - 0.7);
+  m.box("glass", 2.6, 2.2, 0.02, -W / 2 + 1.75, F + 1.1, D / 2);
+  m.box("aluminium", 2.7, 0.06, 0.06, -W / 2 + 1.75, F + 2.22, D / 2 + 0.01);
+  m.box("glass", 1.6, 1.0, 0.02, 1.9, F + 1.5, D / 2 + 0.08);
+  m.cyl("metal_dark", 0.02, 0.02, 0.4, -W / 2 + 1.75, F + H - 0.05, D / 2 + 0.25, 6, { rx: Math.PI / 2 });
+  const lamp = new THREE.SphereGeometry(0.16, 14, 10);
+  m.add("lamp_red", lamp, { uv: "box", matrix: new THREE.Matrix4().makeTranslation(-W / 2 + 1.75, F + H - 0.05, D / 2 + 0.45) });
+  hipRoof(m, "roof_tin_blue", { W, D, over: 0.7, eaveY: F + H + 0.05, ridgeY: F + H + 0.05 + (D / 2 + 0.7) * 0.45, sori: 0, thick: 0.1, gable: 0.7, uv: 1, ridgeMat: "roof_tin_blue", gableMat: "plaster_white", ridgeH: 0.15 });
+  SIGN_ANCHORS["chuzaisho"] = [[-W / 2 + 0.25, F + 1.5, D / 2 + 0.1, 0.36, 1.7, 1]];
+  return m;
+}
+/** JA branch office (one storey, glass front) and its rice warehouse. */
+function nokyo() {
+  return shopHouse("nokyo", { W: 12, D: 8.5, storeys: 1, roof: "roof_tin", front: "glass", upper: "concrete_cap" });
+}
+function nokyoSoko() {
+  const m = new Model("nokyo-soko");
+  const W = 18, D = 11, H = 5.6;
+  m.box("concrete", W + 0.3, 0.4, D + 0.3, 0, 0.2, 0);
+  for (const s of [-1, 1]) {
+    m.box("concrete_block", 0.25, 1.5, D, s * W / 2, 1.15, 0);
+    m.box("roof_tin", 0.12, H - 1.5, D, s * W / 2, 0.4 + 1.5 + (H - 1.5) / 2, 0);
+  }
+  for (const s of [-1, 1]) {
+    m.box("concrete_block", W, 1.5, 0.25, 0, 1.15, s * D / 2);
+    m.box("roof_tin", W, H - 1.5, 0.12, 0, 0.4 + 1.5 + (H - 1.5) / 2, s * D / 2);
+  }
+  for (const x of [-4.5, 4.5]) m.box("steel_gate", 3.6, 3.6, 0.1, x, 0.4 + 1.8, D / 2 + 0.1);
+  m.box("metal_dark", W - 2, 0.12, 0.12, 0, 0.4 + 3.7, D / 2 + 0.12);
+  gableRoof(m, "roof_tin", { W: W + 0.6, over: 0.5, eaveY: 0.4 + H, ridgeY: 0.4 + H + (D / 2 + 0.5) * 0.3, frontRun: D / 2 + 0.5, backRun: D / 2 + 0.5, thick: 0.06 });
+  return m;
+}
+/** Community hall (kominkan): one storey, tiled hip roof, porch with glass doors, wooden name board. */
+function kominkan() {
+  const m = new Model("kominkan");
+  const W = 14, D = 10, F = 0.45, H = 3.0;
+  m.box("concrete", W + 0.3, F, D + 0.3, 0, F / 2, 0);
+  for (const s of [-1, 1]) {
+    m.box("wood_siding", 0.15, 1.0, D, s * W / 2, F + 0.5, 0);
+    m.box("plaster_white", 0.15, H - 1.0, D, s * W / 2, F + 1.0 + (H - 1.0) / 2, 0);
+  }
+  m.box("wood_siding", W, 1.0, 0.15, 0, F + 0.5, -D / 2);
+  m.box("plaster_white", W, H - 1.0, 0.15, 0, F + 1.0 + (H - 1.0) / 2, -D / 2);
+  m.box("wood_siding", W, 1.0, 0.15, 0, F + 0.5, D / 2);
+  m.box("plaster_white", W, H - 1.0, 0.15, 0, F + 1.0 + (H - 1.0) / 2, D / 2);
+  for (const x of [-4.5, 4.5]) { m.box("glass", 2.4, 1.1, 0.03, x, F + 1.8, D / 2 + 0.08); m.box("wood_frame", 2.5, 0.06, 0.08, x, F + 2.38, D / 2 + 0.1); }
+  // entrance porch
+  m.box("concrete", 3.6, 0.3, 2.6, 0, 0.15, D / 2 + 1.3);
+  m.box("interior_shop", 2.2, 2.2, 0.05, 0, F + 1.1, D / 2 + 0.05);
+  m.box("glass", 2.2, 2.2, 0.02, 0, F + 1.1, D / 2 + 0.1);
+  for (const s of [-1, 1]) m.box("wood_frame", 0.18, 2.7, 0.18, s * 1.6, F + 1.35, D / 2 + 2.4);
+  const porch = new Model("porch");
+  gableRoof(porch, "roof_kawara", { W: 4.0, over: 0.3, eaveY: F + 2.75, ridgeY: F + 3.5, frontRun: 1.5, backRun: 1.5, thick: 0.18 });
+  m.merge(porch, new THREE.Matrix4().makeRotationY(Math.PI / 2).setPosition(0, 0, D / 2 + 1.25));
+  hipRoof(m, "roof_kawara", { W, D, over: 0.9, eaveY: F + H + 0.1, ridgeY: F + H + 0.1 + (D / 2 + 0.9) * 0.55, sori: 0.1, thick: 0.22, gable: 0.6, ridgeMat: "roof_kawara_ridge", gableMat: "plaster_white", ridgeH: 0.4 });
+  m.box("wood_old", 0.42, 1.9, 0.08, -2.15, F + 1.1, D / 2 + 2.4);
+  SIGN_ANCHORS["kominkan"] = [[-2.15, F + 1.1, D / 2 + 2.45, 0.34, 1.75, 1]];
+  return m;
+}
+/** Glass telephone box of the period with a grey frame and a green public phone. */
+function phoneBox() {
+  const m = new Model("phone-box");
+  const S = 0.9, H = 2.2;
+  m.box("concrete", S + 0.2, 0.1, S + 0.2, 0, 0.05, 0);
+  for (const [x, z] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) m.box("metal_grey", 0.06, H, 0.06, x * S / 2, 0.1 + H / 2, z * S / 2);
+  for (const s of [-1, 1]) { m.box("glass", 0.02, H - 0.3, S - 0.06, s * S / 2, 0.1 + (H - 0.3) / 2 + 0.15, 0); m.box("glass", S - 0.06, H - 0.3, 0.02, 0, 0.1 + (H - 0.3) / 2 + 0.15, s * S / 2); }
+  m.box("porcelain", S + 0.14, 0.12, S + 0.14, 0, 0.1 + H + 0.06, 0);
+  m.box("phone_green", 0.26, 0.4, 0.16, 0, 1.25, -S / 2 + 0.12);
+  m.box("metal_dark", 0.3, 0.03, 0.26, 0, 0.98, -S / 2 + 0.16);
+  return m;
+}
+/** White road markings on the prefectural road: dashed centre line, edge lines broken at junctions. */
+function roadMarkings() {
+  const m = new Model("road-markings");
+  const pts = scene.roads[0].points, half = scene.roads[0].width / 2;
+  const gaps = scene.roads.filter((r) => r.class !== "prefectural" && r.points.length > 1).map((r) => {
+    const p = r.points[r.points.length - 1], q = r.points[0];
+    // the end of the side road that touches the main road, and which side it joins from
+    const near = [p, q].sort((a, b) => Math.abs(a[0] - roadXAt(a[2])) - Math.abs(b[0] - roadXAt(b[2])))[0];
+    return { z: near[2], side: Math.sign(near[0] - roadXAt(near[2])) || 1, w: (r.width ?? 3) / 2 + 1.5, d: Math.abs(near[0] - roadXAt(near[2])) };
+  }).filter((g) => g.d < half + 4);
+  function roadXAt(z) { let best = pts[0]; for (const p of pts) if (Math.abs(p[2] - z) < Math.abs(best[2] - z)) best = p; return best[0]; }
+  let along = 0;
+  for (let i = 0; i < pts.length - 1; i++) {
+    const [ax, ay, az] = pts[i], [bx, by, bz] = pts[i + 1];
+    const L = Math.hypot(bx - ax, bz - az), dx = (bx - ax) / L, dz = (bz - az) / L, nx = dz, nz = -dx, yaw = Math.atan2(dx, dz);
+    const strip = (off, t0, t1) => {
+      const cx = (ax + bx) / 2 + nx * off + dx * ((t0 + t1) / 2 - L / 2), cz = (az + bz) / 2 + nz * off + dz * ((t0 + t1) / 2 - L / 2);
+      m.box("road_paint", t1 - t0, 0.012, 0.15, cx, (ay + by) / 2 + 0.012, cz, { ry: yaw + Math.PI / 2 });
+    };
+    // centre: 5 m line, 5 m gap
+    let t = 0;
+    while (t < L) {
+      const phase = (along + t) % 10, run = Math.min(phase < 5 ? 5 - phase : 10 - phase, L - t);
+      if (phase < 5) strip(0, t, t + run);
+      t += run;
+    }
+    for (const s of [-1, 1]) {
+      const mz = (az + bz) / 2;
+      if (gaps.some((g) => g.side === s && Math.abs(mz - g.z) < g.w)) continue;
+      strip(s * (half - 0.25), 0, L + 0.01);
+    }
+    along += L;
+  }
+  return m;
+}
+
 // ---------------------------------------------------------------- river works (world coordinates)
 /** Flip triangles of a non-indexed geometry so that their normals agree with dir(centroid). */
 function orientTo(g, dir) {
@@ -1175,6 +1384,32 @@ await save("stairs", stairs());
 await save("hinomi", hinomi());
 await save("shobo-shed", shoboShed());
 await save("post", postBox());
+await save("shop-yorozuya", shopHouse("shop-yorozuya", { W: 9, D: 8.5, storeys: 2, roof: "roof_kawara", front: "glass",
+  extras: (m, { F, fz }) => {
+    // ice-cream chest and a bench under the awning
+    m.box("porcelain", 1.1, 0.8, 0.6, 2.6, F + 0.4, fz + 0.55);
+    m.box("glass", 1.0, 0.03, 0.5, 2.6, F + 0.81, fz + 0.55);
+    m.box("wood_old", 1.6, 0.06, 0.4, -2.4, F + 0.42, fz + 0.65);
+    for (const x of [-3.0, -1.8]) m.box("wood_old", 0.06, 0.4, 0.36, x, F + 0.2, fz + 0.65);
+  } }));
+await save("shop-sakaya", shopHouse("shop-sakaya", { W: 8, D: 8, storeys: 2, roof: "roof_tin", front: "mixed",
+  extras: (m, { F, fz, signs }) => {
+    // the red tobacco plate on a bracket, and stacked beer crates
+    m.box("metal_dark", 0.04, 0.04, 0.5, 3.5, F + 2.25, fz + 0.25);
+    signs.push([3.5, F + 1.95, fz + 0.5, 0.72, 0.44, 0]);
+    for (let i = 0; i < 6; i++) m.box(i % 2 ? "vend_red" : "sign_blue", 0.45, 0.3, 0.33, -3.2 + (i % 3) * 0.47, F + 0.15 + Math.floor(i / 3) * 0.31, fz + 0.45);
+  } }));
+await save("shop-tofu", shopHouse("shop-tofu", { W: 7, D: 8, storeys: 2, roof: "roof_kawara", front: "mixed" }));
+await save("barber", shopHouse("barber", { W: 7, D: 7.5, storeys: 2, roof: "roof_tin", front: "glass",
+  extras: (m, { F, fz }) => barberPole(m, 3.05, F + 0.9, fz + 0.32) }));
+await save("post-office", postOffice());
+await save("chuzaisho", chuzaisho());
+await save("nokyo", nokyo());
+await save("nokyo-soko", nokyoSoko());
+await save("kominkan", kominkan());
+await save("phone-box", phoneBox());
+await save("road-markings", roadMarkings());
+for (const [k, v] of Object.entries(SIGN_ANCHORS)) if (index[k]) index[k].signs = v;
 fs.writeFileSync(path.join(OUT, "index.json"), JSON.stringify({ presets: HOUSE_PRESETS, assets: index }, null, 1));
 // weld + quantize every GLB (KHR_mesh_quantization: supported by three.js and glTFast)
 const { NodeIO, PropertyType } = await import("@gltf-transform/core");

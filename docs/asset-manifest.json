@@ -213,10 +213,44 @@
   "tool": "tools/bake/bake-cards.mjs + tools/bake/compose_atlases.py"
  },
  {
+  "path": "assets/fonts/OFL.txt",
+  "bytes": 4514,
+  "sha256": "b20f6dae5e2cfb6bf03e878e7393ee4dbbc467a2ec4bc4cf69323d995cd3f4f6",
+  "origin": "Google Fonts",
+  "page": "https://fonts.google.com/noto/specimen/Noto+Serif+JP",
+  "authors": [
+   "Google, Adobe (Noto CJK)"
+  ],
+  "licence": "SIL Open Font License 1.1",
+  "licenceUrl": "https://openfontlicense.org/open-font-license-official-text/",
+  "processing": "subset to the glyphs of the signs (tools/assets/fetch_sign_font.py)"
+ },
+ {
+  "path": "assets/fonts/signs-noto-serif-jp.ttf",
+  "bytes": 24140,
+  "sha256": "544dc82d39c5b59435c3d0ffab45e31811dc0fa99e4f2304dfa1ca8d2ff4b088",
+  "origin": "Google Fonts",
+  "page": "https://fonts.google.com/noto/specimen/Noto+Serif+JP",
+  "authors": [
+   "Google, Adobe (Noto CJK)"
+  ],
+  "licence": "SIL Open Font License 1.1",
+  "licenceUrl": "https://openfontlicense.org/open-font-license-official-text/",
+  "processing": "subset to the glyphs of the signs (tools/assets/fetch_sign_font.py)"
+ },
+ {
   "path": "assets/licenses/PolyHaven-asset-license.json",
   "bytes": 2216,
   "sha256": "a9d88b758d1751dd41713381115ed309ea659e219c1654157b709dce7757e779",
   "origin": "licence text"
+ },
+ {
+  "path": "assets/models/architecture/barber.glb",
+  "bytes": 128092,
+  "sha256": "86046d720b1b1fd35266206d09230a84d96390c589439b2288dbd4198dba5bd6",
+  "origin": "original (this repo)",
+  "licence": "CC0 1.0",
+  "tool": "tools/architecture/build.mjs"
  },
  {
   "path": "assets/models/architecture/bench.glb",
@@ -246,6 +280,14 @@
   "path": "assets/models/architecture/bus-stop.glb",
   "bytes": 9984,
   "sha256": "f79f8ab39ee8bcaac184d078eec712b892876ae10009e9984a137306162a2928",
+  "origin": "original (this repo)",
+  "licence": "CC0 1.0",
+  "tool": "tools/architecture/build.mjs"
+ },
+ {
+  "path": "assets/models/architecture/chuzaisho.glb",
+  "bytes": 76176,
+  "sha256": "ac427c362d578e95cee6a3c211941e8941698790ac378bcc23bade41b90a5e97",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/architecture/build.mjs"
@@ -291,6 +333,14 @@
   "tool": "tools/architecture/build.mjs"
  },
  {
+  "path": "assets/models/architecture/hinomi.glb",
+  "bytes": 92192,
+  "sha256": "e1d5b9342a466eefc9fee79bd93af5515f4d5e576ece23918200d8b02aec9faa",
+  "origin": "original (this repo)",
+  "licence": "CC0 1.0",
+  "tool": "tools/architecture/build.mjs"
+ },
+ {
   "path": "assets/models/architecture/honden.glb",
   "bytes": 57384,
   "sha256": "0d16e3c8c3403884aa70e054d556527af15051bdfe26f88d6e53be15ff57211a",
@@ -300,8 +350,8 @@
  },
  {
   "path": "assets/models/architecture/index.json",
-  "bytes": 16181,
-  "sha256": "dfb924f1776bed3c0ef0c1d5b246b789c8a0a3c07493905119e9732b905f85b0",
+  "bytes": 22597,
+  "sha256": "739b180a706b717c4d70302164c1eb13f1a5cb3c58c2c1590c13c205fabc8397",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/architecture/build.mjs"
@@ -363,33 +413,41 @@
   "tool": "tools/architecture/build.mjs"
  },
  {
+  "path": "assets/models/architecture/kominkan.glb",
+  "bytes": 90524,
+  "sha256": "0e0ab2901a23d716209cf9d6957eb88f6ee3d819488da84bf119aea8dc545f26",
+  "origin": "original (this repo)",
+  "licence": "CC0 1.0",
+  "tool": "tools/architecture/build.mjs"
+ },
+ {
   "path": "assets/models/architecture/minka-kawara_0.glb",
-  "bytes": 177332,
-  "sha256": "4eacd44f9e24eca072cd8f0547038e97ce7f2455ca067ca4c71b1f23980962ac",
+  "bytes": 181228,
+  "sha256": "3ede2da696948b826f492333b259b62a8905cc648707340d6ad9a3b688522747",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/architecture/build.mjs"
  },
  {
   "path": "assets/models/architecture/minka-kawara_1.glb",
-  "bytes": 256476,
-  "sha256": "7e177ee1093886496d0d6821d68b82ab44f04d880235801ec811ed428b407958",
+  "bytes": 260292,
+  "sha256": "e3983625ed1949d76b92ae62a7a10afc6a6f3c79940e3e04b5b48b9883e14f89",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/architecture/build.mjs"
  },
  {
   "path": "assets/models/architecture/minka-kawara_2.glb",
-  "bytes": 150396,
-  "sha256": "69f3ab9abad7ccb18e88f05492d464401f8c9415e8c535d0238eece38a5819c9",
+  "bytes": 154208,
+  "sha256": "f0c417696f08bdef2d2d8622b940c2b1257c08fa000e4dc5f65c62809d8d698a",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/architecture/build.mjs"
  },
  {
   "path": "assets/models/architecture/minka-kawara_3.glb",
-  "bytes": 257204,
-  "sha256": "b0d7ddbd52a1c441060d81dc9e7c58610dfaf416472d611cbfee8b6f2192419b",
+  "bytes": 261096,
+  "sha256": "53523a7b6274603c29b296bc145442212fc7420e3450ab55fca887fbf3196cc3",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/architecture/build.mjs"
@@ -460,32 +518,32 @@
  },
  {
   "path": "assets/models/architecture/minka-totan_0.glb",
-  "bytes": 156352,
-  "sha256": "2c9d9547632be3b71a87a12511780e8b7163dbe456117b857150323c34fdb120",
+  "bytes": 160248,
+  "sha256": "b6da3b0d17fd0923c7f8535ff3d10e69b1251144313f5d9516b3e97a2b8f2d00",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/architecture/build.mjs"
  },
  {
   "path": "assets/models/architecture/minka-totan_1.glb",
-  "bytes": 174900,
-  "sha256": "2c74e75435ad9f50ea148cc799eb4793b214df3106d0d79a7e957240d806d045",
+  "bytes": 178792,
+  "sha256": "3a0c0d4016508ad594915fb4ee2f7945a2e586fc7aa55a01d177443eb6433624",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/architecture/build.mjs"
  },
  {
   "path": "assets/models/architecture/minka-totan_2.glb",
-  "bytes": 150288,
-  "sha256": "8eb06d6a75bd630eb4da1c4d149b5cb9fe8e4469db3e579caf5d3928dba8e25d",
+  "bytes": 154180,
+  "sha256": "17a8692ec9f2aca79932c3985d37583cdeaf553ab348813ca539100d6eef07da",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/architecture/build.mjs"
  },
  {
   "path": "assets/models/architecture/minka-totan_3.glb",
-  "bytes": 153360,
-  "sha256": "6dd57f51ad4d54f0ed30153c62d64f9ccf75aa6c95d92ee55f5c1e5c095df3ce",
+  "bytes": 157172,
+  "sha256": "08d54c7b238add1c5748ab04890da96625928b80e341d3ffdcc4c0e29910d7b8",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/architecture/build.mjs"
@@ -507,6 +565,46 @@
   "tool": "tools/architecture/build.mjs"
  },
  {
+  "path": "assets/models/architecture/nokyo-soko.glb",
+  "bytes": 20412,
+  "sha256": "5823407a0d5868418b27ecba334905415a8207613f19ec81d76ea973a856c6d4",
+  "origin": "original (this repo)",
+  "licence": "CC0 1.0",
+  "tool": "tools/architecture/build.mjs"
+ },
+ {
+  "path": "assets/models/architecture/nokyo.glb",
+  "bytes": 109364,
+  "sha256": "1b726ae92b881c88496f29acf7cd6dabdb86df4708cfc0195515b03f1f8c1628",
+  "origin": "original (this repo)",
+  "licence": "CC0 1.0",
+  "tool": "tools/architecture/build.mjs"
+ },
+ {
+  "path": "assets/models/architecture/phone-box.glb",
+  "bytes": 9508,
+  "sha256": "6ec987de95b2e92ef258962d05b8d24bcde52e1442dd22fe704fc16cbdbfe1cf",
+  "origin": "original (this repo)",
+  "licence": "CC0 1.0",
+  "tool": "tools/architecture/build.mjs"
+ },
+ {
+  "path": "assets/models/architecture/post-office.glb",
+  "bytes": 14456,
+  "sha256": "3979955a8eab54f3a79d056af6a79fb54de47fabb0af2afc661ab890ae7f05b6",
+  "origin": "original (this repo)",
+  "licence": "CC0 1.0",
+  "tool": "tools/architecture/build.mjs"
+ },
+ {
+  "path": "assets/models/architecture/post.glb",
+  "bytes": 18536,
+  "sha256": "204d413194279a2ac90701bbd0d685bdbd41e90e4a9a1cba03ceea2c12da6e7d",
+  "origin": "original (this repo)",
+  "licence": "CC0 1.0",
+  "tool": "tools/architecture/build.mjs"
+ },
+ {
   "path": "assets/models/architecture/river-works.glb",
   "bytes": 1204380,
   "sha256": "4b8246032074e76996bebf08d2559c2c339c9adbab454b41292a79703996db83",
@@ -516,8 +614,16 @@
  },
  {
   "path": "assets/models/architecture/road-ditch.glb",
-  "bytes": 1750824,
-  "sha256": "af77ca1154c349189a05ff229fc7d70aeb7b87f6516d3690f7ffc0f801165d2d",
+  "bytes": 1824696,
+  "sha256": "ed879ed32163022cd92ab6dfe3828660d3f48ce71130216b42bb2aeaad06360a",
+  "origin": "original (this repo)",
+  "licence": "CC0 1.0",
+  "tool": "tools/architecture/build.mjs"
+ },
+ {
+  "path": "assets/models/architecture/road-markings.glb",
+  "bytes": 737364,
+  "sha256": "a49a9351990fbd17fc14fb3b2c595c163c1ad0a690841eae798b9f3ba0fde08c",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/architecture/build.mjs"
@@ -550,6 +656,38 @@
   "path": "assets/models/architecture/shimenawa-tree.glb",
   "bytes": 31568,
   "sha256": "072c04dda8332b0bdab0e7602945a263e4a751603a9aca818d6b666c3ba2271b",
+  "origin": "original (this repo)",
+  "licence": "CC0 1.0",
+  "tool": "tools/architecture/build.mjs"
+ },
+ {
+  "path": "assets/models/architecture/shobo-shed.glb",
+  "bytes": 30700,
+  "sha256": "6b98f786568c16e974499dad9c85ffd0302a17648c7520b9a5599c05200a3920",
+  "origin": "original (this repo)",
+  "licence": "CC0 1.0",
+  "tool": "tools/architecture/build.mjs"
+ },
+ {
+  "path": "assets/models/architecture/shop-sakaya.glb",
+  "bytes": 108188,
+  "sha256": "159ee5a480e62e4f127f12c366bde18a93791ad72c8c75275f3aff576ae55dc3",
+  "origin": "original (this repo)",
+  "licence": "CC0 1.0",
+  "tool": "tools/architecture/build.mjs"
+ },
+ {
+  "path": "assets/models/architecture/shop-tofu.glb",
+  "bytes": 102992,
+  "sha256": "9765a86d59d13b4cf6162086630114afa734d3fec6ae511639815c5243eca6d8",
+  "origin": "original (this repo)",
+  "licence": "CC0 1.0",
+  "tool": "tools/architecture/build.mjs"
+ },
+ {
+  "path": "assets/models/architecture/shop-yorozuya.glb",
+  "bytes": 127248,
+  "sha256": "12548a0b08fca6b8b6e60533e16901a7f724a8caf96965d960207111d8966675",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/architecture/build.mjs"
@@ -2106,8 +2244,8 @@
  },
  {
   "path": "world/clutter.json",
-  "bytes": 2872401,
-  "sha256": "9a70fe43ca9cbcb625c403c1f88af4a44be218234e0e94fc3990135af9eaa9ff",
+  "bytes": 1826320,
+  "sha256": "1f09cf9e94ef88244945b0b8721167a4e8d96c6a85e601339561d23f4bac0f3d",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/world/generate_world.py"
@@ -2130,8 +2268,8 @@
  },
  {
   "path": "world/heightmap.png",
-  "bytes": 967570,
-  "sha256": "a3d4922a3c3681cff6ee53de96ec279d2d9a217d19106783dbf911ec934d77cc",
+  "bytes": 969700,
+  "sha256": "cf0b8792282d8233b7539a6bb1fff4280c40eb507295d5951eab3ce3ced7f8c9",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/world/generate_world.py"
@@ -2139,71 +2277,71 @@
  {
   "path": "world/heightmap.r16",
   "bytes": 2101250,
-  "sha256": "35be12e079e250daf6b5d26dd7e2ee853c7072d499c8fba57cecb2658c57d715",
+  "sha256": "735878d9e35453ee73d8ee3e34f41d463f926d5bbe3bbd74b9446d9eaf3899f8",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/world/generate_world.py"
  },
  {
   "path": "world/materials.json",
-  "bytes": 10235,
-  "sha256": "8286dd0cb00a035a23cb78ccfee7dd144f18b815b804da19e1056daafe11b516",
+  "bytes": 10993,
+  "sha256": "2ca1ecdc8fe180233aa324e0bb3f7892b885e647fcd37b3769ae0eda111f21f2",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/world/generate_world.py"
  },
  {
   "path": "world/paddy-level.png",
-  "bytes": 13608,
-  "sha256": "12c31394b0b02a371e19b7822cdbf2073415f8c0a9bc942b5980508cd2db9e21",
+  "bytes": 17303,
+  "sha256": "0d2102ce9cc052f12c3ac1bfd0f6c8499fc4d50a75c0f405848c0b4179d354c9",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/world/generate_world.py"
  },
  {
   "path": "world/scene.json",
-  "bytes": 397852,
-  "sha256": "17cf52c5fe453df257429a023be5e79f1595a3bb33bb42197b171efdefa877fc",
+  "bytes": 442363,
+  "sha256": "812f89023465166b1f563e310f36fd1a5c1aef31db4b001bd3d072c519595bd3",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/world/generate_world.py"
  },
  {
   "path": "world/splat0.png",
-  "bytes": 327233,
-  "sha256": "13d72494ce6e33f5e81c549788ebd77ef58730f4443249fa402a02a5caddd03b",
+  "bytes": 324347,
+  "sha256": "118337926ab7499e354b36c50a0873f20f847a6d4abb540de0715350cd566ce6",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/world/generate_world.py"
  },
  {
   "path": "world/splat1.png",
-  "bytes": 28448,
-  "sha256": "fd78577c9ca463fd9afa8ff91cd5dff9f14123f7c53585fbe43f6210e9b77121",
+  "bytes": 30969,
+  "sha256": "5412ecf829899eccc44002be9392f1362e0abe3110b12044838a2dc3b9d4987d",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/world/generate_world.py"
  },
  {
   "path": "world/splat2.png",
-  "bytes": 17192,
-  "sha256": "90824f3edd8ca5e8ef671631720cc21b4c312c70816154344e14759ed54e663c",
+  "bytes": 16852,
+  "sha256": "6f584b4d841eb89fc98d98b4173c333dd665813d22d422b7063f3f92a4c0b073",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/world/generate_world.py"
  },
  {
   "path": "world/vegetation-mask.png",
-  "bytes": 315516,
-  "sha256": "664c67f79a7b3637c0584f05e8515c407d9837c23f00dfec4477f708eeab906c",
+  "bytes": 307571,
+  "sha256": "55e77525092d7db698e9c79a8baaa2908fb44d1153e218d22e2cc000d70bf79a",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/world/generate_world.py"
  },
  {
   "path": "world/vegetation.json",
-  "bytes": 1740611,
-  "sha256": "032736eb6bc423a5ecf1bd6f728d56b276df693701c33ba2f8cc505565953a9e",
+  "bytes": 1769743,
+  "sha256": "1ea027bd61c458e590d399ef14e107d5d85730d9a932a76610ef6ef8a85fb5eb",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/world/generate_world.py"

@@ -6,7 +6,7 @@ import type { Heightfield, WorldData } from "./data";
 
 /** Terrain layers in splat order (splat0..2 RGBA) and their tile size in metres. `fixed` = sample without the anti-tiling rotation (directional textures). */
 export const TERRAIN_LAYERS = [
-  { id: "leafy_grass", size: 3.2, tint: [0.62, 0.78, 0.5] },
+  { id: "leafy_grass", size: 3.2, tint: [0.54, 0.74, 0.45] },
   { id: "forest_leaves_02", size: 3.0, tint: [0.52, 0.56, 0.42] },
   { id: "stony_dirt_path", size: 2.6, tint: [0.95, 0.92, 0.88] },
   { id: "mossy_rock", size: 4.5, tint: [0.9, 0.92, 0.86] },

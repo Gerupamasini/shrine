@@ -7,6 +7,7 @@ import { River } from "./water";
 import { FarTerrain } from "./far";
 import { Understory, crops } from "./understory";
 import { Smoke } from "./smoke";
+import { Signs } from "./signs";
 import { Dragonflies } from "./insects";
 import * as T from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
@@ -21,8 +22,10 @@ export async function populate(land: Landscape, progress: (p: number, label: str
   const far = new FarTerrain(land);
   const under = new Understory();
   const smoke = new Smoke();
+  const signs = new Signs();
   await Promise.all([
     smoke.load(land),
+    signs.load(land),
     veg.load((p) => progress(0.3 + p * 0.3, "木立を育てています")),
     arch.load((p) => progress(0.6 + p * 0.2, "社と家並みを建てています")),
     clutter.load(),
@@ -31,6 +34,12 @@ export async function populate(land: Landscape, progress: (p: number, label: str
     under.load(land),
   ]);
   land.add(veg);
+  // forest on the ranges beyond the map: billboards out to ~2.6 km (1.8 km at low quality)
+  {
+    const low = land.quality === "low";
+    const { sites, kinds } = far.treeSites(low ? 1800 : 2600, low ? 13 : 9.5);
+    veg.addFarForest(sites, kinds);
+  }
   land.add(arch);
   land.add(clutter);
   // near: photographed grass clumps (Poly Haven grass_medium_01); beyond: procedural blades

@@ -322,14 +322,16 @@ rd = np.abs(X - rx)
 RB = bed_half(Z)
 RIVER_KEEP = RB + WALL_RUN + CAP_W + PATH_W + 3.2     # bed + revetment + levee path + canal
 
-# Road: graded slightly above the floor, cambered.
+# Main road (prefectural road, kendo): 6 m of asphalt, two lanes with a dashed centre line and
+# edge lines, gravel shoulders and concrete side ditches; graded slightly above the floor.
+ROAD_HALF = 3.0
 road = road_x(Z)
 road_d = np.abs(X - road)
 road_y = floor_base(Z) + 1.05
-road_mask = (1 - smoothstep(2.4, 6.0, road_d)) * smoothstep(-560, -520, Z) * (1 - smoothstep(560, 590, Z))
+road_mask = (1 - smoothstep(ROAD_HALF + 0.8, ROAD_HALF + 4.5, road_d)) * smoothstep(-560, -520, Z) * (1 - smoothstep(560, 590, Z))
 h = h * (1 - road_mask) + road_y * road_mask
 # Concrete side ditches (sokko) both sides of the road: a groove for tools/architecture to line.
-DITCH_OFF = 2.45
+DITCH_OFF = ROAD_HALF + 0.75
 groove = np.exp(-((road_d - DITCH_OFF) / 0.45) ** 2) * smoothstep(-520, -500, Z) * (1 - smoothstep(540, 560, Z))
 h = h - 0.42 * groove
 
@@ -346,28 +348,31 @@ bm = 1 - smoothstep(2.6, 6.5, bd)
 h = h * (1 - bm) + branch_y * bm
 
 # ---- Settlement ----------------------------------------------------------------------
-# A Tohoku valley farm village (see docs/TERRAIN_DESIGN.md, "集落"): hamlets (shuraku) on
-# the gently rising foot of the eastern hills along the road, a hamlet across the river
-# (Kawamuko) on the west footslope above its terraced paddies, and farmsteads standing
-# alone among the paddies (sankyo). Every house faces south with its ridge east-west,
-# turned a little towards the open valley; a packed-earth front yard, a barn at the west
-# side of the yard facing it, a kitchen garden on the east side, a windbreak (igune: sugi
-# with keyaki) on the north and west against the winter north-westerly, and a lane down
-# to the road.
+# The village follows the pattern of a Tohoku valley village (docs/TERRAIN_DESIGN.md, "集落"):
+#  * a small centre (machi) where the town road from the bridge meets the prefectural road:
+#    shop-houses and public buildings in a row on both sides, fronts on the road, close together
+#    (general store, liquor and tobacco shop, post office, police box, JA branch with its rice
+#    warehouse, community hall, barber, fire lookout) - the services that cluster on the main road
+#  * farm hamlets along the road on the gently rising foot of the eastern hills: houses that front
+#    the road face it, those set back face south behind an igune windbreak on the north and west
+#  * Kawamuko across the river above its terraced paddies, and farmsteads alone among the paddies
+#    beside the farm road, each ringed by igune
+# Roads form a hierarchy: the paved prefectural road, paved town roads (to the bridge and up to
+# Kawamuko), gravel farm roads, and short gravel driveways from each yard to the nearest road.
 houses = []
-lanes = []            # dirt lanes: [(x, z, y), ...] polylines
+lanes = []            # driveways: [(x, z, y), ...]
 ditch_crossings = [BRIDGE_Z]
 PRESETS = json.loads((ROOT / "tools/architecture/presets.json").read_text())
 KIND_ASSET = {"kawara": "minka-kawara", "thatch": "minka-kayabuki", "tin": "minka-totan", "kura-house": "minka-kura"}
 HAMLETS = [  # name, centre z, half length along the road, houses, valley-side share, kinds in turn
-    ("kaminosawa", -300.0, 46.0, 9, 0.25, ["thatch", "tin", "thatch", "kawara", "tin"]),
-    ("nakazato", -198.0, 32.0, 7, 0.3, ["kawara", "tin", "thatch"]),
-    ("miyashita", -84.0, 36.0, 9, 0.2, ["kawara", "thatch", "kura-house", "kawara", "tin"]),
-    ("nakamura", 86.0, 58.0, 13, 0.4, ["kawara", "kawara", "tin", "kura-house", "thatch", "tin"]),
-    ("shimojuku", 207.0, 34.0, 8, 0.3, ["tin", "kawara", "thatch", "kawara"]),
-    ("minamizawa", 316.0, 42.0, 9, 0.25, ["thatch", "tin", "kawara", "thatch"]),
+    ("kaminosawa", -300.0, 46.0, 10, 0.3, ["thatch", "tin", "thatch", "kawara", "tin"]),
+    ("nakazato", -196.0, 36.0, 9, 0.35, ["kawara", "tin", "thatch", "kawara"]),
+    ("miyashita", -84.0, 36.0, 9, 0.25, ["kawara", "thatch", "kura-house", "kawara", "tin"]),
+    ("shimojuku", 232.0, 38.0, 10, 0.35, ["tin", "kawara", "thatch", "kawara"]),
+    ("minamizawa", 336.0, 42.0, 10, 0.3, ["thatch", "tin", "kawara", "thatch"]),
 ]
-FIRE_TOWER = (float(road_x(70.0)) + 7.5, 70.0)    # hinomi-yagura at the village centre, by the bus stop
+MACHI_Z = (50.0, 186.0)                            # the village centre along the main road
+FIRE_TOWER = (float(road_x(70.0)) + 7.5, 70.0)    # hinomi-yagura at the south end of the centre
 gy0, gx0 = np.gradient(h, CELL)
 slope0 = np.degrees(np.arctan(np.hypot(gx0, gy0)))
 mountain0 = mountains(X, Z)
@@ -377,57 +382,147 @@ def at(arr, x, z):
     j = int(round((x / EXTENT + 0.5) * (N - 1)))
     return float(arr[min(max(i, 0), N - 1), min(max(j, 0), N - 1)])
 
-def house_ok(x, z, gap=23.0):
+def road_dir(z):
+    """Unit direction of the main road at z (dx, dz) and its angle from +Z."""
+    dx = float(road_x(z + 1) - road_x(z - 1)) / 2
+    l = math.hypot(dx, 1.0)
+    return dx / l, 1.0 / l, math.atan2(dx, 1.0)
+
+def facing_road_yaw(x, z):
+    """Yaw that turns a building's front (local +Z) towards the main road."""
+    _, _, th = road_dir(z)
+    return th - math.pi / 2 if x > float(road_x(z)) else th + math.pi / 2
+
+def farm_road_dist(x, z):
+    best = 1e9
+    for fr in farm_roads:
+        for (ax_, az_), (bx_, bz_) in zip(fr, fr[1:]):
+            vx, vz = bx_ - ax_, bz_ - az_
+            t_ = min(max(((x - ax_) * vx + (z - az_) * vz) / (vx * vx + vz * vz), 0), 1)
+            best = min(best, math.hypot(x - ax_ - vx * t_, z - az_ - vz * t_))
+    return best
+
+def house_ok(x, z, gap=23.0, road_gap=11.0):
+    if farm_road_dist(x, z) < 14:
+        return False
     if abs(z - STAIR_Z) < 20 and x > float(road_x(z)) - 4:
         return False
     if 85 < x < 140 and -66 < z < -14:
         return False
     if math.hypot(x - FIRE_TOWER[0], z - FIRE_TOWER[1]) < 17 or abs(z - BRIDGE_Z) < 12:
         return False
-    if abs(x - float(river_x(z))) < float(bed_half(z)) + 24 or abs(x - float(road_x(z))) < 11:
+    if abs(x - float(river_x(z))) < float(bed_half(z)) + 24 or abs(x - float(road_x(z))) < road_gap:
         return False
-    return all(math.hypot(x - o["x"], z - o["z"]) >= gap for o in houses)
+    return all(math.hypot(x - o["x"], z - o["z"]) >= max(gap, (max(o["w"], o["d"]) + 2) if o["group"] == "machi" else 0) for o in houses)
 
-def add_house(x, z, kind, yaw, group, side):
-    variant = int(rng.integers(0, 4))
-    pre = PRESETS[KIND_ASSET[kind]][variant]
+def add_house(x, z, kind, yaw, group, side, asset=None, w=None, d=None, storeys=1, front=11.0, back=6.0, variant=None):
+    variant = int(rng.integers(0, 4)) if variant is None else variant
+    if asset is None:
+        pre = PRESETS[KIND_ASSET[kind]][variant]
+        w, d, storeys, wing = pre["W"], pre["D"], pre["storeys"], pre.get("wing")
+    else:
+        wing = None
+    hs = dict(x=x, z=z, kind=kind, yaw=yaw, w=w, d=d, side=int(side), variant=variant, wing=wing, storeys=storeys,
+              group=group, asset=asset or KIND_ASSET[kind], front=front, back=back)
     # the barn stands on the side of the yard away from the road, the kitchen garden opposite
-    barn = 1 if (group not in ("sankyo", "kawamuko") and x > float(road_x(z)) and x - float(road_x(z)) < 32) else -1
-    houses.append(dict(x=x, z=z, kind=kind, yaw=yaw, w=pre["W"], d=pre["D"], side=int(side), variant=variant,
-                       wing=pre.get("wing"), storeys=pre["storeys"], group=group, barn=barn))
+    hs["barn"] = 1 if (group not in ("sankyo", "kawamuko") and x > float(road_x(z)) and x - float(road_x(z)) < 32) else -1
+    # houses that front a road face it; the others face south behind their igune
+    hs["roadside"] = group == "machi" or abs(yaw - facing_road_yaw(x, z)) < 0.5 and abs(x - float(road_x(z))) < 26
+    houses.append(hs)
+    return hs
+
+# Farm roads (gravel, 3 m): one along the middle of the valley floor, and cross roads from the
+# main road down to the river levee (or to the canal, where it runs along the levee).
+def levee_path_x(z):
+    return float(river_x(z) + bed_half(z)) + WALL_RUN + CAP_W + PATH_W / 2
+def canal_x_(z):
+    return float(river_x(z) + bed_half(z)) + WALL_RUN + CAP_W + PATH_W + 1.6
+FARM_CROSS = [-382.0, -243.0, -140.0, 10.0, 282.0, 410.0]   # in the gaps between hamlets
+farm_roads = []
+mid_pts = []
+for z in np.arange(-440.0, 480.1, 6.0):
+    xm = 0.5 * (levee_path_x(z) + float(road_x(z))) + 8.0 * math.sin(z * 0.006 + 1.1)
+    mid_pts.append((xm, float(z)))
+farm_roads.append(mid_pts)
+for zc in FARM_CROSS:
+    x1 = float(road_x(zc)) - ROAD_HALF - 0.4
+    x0 = (canal_x_(zc) + 1.2) if (WEIR_Z - 8 < zc < 375) else levee_path_x(zc)
+    pts = [(x0 + (x1 - x0) * t, zc + 2.0 * math.sin(t * math.pi) * (1 if zc > 0 else -1)) for t in np.linspace(0, 1, 24)]
+    farm_roads.append(pts)
+    ditch_crossings.append(zc)
+
+# The centre: a row of buildings on each side of the main road, fronts 2-3 m behind the ditch.
+# (type, z, side, frontage W, depth D, storeys)  -  types other than "house" are shop/public models
+MACHI = [
+    ("kominkan", 89.0, 1, 14.0, 10.0, 1), ("house", 102.5, 1, None, None, 2), ("post-office", 114.0, 1, 9.0, 8.0, 1),
+    ("shop-yorozuya", 126.5, 1, 9.0, 8.5, 2), ("house", 138.0, 1, None, None, 2), ("shop-sakaya", 150.0, 1, 8.0, 8.0, 2),
+    ("barber", 161.0, 1, 7.0, 7.5, 2), ("house", 172.5, 1, None, None, 2), ("house", 184.5, 1, None, None, 1),
+    ("house", 58.0, -1, None, None, 2), ("house", 70.5, -1, None, None, 1), ("chuzaisho", 83.0, -1, 8.0, 7.5, 1),
+    ("house", 95.0, -1, None, None, 2), ("shop-tofu", 106.5, -1, 7.0, 8.0, 2), ("house", 118.0, -1, None, None, 2),
+    ("nokyo", 160.0, -1, 12.0, 8.5, 1), ("house", 174.0, -1, None, None, 2), ("house", 186.0, -1, None, None, 1),
+    ("nokyo-soko", 160.0, -1, 18.0, 11.0, 1),        # the JA rice warehouse, behind the office
+]
+machi_buildings = []
+for kind, z, side, W, D, storeys in MACHI:
+    dxr, dzr, th = road_dir(z)
+    px, pz = dzr, -dxr                                  # unit vector to the east of the road
+    if kind == "house":
+        kind_h = "kawara" if storeys == 2 else str(rng.choice(["tin", "kawara"]))
+        variant = int(rng.choice([1, 3])) if storeys == 2 else int(rng.choice([0, 2]))
+        pre = PRESETS[KIND_ASSET[kind_h]][variant]
+        W, D = pre["W"], pre["D"]
+    setback = DITCH_OFF + 0.45 + (2.6 if kind != "house" else 3.4) + (8.5 + 3.0 if kind == "nokyo-soko" else 0)
+    off = setback + D / 2
+    x = float(road_x(z)) + side * px * off
+    zz = z + side * pz * off
+    yaw = facing_road_yaw(x, zz)
+    if kind == "house":
+        hs = add_house(x, zz, kind_h, yaw, "machi", side, variant=variant, front=setback - DITCH_OFF - 0.3, back=4.0)
+    else:
+        hs = add_house(x, zz, "shop", yaw, "machi", side, asset=kind, w=W, d=D, storeys=storeys, front=setback - DITCH_OFF - 0.3, back=4.0, variant=0)
+    machi_buildings.append(hs)
 
 for name, cz, half, count, down, kinds in HAMLETS:
     placed, tries = 0, 0
-    while placed < count and tries < 2000:
+    while placed < count and tries < 2500:
         tries += 1
         z = cz + rng.uniform(-half, half)
         side = -1 if rng.random() < down else 1
-        x = float(road_x(z)) + side * (rng.uniform(12, 50) if side > 0 else rng.uniform(12, 30))
+        # a first row fronting the road, the rest set back on the slope facing south
+        roadside = rng.random() < 0.45
+        off = rng.uniform(12.5, 15.5) if roadside else (rng.uniform(26, 50) if side > 0 else rng.uniform(26, 32))
+        x = float(road_x(z)) + side * off
         if not house_ok(x, z):
             continue
-        if at(h, x, z) - (float(floor_base(z)) + 1.25) > 6.5 or at(slope0, x, z) > 22:
+        if at(h, x, z) - (float(floor_base(z)) + 1.25) > 7.5 or at(slope0, x, z) > 24:
             continue
-        add_house(x, z, kinds[placed % len(kinds)], -0.12 + rng.normal(0, 0.06), name, side)
+        yaw = facing_road_yaw(x, z) + rng.normal(0, 0.04) if roadside else -0.12 + rng.normal(0, 0.06)
+        hs = add_house(x, z, kinds[placed % len(kinds)], yaw, name, side)
+        if hs["roadside"]:
+            # the yard runs out to the road shoulder, no further
+            hs["front"] = max(2.5, abs(x - float(road_x(z))) - hs["d"] / 2 - DITCH_OFF - 0.6)
         placed += 1
+
 # Kawamuko: across the river, on the footslope above the terraces, facing south-south-east
 placed, tries = 0, 0
-while placed < 6 and tries < 2000:
+while placed < 7 and tries < 2500:
     tries += 1
-    z = rng.uniform(158, 252)
-    x = float(river_x(z)) - rng.uniform(44, 82)
+    z = rng.uniform(158, 256)
+    x = float(river_x(z)) - rng.uniform(44, 84)
     if not house_ok(x, z, 24) or at(slope0, x, z) > 18 or at(h, x, z) - float(floor_base(z)) > 9:
         continue
     add_house(x, z, ["thatch", "tin", "thatch", "kawara"][placed % 4], 0.28 + rng.normal(0, 0.06), "kawamuko", -1)
     placed += 1
-# Farmsteads alone among the paddies, each on a low mound inside its igune
+# Farmsteads alone among the paddies, beside the mid-valley farm road, each on a low mound
 placed, tries = 0, 0
 while placed < 9 and tries < 3000:
     tries += 1
-    z = rng.uniform(-430, 460)
-    a0, a1 = float(river_x(z) + bed_half(z)) + 42, float(road_x(z)) - 48
-    if a1 - a0 < 30 or abs(z - BRIDGE_Z) < 28:
+    k = int(rng.integers(4, len(mid_pts) - 4))
+    mx, mz = mid_pts[k]
+    side = rng.choice([-1.0, 1.0])
+    x, z = mx + side * rng.uniform(17, 22), mz + rng.uniform(-3, 3)
+    if abs(z - BRIDGE_Z) < 28 or any(abs(z - zc) < 24 for zc in FARM_CROSS):
         continue
-    x = rng.uniform(a0, a1)
     if not house_ok(x, z, 85) or at(mountain0, x, z) > 1.2:
         continue
     add_house(x, z, ["kawara", "thatch", "kawara", "kura-house"][placed % 4], -0.05 + rng.normal(0, 0.06), "sankyo", 0)
@@ -443,72 +538,99 @@ for i, hs in enumerate(houses):
     ground = float(np.median(h[np.hypot(X - x, Z - z) < 9]))
     if hs["group"] == "sankyo":
         level = ground + 0.7                                   # a low mound above the paddies
+    elif hs["group"] == "machi":
+        level = base + 1.05 + 0.18                             # a step up from the road
     else:
         local = base + (1.6 if hs["group"] == "kawamuko" else 1.25)
         level = max(local, min(ground, local + 4.0))           # cut into the slope where it rises
-    hs["ground_south"] = at(h, *loc(0, D2 + 15))
+    hs["ground_south"] = at(h, *loc(0, D2 + hs["front"] + 4))
     pad_level[i] = level
     hs["y"] = round(level, 3)
     lx = (X - x) * c - (Z - z) * s_
     lz = (X - x) * s_ + (Z - z) * c
-    # flat plot: house, front yard to the south (11 m), barn and garden either side
-    dist = np.maximum(np.abs(lx) - (W2 + 8), np.maximum(-(D2 + 6) - lz, lz - (D2 + 11)))
-    wgt = 1 - smoothstep(0, 3.5 if hs["group"] == "sankyo" else 4.5, dist)
+    side_w = 3.0 if hs["group"] == "machi" else 8.0
+    dist = np.maximum(np.abs(lx) - (W2 + side_w), np.maximum(-(D2 + hs["back"]) - lz, lz - (D2 + hs["front"])))
+    wgt = 1 - smoothstep(0, 3.5 if hs["group"] in ("sankyo", "machi") else 4.5, dist)
     h = h * (1 - wgt) + level * wgt
 
-# Lanes: from the front of each yard down to the road (hamlets, farmsteads); Kawamuko's
-# houses join one lane that climbs from the west end of the bridge.
 def road_level(z):
     return float(floor_base(z)) + 1.05
 
-def yard_front(hs, extra=9.0):
+def yard_front(hs, extra=None):
     c, s_ = math.cos(hs["yaw"]), math.sin(hs["yaw"])
-    lz = hs["d"] / 2 + extra
+    lz = hs["d"] / 2 + (hs["front"] - 2.0 if extra is None else extra)
     return hs["x"] + lz * s_, hs["z"] + lz * c
 
+# Town road up to Kawamuko from the west end of the bridge (paved, 3.5 m)
+kawa = [hs for hs in houses if hs["group"] == "kawamuko"]
+bx0 = float(river_x(BRIDGE_Z)) - float(bed_half(BRIDGE_Z)) - WALL_RUN - CAP_W - 0.4
+cxk, czk = (float(np.mean([k["x"] for k in kawa])), float(np.mean([k["z"] for k in kawa]))) if kawa else (bx0 - 40, 200.0)
+trunk = [(bx0, BRIDGE_Z, float(bank_top(BRIDGE_Z)) + 0.1), (bx0 - 16, BRIDGE_Z + 7, None), (cxk + 6, czk - 8, None), (cxk - 4, czk + 14, None)]
+trunk = [(x_, z_, y_ if y_ is not None else at(h, x_, z_)) for x_, z_, y_ in trunk]
+
+# Driveways: straight and short, from each yard to the nearest road of any class. Houses in the
+# centre and those that front the road open straight onto it.
+def nearest_on(pts, x, z):
+    best = (1e9, None)
+    for (ax_, az_), (bx_, bz_) in zip(pts, pts[1:]):
+        vx, vz = bx_ - ax_, bz_ - az_
+        t_ = min(max(((x - ax_) * vx + (z - az_) * vz) / (vx * vx + vz * vz), 0), 1)
+        qx, qz = ax_ + vx * t_, az_ + vz * t_
+        d = math.hypot(x - qx, z - qz)
+        if d < best[0]:
+            best = (d, (qx, qz))
+    return best
 for hs in houses:
-    if hs["group"] == "kawamuko":
+    if hs["group"] == "machi":
         continue
     fx, fz = yard_front(hs)
-    if hs["group"] == "sankyo":
-        mz = fz + 6.0
-        ex = float(road_x(mz)) - 2.1
-        lanes.append([(fx, fz, hs["y"]), (fx, mz, hs["y"] - 0.4), (ex, mz, road_level(mz))])
-        ditch_crossings.append(round(mz, 2))
+    zr = fz
+    main_d = abs(fx - float(road_x(zr))) - ROAD_HALF
+    if hs["roadside"]:
+        ex = float(road_x(zr)) + math.copysign(ROAD_HALF + 0.3, fx - float(road_x(zr)))
+        lanes.append([(fx, fz, hs["y"]), (ex, zr, road_level(zr))])
+        ditch_crossings.append(round(zr, 2))
         continue
-    ez = fz + rng.uniform(2.0, 7.0)
-    sgn = 1.0 if fx > float(road_x(ez)) else -1.0
-    ex = float(road_x(ez)) + sgn * 2.1
-    mx, mz = fx + (ex - fx) * 0.45, fz + (ez - fz) * 0.7 + 1.5
-    ym = hs["y"] + (road_level(ez) - hs["y"]) * 0.45
-    lanes.append([(fx, fz, hs["y"]), (mx, mz, ym), (ex, ez, road_level(ez))])
-    ditch_crossings.append(round(ez, 2))
-kawa = [hs for hs in houses if hs["group"] == "kawamuko"]
-if kawa:
-    bx0 = float(river_x(BRIDGE_Z)) - float(bed_half(BRIDGE_Z)) - WALL_RUN - CAP_W - 0.4
-    cxk, czk = float(np.mean([k["x"] for k in kawa])), float(np.mean([k["z"] for k in kawa]))
-    trunk = [(bx0, BRIDGE_Z, float(bank_top(BRIDGE_Z)) + 0.1), (bx0 - 16, BRIDGE_Z + 7, None), (cxk + 6, czk - 8, None), (cxk - 4, czk + 14, None)]
-    trunk = [(x_, z_, y_ if y_ is not None else at(h, x_, z_)) for x_, z_, y_ in trunk]
-    lanes.append(trunk)
-    for hs in kawa:
-        fx, fz = yard_front(hs, 8.0)
-        tx, tz, ty = min(trunk[1:], key=lambda p: math.hypot(p[0] - fx, p[1] - fz))
-        lanes.append([(fx, fz, hs["y"]), (tx, tz, ty)])
+    cands = [(main_d, ("main", (float(road_x(zr)) + math.copysign(ROAD_HALF + 0.3, fx - float(road_x(zr))), zr)))]
+    for fr in farm_roads:
+        d, q = nearest_on(fr, fx, fz)
+        cands.append((d - 1.5, ("farm", q)))
+    if hs["group"] == "kawamuko":
+        d, q = nearest_on([(p[0], p[1]) for p in trunk], fx, fz)
+        cands.append((d - 1.7, ("town", q)))
+    d, (cls, (qx, qz)) = min(cands, key=lambda c_: c_[0])
+    qy = road_level(qz) if cls == "main" else None
+    lanes.append([(fx, fz, hs["y"]), (qx, qz, qy)])
+    if cls == "main":
+        ditch_crossings.append(round(qz, 2))
 
 lane_d = np.full_like(h, 1e9)
-def grade_lane(h, pts, width=2.4):
-    for (ax_, az_, ay), (bx_, bz_, by) in zip(pts, pts[1:]):
+farm_d = np.full_like(h, 1e9)
+town_d = np.full_like(h, 1e9)
+def grade_line(h, pts, width, dist_arr, raise_=0.0):
+    """Grade a polyline [(x, z, y|None)]: y None follows the smoothed ground (+raise_)."""
+    ys = [p[2] if p[2] is not None else at(h, p[0], p[1]) + raise_ for p in pts]
+    if len(pts) > 2:   # smooth the free points along the line
+        ys2 = ys[:]
+        for k in range(1, len(pts) - 1):
+            if pts[k][2] is None:
+                ys2[k] = (ys[k - 1] + 2 * ys[k] + ys[k + 1]) / 4
+        ys = ys2
+    for (ax_, az_, _), (bx_, bz_, _), ay, by in zip(pts, pts[1:], ys, ys[1:]):
         j0 = max(int((min(ax_, bx_) - 8) / CELL + (N - 1) / 2), 0); j1 = min(int((max(ax_, bx_) + 8) / CELL + (N - 1) / 2) + 2, N)
         i0 = max(int((min(az_, bz_) - 8) / CELL + (N - 1) / 2), 0); i1 = min(int((max(az_, bz_) + 8) / CELL + (N - 1) / 2) + 2, N)
         Xw, Zw = X[i0:i1, j0:j1], Z[i0:i1, j0:j1]
         d, tt = segment_dist(Xw, Zw, ax_, az_, bx_, bz_)
         tgt = ay + (by - ay) * tt
-        m = 1 - smoothstep(width / 2 + 0.2, width / 2 + 2.8, d)
+        m = 1 - smoothstep(width / 2 + 0.2, width / 2 + 2.6, d)
         h[i0:i1, j0:j1] = h[i0:i1, j0:j1] * (1 - m) + tgt * m
-        lane_d[i0:i1, j0:j1] = np.minimum(lane_d[i0:i1, j0:j1], d)
+        dist_arr[i0:i1, j0:j1] = np.minimum(dist_arr[i0:i1, j0:j1], d)
     return h
+for fr in farm_roads:
+    h = grade_line(h, [(x_, z_, None) for x_, z_ in fr], 3.0, farm_d, raise_=0.25)
+h = grade_line(h, trunk, 3.5, town_d)
 for ln in lanes:
-    h = grade_lane(h, ln)
+    h = grade_line(h, ln, 2.6, lane_d)
 
 # ---- Paddies ------------------------------------------------------------------
 mountain_factor = mountains(X, Z)
@@ -516,7 +638,7 @@ slope_ok = mountain_factor < 1.6
 house_clear = np.ones_like(h, bool)
 for hs in houses:
     house_clear &= np.hypot(X - hs["x"], Z - hs["z"]) > (25 if hs["group"] == "sankyo" else 21)
-house_clear &= (lane_d > 3.0) & (np.hypot(X - FIRE_TOWER[0], Z - FIRE_TOWER[1]) > 12)
+house_clear &= (lane_d > 3.0) & (farm_d > 3.4) & (town_d > 3.6) & (np.hypot(X - FIRE_TOWER[0], Z - FIRE_TOWER[1]) > 12)
 paddy_region = (
     slope_ok & house_clear
     & (rd > RIVER_KEEP)
@@ -598,7 +720,7 @@ for fid in np.unique(label[label >= 0]):
     if fid >= TERRACE0:
         fields[-1]["terrace"] = True
         ftype = "fallow" if r_ < 0.2 else "rice"      # abandoned terraces going back to susuki
-    elif near_house < 60 and r_ < 0.2:
+    elif near_house < 45 and r_ < 0.12:
         ftype = "hatake"
     elif r_ < 0.07:
         ftype = "fallow"
@@ -672,7 +794,7 @@ track_y = float(bank_top(BRIDGE_Z)) + (float(floor_base(BRIDGE_Z)) + 1.05 - floa
 track_zd = np.abs(Z - BRIDGE_Z)
 in_track = (X > track_x0 - 2.0) & (X < track_x1 + 1.0)
 h = np.where(in_track, np.maximum(h, track_y - np.maximum(track_zd - 1.5, 0) * 0.67), h)
-h = np.where(in_track & (track_zd < 1.6), track_y, h)
+h = np.where(in_track & (track_zd < 2.2), track_y, h)
 
 # Irrigation canal (concrete U-channel, 0.6 m wide) fed by the weir intake, along the
 # land side of the east levee, gently graded (1/1000) so it ends up level with the fields.
@@ -716,7 +838,8 @@ def sample(x, z):
 # ---- Surface masks ---------------------------------------------------------------
 gy, gx = np.gradient(hq, CELL)
 slope = np.degrees(np.arctan(np.hypot(gx, gy)))
-forest_density = np.clip(smoothstep(1.0, 6, mountain_factor) + smoothstep(2, 10, shrine_spur(X, Z) - 2), 0, 1)
+# woods reach down the footslopes to the edge of the fields (satoyama), not just the mountains
+forest_density = np.clip(smoothstep(0.35, 3.5, mountain_factor) + smoothstep(2, 10, shrine_spur(X, Z) - 2), 0, 1)
 forest_density = np.clip(forest_density * (0.75 + 0.5 * (fbm(P1, X, Z, 140, 3) * 0.5 + 0.5)), 0, 1)
 pre = (X > px0 - 1) & (X < px1) & (Z > pz0) & (Z < pz1)
 forest_density = np.where(pre, 0, forest_density)
@@ -733,28 +856,30 @@ riverbed = in_bed * (1 - smoothstep(0.03, 0.12, above + nb_))
 patch = fbm(P4, X, Z, 7.0, 3)
 bar = in_bed * (1 - riverbed) * (1 - smoothstep(0.32, 0.5, above + 0.45 * patch + nb_))
 wall_band = (1 - earth_s) * (rd > RB - 0.3) * (rd < RB + _sec["run"] + _sec["cap"] + 0.15)
-asphalt = (1 - smoothstep(1.9, 2.4, road_d)) * smoothstep(-560, -520, Z) * (1 - smoothstep(560, 590, Z))
+asphalt = (1 - smoothstep(ROAD_HALF - 0.1, ROAD_HALF + 0.15, road_d)) * smoothstep(-560, -520, Z) * (1 - smoothstep(560, 590, Z))
+# town roads: to the bridge (4 m) and up to Kawamuko (3.5 m), paved without markings
+town_paved = ((X > track_x0 - 1.0) & (X < track_x1 + 0.5)) * (1 - smoothstep(1.85, 2.1, track_zd))
+# in the centre the shoulders are paved up to the ditch, and the shop fronts beyond it
+in_machi = smoothstep(MACHI_Z[0] - 6, MACHI_Z[0], Z) * (1 - smoothstep(MACHI_Z[1], MACHI_Z[1] + 6, Z))
+asphalt = np.maximum(asphalt, in_machi * (1 - smoothstep(DITCH_OFF - 0.35, DITCH_OFF - 0.2, road_d)))
+asphalt = np.maximum(asphalt, np.maximum(town_paved, 1 - smoothstep(1.6, 1.85, town_d)))
 branch = (1 - smoothstep(1.8, 2.3, bd))
 dirt = np.clip(branch + (1 - smoothstep(0.8, 1.4, np.abs(Z - STAIR_Z))) * ((X > 92) & (X < STAIR_X0)) * 0, 0, 1)
-# Farm tracks: every few band edges become 2.5 m dirt tracks through the paddies.
 track = np.zeros_like(h)
-for i, e in enumerate(band_edges):
-    if i % 3 == 1:
-        track = np.maximum(track, (1 - smoothstep(1.0, 1.6, np.abs(t - e))) * (~is_paddy | aze))
-track = track * ((rd > RIVER_KEEP) & (road_d > 2.3) & (mountain_factor < 3))
 # Levee path and the farm road to the bridge: two wheel ruts with grass between them.
 def ruts(d):
     return np.maximum(1 - smoothstep(0.16, 0.36, np.abs(d - 0.68)), 0.3 * (1 - smoothstep(0.9, 1.3, d)))
 levee_c = RB + _sec["run"] + _sec["cap"] + _sec["path"] / 2
 levee_path = (X > rx) * ruts(np.abs(rd - levee_c)) * smoothstep(-560, -540, Z) * (1 - smoothstep(580, 595, Z))
-farm_road = ((X > track_x0 - 1.0) & (X < track_x1 + 0.5)) * ruts(track_zd)
-track = np.maximum(track, np.maximum(levee_path, farm_road))
+track = np.maximum(track, levee_path)
+# farm roads: compacted gravel with wheel ruts
+gravel_road = (1 - smoothstep(1.4, 1.75, farm_d)) * (1 - town_paved)
 dirt = np.clip(dirt + track * 0.85, 0, 1)
 # road shoulders: packed earth and gravel between the asphalt edge and the ditch
-shoulder = (1 - smoothstep(2.1, 2.9, road_d)) * smoothstep(1.7, 2.1, road_d) * smoothstep(-560, -520, Z)
+shoulder = (1 - smoothstep(ROAD_HALF + 0.1, ROAD_HALF + 0.8, road_d)) * smoothstep(ROAD_HALF - 0.2, ROAD_HALF + 0.1, road_d) * smoothstep(-560, -520, Z)
 dirt = np.maximum(dirt, shoulder * 0.9)
 # lanes: worn wheel ruts
-dirt = np.maximum(dirt, ruts(lane_d) * 0.9)
+dirt = np.maximum(dirt, np.maximum(ruts(lane_d) * 0.9, gravel_road * (0.55 + 0.4 * ruts(farm_d))))
 # house plots: packed-earth front yard (niwa) and a kitchen garden on the east side
 garden = np.zeros(h.shape, bool)
 yard_noise = 0.6 + 0.8 * (fbm(P2, X, Z, 4, 2) * 0.5 + 0.5)
@@ -765,12 +890,18 @@ for hs in houses:
     lx = (X - hs["x"]) * c - (Z - hs["z"]) * s_
     lz = (X - hs["x"]) * s_ + (Z - hs["z"]) * c
     bs = hs["barn"]
-    yard = np.maximum(np.maximum(-(W2 + 6) + bs * lx, -bs * lx - (W2 + 1.0)), np.maximum(D2 - 0.3 - lz, lz - (D2 + 10.5)))
+    yard = np.maximum(np.maximum(-(W2 + (1.5 if hs["group"] == "machi" else 6)) + bs * lx, -bs * lx - (W2 + 1.0)), np.maximum(D2 - 0.3 - lz, lz - (D2 + hs["front"] - 0.5)))
+    if hs["group"] == "machi":
+        # concrete/asphalt forecourt in front of shops and houses on the main street
+        asphalt = np.where(win, np.maximum(asphalt, (1 - smoothstep(-0.3, 0.6, yard)) * 0.95), asphalt)
     dirt = np.where(win, np.maximum(dirt, (1 - smoothstep(-0.5, 1.2, yard)) * 0.8 * np.clip(yard_noise, 0, 1.2)), dirt)
     dirt = np.where(win, np.maximum(dirt, (1 - smoothstep(4, 11, np.hypot(lx, lz))) * 0.3 * yard_noise), dirt)
     gx = sorted([-bs * (W2 + 1.8), -bs * (W2 + 7.6)])
     hs["garden"] = [gx[0], gx[1], -D2 + 0.5, D2 + 8.5]          # local x0, x1, z0, z1
-    garden |= win & (lx > gx[0]) & (lx < gx[1]) & (lz > -D2 + 0.5) & (lz < D2 + 8.5)
+    if hs["group"] == "machi":
+        hs["garden"] = None
+        continue
+    garden |= win & (lx > gx[0]) & (lx < gx[1]) & (lz > -D2 + 0.5) & (lz < D2 + min(8.5, hs["front"] - 1.0))
 gravel = pre * (1 - smoothstep(-3.0, 1.0, edge))  # the whole precinct floor is gravel up to its rim
 forest_density = np.maximum(forest_density, pre * smoothstep(-6, 0, edge) * 0.5)
 rice = interior & (field_type == 1)
@@ -952,6 +1083,15 @@ for hs in houses:
     c, s_ = math.cos(hs["yaw"]), math.sin(hs["yaw"])
     W2, D2 = hs["w"] / 2, hs["d"] / 2
     loc = lambda lx, lz: (hs["x"] + lx * c + lz * s_, hs["z"] - lx * s_ + lz * c)
+    if hs["group"] == "machi":
+        continue
+    if hs["roadside"]:
+        # houses that front the road have no windbreak: a garden tree or two behind the house
+        for k_ in range(int(rv.integers(0, 3))):
+            x, z = loc(rv.uniform(-W2, W2), -(D2 + rv.uniform(3, 5)))
+            if igune_ok(x, z, hs) and not view_blocked(x, z, sample(x, z) + 9.0):
+                add_tree(str(rv.choice(["broadleaf", "broadleaf", "keyaki"])), x, z, rv.uniform(0.4, 0.6))
+        continue
     spots = []
     rows = 2 if hs["group"] == "sankyo" or rv.random() < 0.4 else 1
     for r_ in range(rows):
@@ -1100,6 +1240,8 @@ for f in fields:
 # Kitchen gardens beside the houses: two or three crops in rows on the furrow ridges.
 for hs in houses:
     c, s_ = math.cos(hs["yaw"]), math.sin(hs["yaw"])
+    if not hs.get("garden"):
+        continue
     gx0_, gx1_, gz0_, gz1_ = hs["garden"]
     corners = [(hs["x"] + lx * c + lz * s_, hs["z"] - lx * s_ + lz * c) for lx in (gx0_, gx1_) for lz in (gz0_, gz1_)]
     zmin, zmax = min(p_[1] for p_ in corners), max(p_[1] for p_ in corners)
@@ -1230,66 +1372,90 @@ obj("bench", 212.0, TOP_Y, -4.6, math.radians(225) + math.pi, 1.0, collider={"ty
 obj("fence-lookout", px0 - 1.0, TOP_Y - 0.05, -14.0, math.pi / 2, 1.0)
 obj("fence-lookout", px0 + 12.0, TOP_Y - 0.05, pz1 + 1.0, 0.0, 1.0)
 
+# Shop and public building signs (fictional names; drawn at runtime from a subset of Noto Serif JP)
+SIGNS = {
+    "shop-yorozuya": [("佐藤商店", "board")], "shop-sakaya": [("菅原酒店", "board"), ("たばこ", "tabako")],
+    "post-office": [("〒 上沢郵便局", "post")], "chuzaisho": [("上沢駐在所", "plate")],
+    "nokyo": [("上沢農協 支所", "board")], "kominkan": [("上沢地区公民館", "wood")],
+    "barber": [("理容 阿部", "board")], "shop-tofu": [("高橋豆腐店", "board")],
+}
 smoke_n = 0
 for i, hs in enumerate(houses):
-    asset = KIND_ASSET[hs["kind"]]
+    asset = hs["asset"]
     W2, D2 = hs["w"] / 2, hs["d"] / 2
+    shop = hs["kind"] == "shop"
+    machi = hs["group"] == "machi"
     # a thin column of smoke from a few kitchens and bath stoves (and the irori of a thatched house)
-    smoke = hs["group"] != "sankyo" and rng.random() < 0.16 and smoke_n < 8
+    smoke = not shop and hs["group"] != "sankyo" and rng.random() < 0.16 and smoke_n < 8
     smoke_n += int(smoke)
+    extra = {}
+    if smoke:
+        extra["smoke"] = True
+    if hs["roadside"]:
+        extra["roadside"] = True
+    if shop and asset in SIGNS:
+        extra["signs"] = [{"text": t, "style": st} for t, st in SIGNS[asset]]
     obj(asset, hs["x"], hs["y"], hs["z"], hs["yaw"], 1.0, variant=hs["variant"], size=[round(hs["w"], 2), round(hs["d"], 2)],
-        group=hs["group"], **({"smoke": True} if smoke else {}),
+        group=hs["group"], **extra,
         collider={"type": "box", "halfExtents": [W2 + 0.3, 3.0 * hs["storeys"], D2 + 0.3]},
         **({"wing": {"offset": hs["wing"][:2], "halfExtents": [hs["wing"][2] / 2 + 0.3, 2.6, hs["wing"][3] / 2 + 0.3]}} if hs.get("wing") else {}))
     c, s_ = math.cos(hs["yaw"]), math.sin(hs["yaw"])
     def local(lx, lz):
         return hs["x"] + lx * c + lz * s_, hs["z"] - lx * s_ + lz * c
-    # barn at the west side of the yard, its open bay facing the yard
+    for k in range(2 if not shop else 1):
+        px_, pz_ = local(rng.uniform(-W2, W2), -D2 - 1.6)
+        obj(str(rng.choice(["prop-bucket", "prop-barrels", "prop-crate", "prop-basket", "prop-ladder"])), px_, hs["y"], pz_, float(rng.random() * math.tau), 1.0)
+    if machi:
+        continue
+    # barn at the side of the yard away from the road, its open bay facing the yard
     bs = hs["barn"]
-    bx, bz = local(bs * (W2 + 5.0), D2 + 3.2)
+    bx, bz = local(bs * (W2 + 5.0), D2 + min(3.2, hs["front"] - 2.5))
     obj("naya", bx, hs["y"], bz, hs["yaw"] - bs * math.pi / 2, rng.uniform(0.85, 1.1), collider={"type": "box", "halfExtents": [2.6, 1.8, 2.1]})
     if i % 3 == 0 and hs["group"] != "sankyo":
-        wx, wz = local(-2.0, D2 + 11.3)
+        wx, wz = local(-2.0, D2 + hs["front"] + 0.3)
         obj("block-wall", wx, hs["y"], wz, hs["yaw"], 1.0, length=round(hs["w"] + 8, 2))
-    if i % 4 == 1:
-        tx, tz = local(-bs * (W2 - 1.8), D2 + 5.5)
+    if i % 4 == 1 and hs["front"] > 6:
+        tx, tz = local(-bs * (W2 - 1.8), D2 + min(5.5, hs["front"] - 2.5))
         obj("kei-truck", tx, hs["y"], tz, hs["yaw"] + 0.3, 1.0, collider={"type": "box", "halfExtents": [0.75, 0.9, 1.7]})
-    for k in range(2):
-        px_, pz_ = local(rng.uniform(-W2, W2), -D2 - 2.2)
-        obj(str(rng.choice(["prop-bucket", "prop-barrels", "prop-crate", "prop-basket", "prop-ladder"])), px_, hs["y"], pz_, float(rng.random() * math.tau), 1.0)
-    px_, pz_ = local(bs * (W2 + 2.4), D2 + 6.0 + rng.uniform(0, 2))
+    px_, pz_ = local(bs * (W2 + 2.4), D2 + min(6.0, hs["front"] - 1.5))
     obj(str(rng.choice(["prop-bucket", "prop-basket", "prop-crate"])), px_, hs["y"], pz_, float(rng.random() * math.tau), 1.0)
     # stone retaining wall where the yard stands above the ground in front of it
     drop_ = hs["y"] - hs["ground_south"]
     if drop_ > 1.1:
-        rx_, rz_ = local(0, D2 + 11.7)
+        rx_, rz_ = local(0, D2 + hs["front"] + 0.7)
         obj("ishigaki", rx_, hs["y"], rz_, hs["yaw"], 1.0, length=round(hs["w"] + 14, 2), height=round(min(drop_, 4.0), 2))
-
 # Utility poles along the road, with wires.
 poles = []
 zp = -300.0
 while zp < 380:
-    x = float(road_x(zp)) - 3.4
+    x = float(road_x(zp)) - DITCH_OFF - 0.9
     poles.append([round(x, 2), round(sample(x, zp), 3), round(zp, 2)])
     obj("denchu", x, sample(x, zp), zp, math.atan2(float(road_x(zp + 1) - road_x(zp - 1)), 2.0), 1.0,
         collider={"type": "cylinder", "radius": 0.16, "height": 9.0})
     zp += rng.uniform(32, 40)
 # Road mirror / bus stop / jizo at junction.
-obj("jizo", float(road_at_stair) + 4.0, sample(road_at_stair + 4, STAIR_Z - 5), STAIR_Z - 5.0, FACE_WEST, 1.0)
-obj("bus-stop", float(road_x(60)) + 3.2, sample(road_x(60) + 3.2, 60), 60.0, -math.pi / 2, 1.0)
+obj("jizo", float(road_at_stair) + 5.2, sample(road_at_stair + 5.2, STAIR_Z - 5), STAIR_Z - 5.0, FACE_WEST, 1.0)
+# the bus stop in the centre, on the west side by the town road junction
+_bz = 128.5
+obj("bus-stop", float(road_x(_bz)) - DITCH_OFF - 1.0, sample(float(road_x(_bz)) - DITCH_OFF - 1.0, _bz), _bz, math.pi / 2, 1.0)
 # fire lookout tower with the village PA horns and its bell, the fire brigade shed beside it,
 # and a red pillar post box at the bus stop
 obj("hinomi", FIRE_TOWER[0], sample(*FIRE_TOWER), FIRE_TOWER[1], -math.pi / 2, 1.0, collider={"type": "box", "halfExtents": [1.7, 5.5, 1.7]})
 obj("shobo-shed", FIRE_TOWER[0] + 0.6, sample(FIRE_TOWER[0] + 0.6, FIRE_TOWER[1] + 6.5), FIRE_TOWER[1] + 6.5, -math.pi / 2, 1.0,
     collider={"type": "box", "halfExtents": [2.4, 1.5, 1.9]})
-obj("post", float(road_x(57.5)) + 2.9, sample(float(road_x(57.5)) + 2.9, 57.5), 57.5, -math.pi / 2, 1.0, collider={"type": "cylinder", "radius": 0.25, "height": 1.3})
+# red pillar box in front of the post office, a telephone box by the general store
+_pz = 110.0
+obj("post", float(road_x(_pz)) + DITCH_OFF + 0.9, sample(float(road_x(_pz)) + DITCH_OFF + 0.9, _pz), _pz, -math.pi / 2, 1.0, collider={"type": "cylinder", "radius": 0.25, "height": 1.3})
+_tz = 120.6
+obj("phone-box", float(road_x(_tz)) + DITCH_OFF + 1.2, sample(float(road_x(_tz)) + DITCH_OFF + 1.2, _tz), _tz, -math.pi / 2, 1.0, collider={"type": "box", "halfExtents": [0.5, 1.2, 0.5]})
 # roadside stones (koshin-to, dosojin) at the ends of each hamlet
 for name, cz, half, *_ in HAMLETS:
     for zz in (cz - half - 7, cz + half + 7):
-        sx = float(road_x(zz)) + 3.4
+        sx = float(road_x(zz)) + DITCH_OFF + 1.1
         obj("sekihi", sx, sample(sx, zz), zz, -math.pi / 2 + rng.normal(0, 0.15), rng.uniform(0.55, 0.75))
 # drinks vending machines (lit at dusk): by the bus stop and at the shrine road junction, facing the road
-for vx, vz, vv in [(float(road_x(56)) + 3.6, 56.0, 0), (road_at_stair + 4.6, STAIR_Z + 6.5, 1), (float(road_x(-215)) + 3.8, -215.0, 0)]:
+for vx, vz, vv in [(float(road_x(132.0)) + DITCH_OFF + 0.9, 132.0, 0), (float(road_x(133.2)) + DITCH_OFF + 0.9, 133.2, 1), (float(road_x(145.4)) + DITCH_OFF + 0.9, 145.4, 0),
+                   (road_at_stair + 5.4, STAIR_Z + 6.5, 1), (float(road_x(-215)) + DITCH_OFF + 1.0, -215.0, 0)]:
     obj("jihanki", vx, sample(vx, vz), vz, -math.pi / 2, 1.0, variant=vv, collider={"type": "box", "halfExtents": [0.55, 0.95, 0.4]})
 
 # Bridge where the farm road crosses the river: a concrete slab across the bed, deck level
@@ -1402,11 +1568,18 @@ meta = {
     "objects": objects,
     "fields": fields,
     "river": river_meta,
-    "roads": [{"id": "village-road", "width": 4.0, "surface": "asphalt", "points": road_pts},
-              {"id": "shrine-branch", "width": 3.6, "surface": "dirt", "points": branch_pts}]
-             + [{"id": f"lane-{i:02}", "width": 2.4, "surface": "dirt", "points": [[round(x_, 2), round(sample(x_, z_), 3), round(z_, 2)] for x_, z_, _ in ln]}
+    "roads": [{"id": "village-road", "class": "prefectural", "width": ROAD_HALF * 2, "surface": "asphalt", "markings": "centre dashed, edge lines", "points": road_pts},
+              {"id": "shrine-branch", "class": "approach", "width": 3.6, "surface": "dirt", "points": branch_pts},
+              {"id": "town-bridge", "class": "town", "width": 4.0, "surface": "asphalt",
+               "points": [[round(x_, 2), round(sample(x_, BRIDGE_Z), 3), BRIDGE_Z] for x_ in np.linspace(track_x0, track_x1, 30)]},
+              {"id": "town-kawamuko", "class": "town", "width": 3.5, "surface": "asphalt",
+               "points": [[round(x_, 2), round(sample(x_, z_), 3), round(z_, 2)] for x_, z_, _ in trunk]}]
+             + [{"id": f"farm-{i:02}", "class": "farm", "width": 3.0, "surface": "gravel",
+                 "points": [[round(x_, 2), round(sample(x_, z_), 3), round(z_, 2)] for x_, z_ in fr]} for i, fr in enumerate(farm_roads)]
+             + [{"id": f"lane-{i:02}", "class": "driveway", "width": 2.6, "surface": "gravel", "points": [[round(x_, 2), round(sample(x_, z_), 3), round(z_, 2)] for x_, z_, _ in ln]}
                 for i, ln in enumerate(lanes)],
-    "hamlets": [{"name": n, "z": cz, "halfLength": hl} for n, cz, hl, *_ in HAMLETS] + [{"name": "kawamuko", "z": 205.0, "halfLength": 47.0}],
+    "hamlets": [{"name": n, "z": cz, "halfLength": hl} for n, cz, hl, *_ in HAMLETS] + [{"name": "kawamuko", "z": 205.0, "halfLength": 47.0},
+                                                                                      {"name": "machi", "z": 118.0, "halfLength": 68.0}],
     "powerLine": {"poles": poles, "wires": 3, "sag": 0.6},
     "ditch": {"offset": DITCH_OFF, "width": 0.45, "depth": 0.42, "zRange": [-500, 540], "crossings": sorted(ditch_crossings)},
     "budgets": {"high": {"triangles": 4500000, "drawCalls": 900, "pixelRatio": 1.5},

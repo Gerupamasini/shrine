@@ -47,7 +47,7 @@ function requestLook() {
   if (!ready) return;
   try {
     const r = canvas.requestPointerLock() as unknown as Promise<void> | undefined;
-    r?.catch?.(() => ($("resume").textContent = "画面をドラッグして視点を動かせます"));
+    r?.catch?.(() => undefined);   // no pointer lock: the mouse still looks around without it
   } catch {
     /* pointer lock unavailable: drag to look */
   }
@@ -56,7 +56,7 @@ function setSettings(open: boolean) {
   settingsOpen = open;
   $("settings").hidden = !open;
   if (open) document.exitPointerLock();
-  $("resume").hidden = !started || open || locked;
+  $("resume").hidden = true;
 }
 function audioLabel() {
   const t = audio.muted || !audio.context ? "オフ" : "オン";
@@ -94,18 +94,35 @@ $("close-settings").onclick = () => setSettings(false);
 addEventListener("pointerlockchange", () => {
   locked = document.pointerLockElement === canvas;
   $("crosshair").hidden = !locked;
-  $("resume").hidden = !started || locked || settingsOpen;
+  $("resume").hidden = true;
   keys.clear();
 });
+// Looking around: the mouse turns the view as it moves over the scene, no click needed (a click
+// still locks the pointer for unlimited turning). Without the lock the cursor stops at the edge of
+// the window, so resting it near the left or right edge keeps turning that way.
 let dragging = false;
+const hover = { x: 0.5, y: 0.5, inside: false };
 canvas.addEventListener("pointerdown", () => (dragging = true));
 addEventListener("pointerup", () => (dragging = false));
+const overUi = (t: EventTarget | null) => !!(t as HTMLElement | null)?.closest?.("#settings, #welcome, button, input, select, a, label");
 addEventListener("mousemove", (e) => {
-  if ((locked || dragging) && !settingsOpen && started) {
+  if (!started || settingsOpen) return;
+  hover.x = e.clientX / innerWidth;
+  hover.y = e.clientY / innerHeight;
+  hover.inside = !overUi(e.target);
+  if (locked || dragging || hover.inside) {
     yaw -= e.movementX * 0.0018;
     pitch = T.MathUtils.clamp(pitch - e.movementY * 0.0018, -1.45, 1.45);
   }
 });
+document.addEventListener("mouseleave", () => (hover.inside = false));
+addEventListener("blur", () => (hover.inside = false));
+function edgeTurn(dt: number) {
+  if (locked || !hover.inside || !started || settingsOpen) return;
+  const EDGE = 0.06;
+  const l = 1 - Math.min(hover.x / EDGE, 1), r = 1 - Math.min((1 - hover.x) / EDGE, 1);
+  yaw += (l * l - r * r) * 1.7 * dt;
+}
 let bookmark: number[] | null = null;
 function setFree(v: boolean) {
   if (v && !walker.free) bookmark = walker.position.toArray();
@@ -168,6 +185,7 @@ function goto(name: string) {
 document.querySelectorAll<HTMLButtonElement>("[data-place]").forEach((b) => (b.onclick = () => (goto(b.dataset.place!), setSettings(false))));
 
 function updateCamera(dt: number) {
+  edgeTurn(dt);
   camera.position.copy(walker.position);
   if (!walker.free && walker.grounded && walker.speed > 0.2) camera.position.y += Math.sin(walker.bob * Math.PI * 2) * 0.018 * Math.min(1, walker.speed / 1.5);
   if (!walker.free) camera.position.y -= Math.sin(Math.min(1, walker.landing) * Math.PI) * 0.12;

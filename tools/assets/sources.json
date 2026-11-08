@@ -303,5 +303,17 @@
         "use": "higurashi second voice (car noise segments excluded)"
       }
     ]
-  }
+  },
+  "googleFonts": [
+    {
+      "family": "Noto Serif JP",
+      "weight": 700,
+      "out": "public/assets/fonts/signs-noto-serif-jp.ttf",
+      "licence": "SIL Open Font License 1.1",
+      "licenceUrl": "https://openfontlicense.org/open-font-license-official-text/",
+      "page": "https://fonts.google.com/noto/specimen/Noto+Serif+JP",
+      "authors": "Google, Adobe (Noto CJK)",
+      "use": "shop and public building signs in the village centre (subset of the glyphs used)"
+    }
+  ]
 }
