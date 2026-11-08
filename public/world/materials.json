@@ -381,6 +381,16 @@
    "size": 2.6,
    "color": "#c8c0b2",
    "gain": 0.95
+  },
+  "bronze_dark": {
+   "color": "#3c3427",
+   "metalness": 0.75,
+   "roughness": 0.5
+  },
+  "post_red": {
+   "color": "#b3241c",
+   "roughness": 0.42,
+   "metalness": 0.12
   }
  },
  "terrainLayers": [

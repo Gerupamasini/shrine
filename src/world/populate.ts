@@ -6,6 +6,8 @@ import { GrassField, RiceCanopy, WorldTextures } from "./grass";
 import { River } from "./water";
 import { FarTerrain } from "./far";
 import { Understory, crops } from "./understory";
+import { Smoke } from "./smoke";
+import { Dragonflies } from "./insects";
 import * as T from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { publicUrl } from "../urls";
@@ -18,7 +20,9 @@ export async function populate(land: Landscape, progress: (p: number, label: str
   const wt = new WorldTextures(land);
   const far = new FarTerrain(land);
   const under = new Understory();
+  const smoke = new Smoke();
   await Promise.all([
+    smoke.load(land),
     veg.load((p) => progress(0.3 + p * 0.3, "木立を育てています")),
     arch.load((p) => progress(0.6 + p * 0.2, "社と家並みを建てています")),
     clutter.load(),
@@ -46,5 +50,7 @@ export async function populate(land: Landscape, progress: (p: number, label: str
   land.add(new GrassField(land, wt, { rice: true, spacing: 0.36, radius: 14, blades: 0, seed: 3.1, clump: { geometry: geos[0], map, height: 0.32, scale: 2.9 } }));
   land.add(new RiceCanopy(land, wt));
   land.add(new River(land, wt));
+  land.add(smoke);
+  land.add(new Dragonflies(land, wt, () => land.lighting.elevation));
   crops(land);
 }

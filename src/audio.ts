@@ -149,6 +149,82 @@ export class Soundscape {
     }
     this.status = "playing";
   }
+  private chimeAt = -1e9;
+  /**
+   * The village radio's evening chime (bosai musen, 18:00 in summer): "Yuyake Koyake", melody by
+   * Kusakawa Shin (1923, public domain; the tune only, no lyrics), synthesised as an electronic
+   * chime through PA horn speakers on the fire lookout, with echoes off the hills around the
+   * valley and a long soft tail.
+   */
+  chime(at: T.Vector3, delay = 0) {
+    const ctx = this.context;
+    if (!ctx || this.status === "loading") return;
+    if (ctx.currentTime - this.chimeAt < 60) return;
+    this.chimeAt = ctx.currentTime;
+    const t0 = ctx.currentTime + delay, BEAT = 0.78, TONIC = 523.25;
+    // [semitones above the low do (null = rest), beats] - C major, 4/4, eight bars
+    const R = null;
+    const tune: [number | null, number][] = [
+      [7, .5], [7, .5], [7, .5], [9, .5], [7, .5], [7, .5], [7, .5], [4, .5],
+      [0, .5], [0, .5], [2, .5], [4, .5], [2, 1], [R, 1],
+      [4, 1], [4, .5], [7, .5], [9, .5], [12, .5], [12, .5], [9, .5],
+      [7, .5], [7, .5], [9, .5], [7, .5], [12, 1.5], [R, .5],
+      [12, .75], [14, .25], [12, .5], [9, .5], [12, .5], [12, .5], [7, .5], [7, .5],
+      [9, .5], [7, .5], [9, .5], [7, .5], [4, 1.5], [R, .5],
+      [7, .5], [4, .5], [2, .5], [0, .5], [2, .5], [2, .5], [0, .5], [2, .5],
+      [4, .5], [7, .5], [9, .5], [7, .5], [12, 2.5],
+    ];
+    // horn speaker: band-limited, a little gritty
+    const bus = ctx.createGain();
+    bus.gain.value = 0.2;
+    const hp = new BiquadFilterNode(ctx, { type: "highpass", frequency: 380, Q: 0.7 });
+    const pk = new BiquadFilterNode(ctx, { type: "peaking", frequency: 2300, Q: 1.1, gain: 5 });
+    const lp = new BiquadFilterNode(ctx, { type: "lowpass", frequency: 4300, Q: 0.6 });
+    const sat = ctx.createWaveShaper();
+    const curve = new Float32Array(1024);
+    for (let i = 0; i < 1024; i++) { const x = (i / 1023) * 2 - 1; curve[i] = Math.tanh(1.8 * x) / Math.tanh(1.8); }
+    sat.curve = curve;
+    bus.connect(hp).connect(pk).connect(sat).connect(lp);
+    const pan = new PannerNode(ctx, { panningModel: "equalpower", distanceModel: "inverse", refDistance: 45, rolloffFactor: 0.7, maxDistance: 3000, positionX: at.x, positionY: at.y, positionZ: at.z });
+    lp.connect(pan).connect(this.master);
+    // echoes from the hills: later, darker, from either side
+    for (const [d, g, p] of [[0.43, 0.3, -0.55], [1.07, 0.22, 0.6], [1.9, 0.15, -0.3], [2.95, 0.09, 0.4]]) {
+      const dl = new DelayNode(ctx, { delayTime: d, maxDelayTime: 4 });
+      const f = new BiquadFilterNode(ctx, { type: "lowpass", frequency: 1900 - d * 300 });
+      const gn = new GainNode(ctx, { gain: g });
+      lp.connect(dl).connect(f).connect(gn).connect(new StereoPannerNode(ctx, { pan: p })).connect(this.master);
+    }
+    // valley tail: a synthetic 3.4 s impulse
+    const n = Math.floor(ctx.sampleRate * 3.4), ir = ctx.createBuffer(2, n, ctx.sampleRate);
+    for (let c = 0; c < 2; c++) {
+      const d = ir.getChannelData(c);
+      for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (ctx.sampleRate * 0.9)) * Math.min(1, i / (ctx.sampleRate * 0.08));
+    }
+    const conv = new ConvolverNode(ctx, { buffer: ir });
+    lp.connect(conv).connect(new GainNode(ctx, { gain: 0.16 })).connect(this.master);
+    let beat = 0;
+    for (const [semi, len] of tune) {
+      const start = t0 + beat * BEAT, end = start + len * BEAT;
+      beat += len;
+      if (semi === null) continue;
+      const f0 = TONIC * Math.pow(2, semi / 12);
+      const env = ctx.createGain();
+      env.gain.setValueAtTime(0, start);
+      env.gain.linearRampToValueAtTime(1, start + 0.012);
+      env.gain.setTargetAtTime(0.42, start + 0.012, 0.18);
+      env.gain.setTargetAtTime(0.0001, end - 0.04, 0.22);
+      env.connect(bus);
+      for (const [mul, g] of [[1, 1], [2, 0.26], [3.01, 0.07], [4.2, 0.025]]) {
+        const o = new OscillatorNode(ctx, { type: "sine", frequency: f0 * mul });
+        const og = new GainNode(ctx, { gain: g });
+        o.connect(og).connect(env);
+        o.start(start);
+        o.stop(end + 1.2);
+      }
+    }
+    // free the graph once the tail has died away
+    window.setTimeout(() => bus.disconnect(), (delay + beat * BEAT + 8) * 1000);
+  }
   setMuted(m: boolean) {
     this.muted = m;
     if (!this.context) return;

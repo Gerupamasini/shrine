@@ -103,7 +103,7 @@
  },
  "assets": {
   "road-ditch": {
-   "triangles": 32388,
+   "triangles": 34020,
    "min": [
     32.434,
     2.715,
@@ -111,7 +111,7 @@
    ],
    "max": [
     90.106,
-    9.508,
+    11.466,
     540.247
    ],
    "materials": [
@@ -472,6 +472,11 @@
     13.5,
     9
    ],
+   "smoke": [
+    0,
+    10.362,
+    0
+   ],
    "storeys": 1
   },
   "minka-kayabuki_1": {
@@ -508,6 +513,11 @@
     12,
     8.5
    ],
+   "smoke": [
+    0,
+    10.05,
+    0
+   ],
    "storeys": 1
   },
   "minka-kayabuki_2": {
@@ -543,6 +553,11 @@
     14.5,
     9.5
    ],
+   "smoke": [
+    0,
+    10.675,
+    0
+   ],
    "storeys": 1
   },
   "minka-kayabuki_3": {
@@ -577,10 +592,15 @@
     11.5,
     8
    ],
+   "smoke": [
+    0,
+    9.737,
+    0
+   ],
    "storeys": 1
   },
   "minka-kawara_0": {
-   "triangles": 4580,
+   "triangles": 4684,
    "min": [
     -7.011,
     0,
@@ -613,10 +633,15 @@
     12,
     8.5
    ],
+   "smoke": [
+    4.9,
+    5.5,
+    -4.7
+   ],
    "storeys": 1
   },
   "minka-kawara_1": {
-   "triangles": 7332,
+   "triangles": 7436,
    "min": [
     -6.4,
     0,
@@ -644,16 +669,22 @@
     "roof_kawara_ridge",
     "metal_grey",
     "roof_tin",
-    "bamboo_green"
+    "bamboo_green",
+    "metal_dark"
    ],
    "footprint": [
     10.8,
     8
    ],
+   "smoke": [
+    4.3,
+    7.5,
+    -4.45
+   ],
    "storeys": 2
   },
   "minka-kawara_2": {
-   "triangles": 3674,
+   "triangles": 3778,
    "min": [
     -7.76,
     0,
@@ -679,16 +710,22 @@
     "roof_soffit",
     "roof_kawara_ridge",
     "metal_grey",
-    "bamboo_green"
+    "bamboo_green",
+    "metal_dark"
    ],
    "footprint": [
     13.5,
     9
    ],
+   "smoke": [
+    5.65,
+    5.5,
+    -4.95
+   ],
    "storeys": 1
   },
   "minka-kawara_3": {
-   "triangles": 7280,
+   "triangles": 7384,
    "min": [
     -6.7,
     0,
@@ -722,10 +759,15 @@
     11.4,
     9.5
    ],
+   "smoke": [
+    4.6,
+    7.5,
+    -5.2
+   ],
    "storeys": 2
   },
   "minka-totan_0": {
-   "triangles": 4210,
+   "triangles": 4314,
    "min": [
     -8.35,
     0,
@@ -756,10 +798,15 @@
     11.5,
     8
    ],
+   "smoke": [
+    4.65,
+    5.5,
+    -4.45
+   ],
    "storeys": 1
   },
   "minka-totan_1": {
-   "triangles": 4570,
+   "triangles": 4674,
    "min": [
     -7.3,
     0,
@@ -791,10 +838,15 @@
     12.8,
     8.6
    ],
+   "smoke": [
+    5.3,
+    5.5,
+    -4.75
+   ],
    "storeys": 1
   },
   "minka-totan_2": {
-   "triangles": 4010,
+   "triangles": 4114,
    "min": [
     -6.96,
     0,
@@ -826,10 +878,15 @@
     10.6,
     7.6
    ],
+   "smoke": [
+    4.2,
+    5.5,
+    -4.25
+   ],
    "storeys": 1
   },
   "minka-totan_3": {
-   "triangles": 4194,
+   "triangles": 4298,
    "min": [
     -9.2,
     0,
@@ -856,11 +913,17 @@
     "roof_soffit",
     "metal_grey",
     "roof_tin",
-    "bamboo_green"
+    "bamboo_green",
+    "metal_dark"
    ],
    "footprint": [
     13.2,
     9.2
+   ],
+   "smoke": [
+    5.5,
+    5.5,
+    -5.05
    ],
    "storeys": 1
   },
@@ -1240,6 +1303,68 @@
     "stone_paving_moss",
     "stone_step_b",
     "ishigaki"
+   ]
+  },
+  "hinomi": {
+   "triangles": 1796,
+   "min": [
+    -1.75,
+    -0.055,
+    -1.75
+   ],
+   "max": [
+    1.75,
+    12.75,
+    1.75
+   ],
+   "materials": [
+    "steel_red",
+    "concrete_old",
+    "wood_old",
+    "bronze_dark",
+    "metal_dark",
+    "metal_grey"
+   ]
+  },
+  "shobo-shed": {
+   "triangles": 592,
+   "min": [
+    -2.7,
+    0,
+    -2.05
+   ],
+   "max": [
+    2.7,
+    3.505,
+    2.05
+   ],
+   "materials": [
+    "concrete",
+    "concrete_block",
+    "steel_red",
+    "steel_gate",
+    "porcelain",
+    "roof_tin",
+    "roof_soffit"
+   ]
+  },
+  "post": {
+   "triangles": 560,
+   "min": [
+    -0.3,
+    0,
+    -0.3
+   ],
+   "max": [
+    0.3,
+    1.286,
+    0.3
+   ],
+   "materials": [
+    "concrete",
+    "post_red",
+    "interior_dark",
+    "porcelain"
    ]
   }
  }

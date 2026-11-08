@@ -108,7 +108,7 @@ test("the weir intake feeds a canal that runs gently downhill above the river", 
 });
 
 test("rice paddies are level fields with levees", () => {
-  const rice = data.fields.filter((f) => f.type === "rice");
+  const rice = data.fields.filter((f) => f.type === "rice" && !f.terrace);
   assert.ok(rice.length > 80, `${rice.length} rice fields`);
   let flat = 0, total = 0;
   for (const f of rice) {
@@ -122,6 +122,50 @@ test("rice paddies are level fields with levees", () => {
     if (onLevel >= 8) flat++;
   }
   assert.ok(flat / total > 0.9, `${flat}/${total} fields have a level interior`);
+});
+
+test("terraced paddies step up the west footslope in level contour benches", () => {
+  const ter = data.fields.filter((f) => f.terrace);
+  assert.ok(ter.length > 40, `${ter.length} terraces`);
+  // every terrace is level: a dense scan of its bounds finds a good share of cells at its level,
+  // and the terraces climb at least 8 m above the valley floor
+  let ok = 0;
+  for (const f of ter) {
+    const [x0, z0, x1, z1] = f.bounds;
+    let on = 0;
+    for (let i = 0; i <= 20; i++) for (let j = 0; j <= 20; j++) if (Math.abs(H(x0 + ((x1 - x0) * i) / 20, z0 + ((z1 - z0) * j) / 20) - f.level) < 0.03) on++;
+    if (on * ((x1 - x0) * (z1 - z0)) / 441 > f.area * 0.25) ok++;
+  }
+  assert.ok(ok / ter.length > 0.85, `${ok}/${ter.length} terraces level`);
+  const lv = ter.map((f) => f.level);
+  assert.ok(Math.max(...lv) - Math.min(...lv) > 8);
+  assert.ok(ter.filter((f) => f.type === "fallow").length > 3, "some terraces lie fallow");
+});
+
+test("houses face south (ridge east-west), each with a lane, a barn and an igune windbreak", () => {
+  const houses = data.objects.filter((o) => o.asset.startsWith("minka-"));
+  assert.ok(houses.length >= 55, `${houses.length} houses`);
+  const veg = JSON.parse(fs.readFileSync(`${W}/vegetation.json`, "utf8"));
+  const trees = [...veg.trees.sugi, ...veg.trees.keyaki, ...veg.trees.hinoki, ...veg.trees.broadleaf];
+  const lanes = data.roads.filter((r) => r.id.startsWith("lane-"));
+  let sheltered = 0;
+  for (const h of houses) {
+    const yaw = h.rotation[1];
+    // front (local +Z) within 25 degrees of south, never facing north
+    assert.ok(Math.abs(yaw) < 0.44, `${h.id} faces ${(yaw * 180) / Math.PI} deg off south`);
+    const [x, , z] = h.position;
+    // windbreak trees behind (north) or west of the house within 22 m (not where the lookout's
+    // sight lines over the village and towards the sunset must stay open)
+    const nw = trees.filter((t) => Math.hypot(t[0] - x, t[2] - z) < 22 && (t[2] < z - 4 || t[0] < x - 6)).length;
+    if (nw >= 3) sheltered++;
+    assert.ok(lanes.some((l) => Math.hypot(l.points[0][0] - x, l.points[0][2] - z) < 20 || l.points.some((p) => Math.hypot(p[0] - x, p[2] - z) < 20)), `${h.id} has a lane`);
+    assert.ok(data.objects.some((o) => o.asset === "naya" && Math.hypot(o.position[0] - x, o.position[2] - z) < 16), `${h.id} has a barn`);
+  }
+  assert.ok(sheltered / houses.length > 0.85, `${sheltered}/${houses.length} houses with an igune`);
+  // houses cluster in hamlets, not a continuous strip along the road
+  const groups = new Set(houses.map((h) => h.group));
+  assert.ok(groups.size >= 7);
+  assert.ok(data.objects.some((o) => o.asset === "hinomi"));
 });
 
 test("lookout faces the village with the evening sun clearing the horizon", () => {
