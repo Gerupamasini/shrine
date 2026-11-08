@@ -130,12 +130,13 @@ export class Walker {
     // Lookout fence (low rail, the view stays open).
     const lk = data.landmarks.lookout;
     box(lk[0] - 4, p.y + 0.5, lk[2] + 4.5, 7, 0.5, 0.08, Math.PI / 4);
-    // Tree trunks near the walkable core.
+    // Tree trunks, every tree: radius at eye height measured from the tree models (scale 1), so
+    // the walker cannot step into a trunk and see it from inside.
+    const TRUNK: Record<string, number> = { sugi: 0.38, hinoki: 0.34, akamatsu: 0.34, broadleaf: 0.3, keyaki: 0.46, bamboo: 0.06 };
     for (const [kind, rows] of Object.entries(w.trees)) {
-      const r = kind === "bamboo" ? 0.06 : kind === "sugi" ? 0.32 : 0.25;
+      const r = TRUNK[kind] ?? 0.3;
       for (const t of rows) {
         const [x, y, z, sc] = t;
-        if (Math.hypot(x - 170, z + 40) > 260 && Math.hypot(x - 20, z - 60) > 380) continue;
         this.world.createCollider(RAPIER.ColliderDesc.cylinder(3, r * sc).setTranslation(x, y + 3, z));
       }
     }
@@ -171,7 +172,7 @@ export class Walker {
       this.position.set(p.x, p.y - HALF - RADIUS + EYE, p.z);
       return;
     }
-    const speed = run ? 5.2 : 1.45;
+    const speed = run ? 7.8 : 1.45;
     // ground: responsive acceleration; air: momentum with a little steering
     const accel = this.grounded ? 12 : 1.6;
     const k = Math.min(1, accel * dt);
@@ -180,7 +181,7 @@ export class Walker {
     this.jumpBuffer = Math.max(0, this.jumpBuffer - dt);
     this.airTime = this.grounded ? 0 : this.airTime + dt;
     if (this.jumpBuffer > 0 && (this.grounded || this.airTime < 0.12) && !this.ascending) {
-      // ~0.95 m apex; running jumps clear about 3.5 m
+      // ~0.95 m apex; running jumps clear about 6.5 m
       this.vertical = 4.3;
       this.ascending = true;
       this.grounded = false;

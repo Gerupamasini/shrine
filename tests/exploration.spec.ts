@@ -59,6 +59,9 @@ test("foot torii → 200-step climb → precinct → lookout; collisions, settin
 // River banks: the ground under a masonry revetment is sunk and covered by the river-works
 // mesh, so the walkable cap, the washing steps and the bridge parapets come from colliders.
 test("river: revetment cap, washing steps and bridge are walkable", async ({ page }) => {
+  // world data is requested with the build's version, so a deploy never mixes code and stale data
+  const dataUrls: string[] = [];
+  page.on("request", (r) => { if (!r.url().includes("/src/") && !r.url().includes("?import") && /\/world\/[^/]+\.(json|png|r16)|\/assets\/models\//.test(r.url())) dataUrls.push(r.url()); });
   await page.goto("/?capture&quality=low");
   await page.waitForFunction(() => (window as any).__satoyama?.ready, null, { timeout: 600000 });
   const r = await page.evaluate(() => {
@@ -97,4 +100,6 @@ test("river: revetment cap, washing steps and bridge are walkable", async ({ pag
   expect(Math.abs(r.deckEye - 1.65)).toBeLessThan(0.1);
   expect(r.parapet).toBeLessThan(1.4);
   expect(r.across).toBeGreaterThan(0);
+  expect(dataUrls.length).toBeGreaterThan(5);
+  for (const u of dataUrls) expect(u).toMatch(/[?&]v=[\w-]+/);
 });

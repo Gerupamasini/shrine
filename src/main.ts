@@ -274,6 +274,7 @@ async function boot() {
   const world = await loadWorld();
   land = new Landscape(renderer, camera, world);
   land.quality = quality;
+  land.lib.setCoverage(quality !== "low");   // alpha-to-coverage needs the MSAA that "low" goes without
   post = new Post(renderer, land.scene, camera);
   post.setQuality(quality);
   resize();

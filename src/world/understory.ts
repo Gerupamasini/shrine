@@ -1,4 +1,5 @@
 import * as T from "three";
+import { darkenFringe } from "../engine/library";
 import { addHook } from "../engine/hooks";
 import { loadImageData, type Heightfield } from "./data";
 import type { Landscape, System } from "./landscape";
@@ -102,6 +103,7 @@ export function cardField(land: Landscape, list: CardRow[], atlasName: string, c
   const m = new T.MeshStandardMaterial({ map: atlas, color, roughness: 0.85, alphaTest: 0.5, side: T.DoubleSide, alphaToCoverage: true });
   (m as unknown as { defines: Record<string, string> }).defines = { FOLIAGE: "" };
   land.lib.finish(m);
+  darkenFringe(m);
   const [t0, t1] = opts.tintRange ?? [new T.Color(0.82, 0.9, 0.8), new T.Color(1.08, 1.04, 0.9)];
   const fade = opts.nearFade;
   addHook(m, `cards-${opts.name}`, (s) => {
