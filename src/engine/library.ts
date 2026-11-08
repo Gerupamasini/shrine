@@ -18,6 +18,8 @@ export type PbrDef = {
   envIntensity?: number;
   /** linear multiplier on the albedo colour */
   gain?: number;
+  /** < 1: see-through (window glass), sorted as transparent and not written to depth */
+  opacity?: number;
 };
 
 /**
@@ -89,6 +91,11 @@ export class Library {
     if (def.gain) m.color.multiplyScalar(def.gain);
     if (def.alphaTest) m.alphaTest = def.alphaTest;
     if (def.envIntensity !== undefined) m.envMapIntensity = def.envIntensity;
+    if (def.opacity !== undefined && def.opacity < 1) {
+      m.transparent = true;
+      m.opacity = def.opacity;
+      m.depthWrite = false;
+    }
     return this.finish(m);
   }
   /** Materials that want alpha-to-coverage. It only works with MSAA: without it three.js keeps the

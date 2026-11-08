@@ -142,13 +142,15 @@
    "color": "#0c1214",
    "roughness": 0.04,
    "metalness": 0.2,
-   "envIntensity": 1.8
+   "envIntensity": 1.8,
+   "opacity": 0.32
   },
   "glass_dark": {
    "color": "#06090a",
    "roughness": 0.06,
    "metalness": 0.2,
-   "envIntensity": 1.5
+   "envIntensity": 1.5,
+   "opacity": 0.55
   },
   "interior_lit": {
    "color": "#1a140c",
@@ -161,7 +163,7 @@
    ]
   },
   "interior_dark": {
-   "color": "#0d0b09",
+   "color": "#17130f",
    "roughness": 1
   },
   "aluminium": {
@@ -391,6 +393,39 @@
    "color": "#b3241c",
    "roughness": 0.42,
    "metalness": 0.12
+  },
+  "interior_shop": {
+   "color": "#2a2016",
+   "emissive": "#ffcf8a",
+   "emissiveIntensity": 0.25,
+   "roughness": 0.6,
+   "dusk": [
+    17.4,
+    18.3,
+    0.85
+   ]
+  },
+  "lamp_red": {
+   "color": "#5a0c08",
+   "emissive": "#ff2a12",
+   "emissiveIntensity": 0.4,
+   "roughness": 0.3,
+   "dusk": [
+    17.8,
+    18.6,
+    2.6
+   ]
+  },
+  "phone_green": {
+   "color": "#3d7a46",
+   "roughness": 0.45
+  },
+  "road_paint": {
+   "tex": "white_plaster_rough_01",
+   "size": 1.2,
+   "color": "#e2ded2",
+   "gain": 1.1,
+   "roughness": 0.75
   }
  },
  "terrainLayers": [

@@ -48,6 +48,10 @@ def origin(rel: str):
         a = SRC["commons"]["audio"][0]
         return {"origin": "Wikimedia Commons", "page": a["page"], "authors": [a["author"]], "licence": a["licence"], "licenceUrl": a["licenceUrl"],
                 "processing": "high-pass 280 Hz, light denoise, loudness normalised, mono downmix (tools/assets/process_audio.sh)"}
+    if rel.startswith("assets/fonts/"):
+        f = SRC["googleFonts"][0]
+        return {"origin": "Google Fonts", "page": f["page"], "authors": [f["authors"]], "licence": f["licence"], "licenceUrl": f["licenceUrl"],
+                "processing": "subset to the glyphs of the signs (tools/assets/fetch_sign_font.py)"}
     if rel.startswith("assets/licenses/"):
         return {"origin": "licence text"}
     tool = {
@@ -98,6 +102,12 @@ md = f"""# 使用素材と出典
 **表記例**：ヒグラシの録音 “Tanna japonensis v01.ogg” by Σ64, Wikimedia Commons, CC BY 4.0。加工：280Hz以下の除去、軽いノイズ低減、音量正規化、モノラル化。
 
 `Higurashi 06c5856.ogg`（cory、CC BY 2.1 JP）も候補として確認しましたが、今回はWikimediaのレート制限（HTTP 429）で取得できず**未使用**です。Freesoundの`AkasakaHieJinjaCicadas_4mics.wav`（CC0）はダウンロードにログインが必要なため**未使用**です。
+
+### フォント
+
+| 素材 | 作者 | ライセンス | 配布ページ | 用途 |
+|---|---|---|---|---|
+| {SRC['googleFonts'][0]['family']} Bold（看板に使う字だけのサブセット） | {SRC['googleFonts'][0]['authors']} | [{SRC['googleFonts'][0]['licence']}]({SRC['googleFonts'][0]['licenceUrl']}) | [Google Fonts]({SRC['googleFonts'][0]['page']}) | 村の中心の商店・郵便局・駐在所・農協・公民館の看板。ライセンス本文は `public/assets/fonts/OFL.txt` |
 
 ### Poly Haven（CC0 1.0。商用利用・改変・再配布可、表記義務なし）
 

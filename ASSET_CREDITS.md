@@ -1,6 +1,6 @@
 # 使用素材と出典
 
-このファイルは `python3 tools/assets/catalog.py` が生成します。全ファイルのパス・サイズ・SHA-256・出典は [`docs/asset-manifest.json`](docs/asset-manifest.json)（209ファイル、計86.8MB）にあります。
+このファイルは `python3 tools/assets/catalog.py` が生成します。全ファイルのパス・サイズ・SHA-256・出典は [`docs/asset-manifest.json`](docs/asset-manifest.json)（225ファイル、計87.6MB）にあります。
 
 ## 外部素材
 
@@ -13,6 +13,12 @@
 **表記例**：ヒグラシの録音 “Tanna japonensis v01.ogg” by Σ64, Wikimedia Commons, CC BY 4.0。加工：280Hz以下の除去、軽いノイズ低減、音量正規化、モノラル化。
 
 `Higurashi 06c5856.ogg`（cory、CC BY 2.1 JP）も候補として確認しましたが、今回はWikimediaのレート制限（HTTP 429）で取得できず**未使用**です。Freesoundの`AkasakaHieJinjaCicadas_4mics.wav`（CC0）はダウンロードにログインが必要なため**未使用**です。
+
+### フォント
+
+| 素材 | 作者 | ライセンス | 配布ページ | 用途 |
+|---|---|---|---|---|
+| Noto Serif JP Bold（看板に使う字だけのサブセット） | Google, Adobe (Noto CJK) | [SIL Open Font License 1.1](https://openfontlicense.org/open-font-license-official-text/) | [Google Fonts](https://fonts.google.com/noto/specimen/Noto+Serif+JP) | 村の中心の商店・郵便局・駐在所・農協・公民館の看板。ライセンス本文は `public/assets/fonts/OFL.txt` |
 
 ### Poly Haven（CC0 1.0。商用利用・改変・再配布可、表記義務なし）
 

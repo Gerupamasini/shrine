@@ -321,6 +321,39 @@ export class Vegetation implements System {
     this.impostor = mesh;
     this.land.scene.add(mesh);
   }
+  farForest?: T.InstancedMesh;
+  /**
+   * Static billboards for the forest beyond the map (sites from FarTerrain): one draw, no per-frame
+   * work. Species follow the same plantation/ridge pattern as inside the map; at these distances the
+   * baked side views give the ridgelines their ragged tree silhouette instead of a smooth, bald slope.
+   */
+  addFarForest(sites: Float32Array, kinds: Uint8Array) {
+    const n = kinds.length;
+    if (!n || !this.impostor) return;
+    const g = this.impostor.geometry.clone();
+    const cell = new Float32Array(n), size = new Float32Array(n * 2), tint = new Float32Array(n);
+    const mesh = new T.InstancedMesh(g, this.impostor.material, n);
+    const m4 = new T.Matrix4();
+    for (let i = 0; i < n; i++) {
+      const si = kinds[i], vv = i % VARIANTS;
+      const v = this.variants[si * VARIANTS + vv];
+      const sc = sites[i * 4 + 3];
+      cell[i] = v.cell;
+      size[i * 2] = v.size[0] * sc;
+      size[i * 2 + 1] = v.size[1] * sc;
+      tint[i] = ((sites[i * 4] * 12.9898 + sites[i * 4 + 2] * 78.233) % 1 + 1) % 1;
+      mesh.setMatrixAt(i, m4.makeTranslation(sites[i * 4], sites[i * 4 + 1], sites[i * 4 + 2]));
+    }
+    g.setAttribute("aCell", new T.InstancedBufferAttribute(cell, 1));
+    g.setAttribute("aSize", new T.InstancedBufferAttribute(size, 2));
+    g.setAttribute("aTint", new T.InstancedBufferAttribute(tint, 1));
+    mesh.frustumCulled = false;
+    mesh.castShadow = false;
+    mesh.receiveShadow = false;
+    mesh.name = "far-forest";
+    this.land.scene.add(mesh);
+    this.farForest = mesh;
+  }
   setQuality(q: Quality) {
     this.dist = q === "low" ? { lod0: 26, lod1: 90, max: 1600 } : q === "high" ? { lod0: 70, lod1: 210, max: 2600 } : { lod0: 45, lod1: 140, max: 2200 };
     this.lastPos.set(1e9, 0, 0);

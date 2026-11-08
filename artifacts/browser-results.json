@@ -4,8 +4,6 @@
       "/opt/node22/bin/node",
       "/home/user/shrine/node_modules/.bin/playwright",
       "test",
-      "-g",
-      "river",
       "--trace",
       "off"
     ],
@@ -118,6 +116,40 @@
       "line": 0,
       "specs": [
         {
+          "title": "foot torii → 200-step climb → precinct → lookout; collisions, settings, no errors",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 1800000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 165808,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-08T09:37:22.718Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b9b4b397a1d4a5f1d1d3-04066e4937f3c731064d",
+          "file": "exploration.spec.ts",
+          "line": 4,
+          "column": 1
+        },
+        {
           "title": "river: revetment cap, washing steps and bridge are walkable",
           "ok": true,
           "tags": [],
@@ -133,12 +165,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 31300,
+                  "duration": 34509,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-11-08T08:29:12.991Z",
+                  "startTime": "2026-11-08T09:40:08.699Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -156,9 +188,9 @@
   ],
   "errors": [],
   "stats": {
-    "startTime": "2026-11-08T08:29:12.502Z",
-    "duration": 32050.707,
-    "expected": 1,
+    "startTime": "2026-11-08T09:37:22.303Z",
+    "duration": 201074.76200000002,
+    "expected": 2,
     "skipped": 0,
     "unexpected": 0,
     "flaky": 0

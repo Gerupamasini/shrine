@@ -103,16 +103,16 @@
  },
  "assets": {
   "road-ditch": {
-   "triangles": 34020,
+   "triangles": 33756,
    "min": [
-    32.434,
+    31.134,
     2.715,
-    -500.278
+    -500.401
    ],
    "max": [
-    90.106,
-    11.466,
-    540.247
+    91.406,
+    9.508,
+    540.356
    ],
    "materials": [
     "concrete_old",
@@ -1365,6 +1365,400 @@
     "post_red",
     "interior_dark",
     "porcelain"
+   ]
+  },
+  "shop-yorozuya": {
+   "triangles": 2576,
+   "min": [
+    -5.3,
+    0,
+    -4.7
+   ],
+   "max": [
+    5.3,
+    8.455,
+    5.4
+   ],
+   "materials": [
+    "concrete",
+    "wood_siding",
+    "plaster_white",
+    "wood_frame",
+    "interior_shop",
+    "wood_dark",
+    "wood_old",
+    "vend_red",
+    "porcelain",
+    "phone_green",
+    "sign_blue",
+    "wood_light",
+    "glass",
+    "aluminium",
+    "roof_tin",
+    "roof_soffit",
+    "metal_dark",
+    "paper",
+    "metal_grey",
+    "interior_lit",
+    "roof_kawara"
+   ],
+   "signs": [
+    [
+     0,
+     3.67,
+     4.34,
+     7.8,
+     0.62,
+     0
+    ]
+   ]
+  },
+  "shop-sakaya": {
+   "triangles": 2252,
+   "min": [
+    -4.8,
+    0,
+    -4.45
+   ],
+   "max": [
+    4.8,
+    8.33,
+    5.15
+   ],
+   "materials": [
+    "concrete",
+    "wood_siding",
+    "plaster_white",
+    "wood_frame",
+    "interior_shop",
+    "wood_dark",
+    "wood_old",
+    "vend_red",
+    "porcelain",
+    "phone_green",
+    "sign_blue",
+    "wood_light",
+    "glass",
+    "aluminium",
+    "steel_gate",
+    "metal_grey",
+    "roof_tin",
+    "roof_soffit",
+    "metal_dark",
+    "paper",
+    "interior_lit"
+   ],
+   "signs": [
+    [
+     0,
+     3.67,
+     4.09,
+     6.8,
+     0.62,
+     0
+    ],
+    [
+     3.5,
+     2.2,
+     4.5,
+     0.72,
+     0.44,
+     0
+    ]
+   ]
+  },
+  "shop-tofu": {
+   "triangles": 2168,
+   "min": [
+    -4.3,
+    0,
+    -4.45
+   ],
+   "max": [
+    4.3,
+    8.33,
+    5.15
+   ],
+   "materials": [
+    "concrete",
+    "wood_siding",
+    "plaster_white",
+    "wood_frame",
+    "interior_shop",
+    "wood_dark",
+    "wood_old",
+    "vend_red",
+    "porcelain",
+    "phone_green",
+    "sign_blue",
+    "wood_light",
+    "glass",
+    "aluminium",
+    "steel_gate",
+    "metal_grey",
+    "roof_tin",
+    "roof_soffit",
+    "metal_dark",
+    "paper",
+    "interior_lit",
+    "roof_kawara"
+   ],
+   "signs": [
+    [
+     0,
+     3.67,
+     4.09,
+     5.8,
+     0.62,
+     0
+    ]
+   ]
+  },
+  "barber": {
+   "triangles": 3044,
+   "min": [
+    -4.3,
+    0,
+    -4.2
+   ],
+   "max": [
+    4.3,
+    8.205,
+    4.9
+   ],
+   "materials": [
+    "concrete",
+    "wood_siding",
+    "plaster_white",
+    "wood_frame",
+    "interior_shop",
+    "wood_dark",
+    "wood_old",
+    "vend_red",
+    "porcelain",
+    "phone_green",
+    "sign_blue",
+    "wood_light",
+    "glass",
+    "aluminium",
+    "roof_tin",
+    "roof_soffit",
+    "metal_dark",
+    "paper",
+    "metal_grey",
+    "interior_lit",
+    "post_red"
+   ],
+   "signs": [
+    [
+     0,
+     3.67,
+     3.84,
+     5.8,
+     0.62,
+     0
+    ]
+   ]
+  },
+  "post-office": {
+   "triangles": 204,
+   "min": [
+    -5.3,
+    0,
+    -4.2
+   ],
+   "max": [
+    5.3,
+    4,
+    5.65
+   ],
+   "materials": [
+    "concrete",
+    "plaster_white",
+    "interior_shop",
+    "glass",
+    "aluminium",
+    "post_red",
+    "concrete_cap"
+   ],
+   "signs": [
+    [
+     0,
+     3.28,
+     4.13,
+     8,
+     0.62,
+     0
+    ]
+   ]
+  },
+  "chuzaisho": {
+   "triangles": 2662,
+   "min": [
+    -4.7,
+    0,
+    -4.45
+   ],
+   "max": [
+    4.7,
+    5.352,
+    4.45
+   ],
+   "materials": [
+    "concrete",
+    "plaster_white",
+    "interior_shop",
+    "glass",
+    "aluminium",
+    "metal_dark",
+    "lamp_red",
+    "roof_tin_blue",
+    "roof_soffit"
+   ],
+   "signs": [
+    [
+     -3.75,
+     1.8,
+     3.85,
+     0.36,
+     1.7,
+     1
+    ]
+   ]
+  },
+  "nokyo": {
+   "triangles": 2576,
+   "min": [
+    -6.8,
+    0,
+    -4.7
+   ],
+   "max": [
+    6.8,
+    5.855,
+    5.4
+   ],
+   "materials": [
+    "concrete",
+    "wood_siding",
+    "concrete_cap",
+    "wood_frame",
+    "interior_shop",
+    "wood_dark",
+    "wood_old",
+    "vend_red",
+    "porcelain",
+    "phone_green",
+    "sign_blue",
+    "wood_light",
+    "glass",
+    "aluminium",
+    "roof_tin",
+    "roof_soffit",
+    "metal_dark"
+   ],
+   "signs": [
+    [
+     0,
+     3.63,
+     4.34,
+     10.8,
+     0.62,
+     0
+    ]
+   ]
+  },
+  "nokyo-soko": {
+   "triangles": 412,
+   "min": [
+    -9.9,
+    0,
+    -6
+   ],
+   "max": [
+    9.9,
+    8.005,
+    6
+   ],
+   "materials": [
+    "concrete",
+    "concrete_block",
+    "roof_tin",
+    "steel_gate",
+    "metal_dark",
+    "roof_soffit"
+   ]
+  },
+  "kominkan": {
+   "triangles": 2654,
+   "min": [
+    -7.907,
+    0,
+    -5.909
+   ],
+   "max": [
+    7.907,
+    7.145,
+    8.65
+   ],
+   "materials": [
+    "concrete",
+    "wood_siding",
+    "plaster_white",
+    "glass",
+    "wood_frame",
+    "interior_shop",
+    "roof_kawara",
+    "roof_soffit",
+    "roof_kawara_ridge",
+    "wood_old"
+   ],
+   "signs": [
+    [
+     -2.15,
+     1.55,
+     7.45,
+     0.34,
+     1.75,
+     1
+    ]
+   ]
+  },
+  "phone-box": {
+   "triangles": 144,
+   "min": [
+    -0.55,
+    0,
+    -0.55
+   ],
+   "max": [
+    0.55,
+    2.42,
+    0.55
+   ],
+   "materials": [
+    "concrete",
+    "metal_grey",
+    "glass",
+    "porcelain",
+    "phone_green",
+    "metal_dark"
+   ]
+  },
+  "road-markings": {
+   "triangles": 13632,
+   "min": [
+    32.384,
+    3.415,
+    -540.051
+   ],
+   "max": [
+    90.156,
+    65.576,
+    577.781
+   ],
+   "materials": [
+    "road_paint"
    ]
   }
  }
