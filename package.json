@@ -11,7 +11,7 @@
     "assets": "python3 tools/assets/fetch.py && python3 tools/assets/process_textures.py && node tools/assets/process_models.mjs && tools/assets/process_audio.sh && npm run world && node tools/trees/build-trees.mjs && node tools/bake/bake-cards.mjs && python3 tools/bake/compose_atlases.py && python3 tools/assets/catalog.py",
     "test:browser": "playwright test",
     "build:pages": "tsc --noEmit && vite build --base=/shrine/",
-    "world": "python3 tools/world/generate_world.py && node tools/architecture/build.mjs"
+    "world": "python3 tools/world/generate_world.py && node tools/architecture/build.mjs && python3 tools/world/bake_map.py"
   },
   "dependencies": {
     "three": "^0.180.0",

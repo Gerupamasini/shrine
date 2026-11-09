@@ -184,6 +184,48 @@ test("village layout: a centre on the main road, road-facing houses, south-facin
   assert.ok(data.objects.some((o) => o.asset === "hinomi") && data.objects.some((o) => o.signs));
 });
 
+test("road works: graded cut and fill slopes (no sheer walls), the road ends at a tunnel portal", () => {
+  const road = data.roads.find((r) => r.class === "prefectural");
+  const tu = data.tunnel;
+  assert.ok(tu, "tunnel portal recorded");
+  assert.ok(Math.abs(road.points[0][2] - tu.z) < 3, "the road starts at the portal");
+  assert.ok(data.objects.some((o) => o.asset === "tunnel" && o.collider), "portal model with a collider");
+  assert.ok(data.ditch.zRange[0] >= tu.z, "ditches stop at the portal");
+  // beside the road the ground never rises faster than 1:1 (cut) or falls faster than 1:1.5 (fill)
+  // from the edge of the flat shoulder; sampled every 10 m along the open road
+  // (yards beside the road end in stone walls, so samples by a house are left out)
+  const houses = data.objects.filter((o) => o.asset.startsWith("minka-") || o.asset === "naya");
+  let worst = 0;
+  for (const [x, y, z] of road.points.filter((_, i) => i % 4 === 0)) {
+    if (z > 560) continue;
+    if (houses.some((o) => Math.hypot(o.position[0] - x, o.position[2] - z) < 32)) continue;
+    for (const side of [-1, 1])
+      for (const d of [6, 9, 12, 16]) {
+        const dy = H(x + side * d, z) - y, run = d - 4.3;
+        worst = Math.max(worst, dy / run, -dy / run / 1.5 * 1.0);
+      }
+  }
+  assert.ok(worst < 1.25, `steepest roadside slope ${worst.toFixed(2)} (1.0 = 45 degrees)`);
+  // carriageway, shoulders and ditch rims are level across the road (the ditch lining sits flush)
+  let off = 0;
+  for (const [x, y, z] of road.points) {
+    if (z > 540) continue;
+    for (const d of [-4.1, -3.75, -2, 0, 2, 3.75, 4.1]) off = Math.max(off, Math.abs(H(x + d, z) - y));
+  }
+  assert.ok(off < 0.08, `road cross-section level within ${off.toFixed(3)} m`);
+});
+
+test("map sheet: image, names of the hamlets and the centre, shrine and post office", () => {
+  const m = JSON.parse(fs.readFileSync(`${W}/map.json`, "utf8"));
+  assert.ok(fs.statSync(`${W}/${m.image}`).size > 100000);
+  assert.equal(m.extent, E);
+  const kinds = (k) => m.labels.filter((l) => l.kind === k).map((l) => l.text);
+  assert.ok(kinds("district").includes("上沢"));
+  assert.ok(kinds("hamlet").length >= 6, "every hamlet is named");
+  for (const t of ["郵便局", "駐在所", "熊野神社"]) assert.ok(kinds("facility").includes(t), t);
+  for (const l of m.labels) assert.ok(Math.abs(l.x) <= E / 2 && Math.abs(l.z) <= E / 2, `${l.text} on the sheet`);
+});
+
 test("lookout faces the village with the evening sun clearing the horizon", () => {
   const lk = data.landmarks.lookout;
   // horizon elevation towards the 18:00 sun azimuth (285.6°) must be below the sun (6.7°)

@@ -56,7 +56,8 @@ export async function populate(land: Landscape, progress: (p: number, label: str
   );
   land.add(new GrassField(land, wt, { rice: false, spacing: 0.4, radius: 42, inner: 14, blades: 4 }));
   // rice hills: the photographed grass clump scaled to rice height (rice is a grass), in rows
-  land.add(new GrassField(land, wt, { rice: true, spacing: 0.36, radius: 14, blades: 0, seed: 3.1, clump: { geometry: geos[0], map, height: 0.32, scale: 2.9 } }));
+  // (hills 30 cm apart, about a metre tall by early August, the canopy closed between the rows)
+  land.add(new GrassField(land, wt, { rice: true, spacing: 0.3, radius: 15, blades: 0, seed: 3.1, clump: { geometry: geos[0], map, height: 0.32, scale: 3.25 } }));
   land.add(new RiceCanopy(land, wt));
   land.add(new River(land, wt));
   land.add(smoke);

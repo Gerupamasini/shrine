@@ -13,9 +13,10 @@ export const TERRAIN_LAYERS = [
   { id: "brown_mud_leaves_01", size: 2.4, tint: [0.8, 0.78, 0.72] },
   { id: "river_small_rocks", size: 2.2, tint: [0.9, 0.9, 0.88] },
   { id: "gravel_floor_02", size: 1.6, tint: [0.56, 0.54, 0.5] },
-  { id: "worn_asphalt", size: 3.5, tint: [1.5, 1.75, 2.0] },
+  { id: "asphalt_01", size: 4.0, tint: [1.0, 1.06, 1.14] },
   { id: "farm_furrows", size: 4.2, tint: [0.78, 0.72, 0.66], fixed: true },
   { id: "ganges_river_pebbles", size: 3.0, tint: [0.88, 0.88, 0.86] },
+  { id: "asphalt_06", size: 3.0, tint: [0.92, 0.93, 0.94] },
 ];
 const NL = 12; // shader capacity (3 splat textures)
 
@@ -127,6 +128,7 @@ export class Terrain {
       uLayerTint: { value: [...TERRAIN_LAYERS.map((l) => new T.Color(...(l.tint as [number, number, number]))), ...Array(NL - TERRAIN_LAYERS.length).fill(new T.Color(1, 1, 1))] },
       uLayerFixed: { value: [...TERRAIN_LAYERS.map((l) => ("fixed" in l && l.fixed ? 1 : 0)), ...Array(NL - TERRAIN_LAYERS.length).fill(0)] },
       uWet: { value: 0.0 },
+      ...this.holeUniforms(),
     });
     const m = (this.material = new T.MeshStandardMaterial({ roughness: 1, metalness: 0 }));
     this.lib.finish(m);
@@ -148,6 +150,24 @@ export class Terrain {
           uniform float uLayerScale[12];
           uniform float uLayerFixed[12];
           uniform vec3 uLayerTint[12];
+          // openings in the ground: the roadside ditch channels and the tunnel mouth
+          uniform sampler2D tRoadX; uniform vec3 uRoadZ; uniform vec4 uDitch; uniform vec4 uTunnel; uniform vec2 uTunnelSize;
+          float roadX(float z, out float slope) {
+            float f = clamp((z - uRoadZ.x) / uRoadZ.y, 0.0, uRoadZ.z - 2.0);
+            int i = int(floor(f));
+            float a = texelFetch(tRoadX, ivec2(i, 0), 0).r, b = texelFetch(tRoadX, ivec2(i + 1, 0), 0).r;
+            slope = (b - a) / uRoadZ.y;
+            return mix(a, b, f - float(i));
+          }
+          void groundHoles() {
+            if (vTW.z > uDitch.z && vTW.z < uDitch.w) {
+              float sl; float rx = roadX(vTW.z, sl);
+              float d = abs(vTW.x - rx) * inversesqrt(1.0 + sl * sl);
+              if (abs(d - uDitch.x) < uDitch.y) discard;
+            }
+            float dz = uTunnel.y - vTW.z;
+            if (dz > 0.04 && dz < 220.0 && vTW.y < uTunnel.w + uTunnelSize.y && abs(vTW.x - (uTunnel.x - uTunnel.z * dz)) < uTunnelSize.x) discard;
+          }
           vec3 tAlb; vec3 tNrm; vec3 tArmV; vec3 tWorldN;
           float hash12(vec2 p){ vec3 p3 = fract(vec3(p.xyx) * .1031); p3 += dot(p3, p3.yzx + 33.33); return fract((p3.x + p3.y) * p3.z); }
           float vnoise(vec2 p){ vec2 i=floor(p), f=fract(p); f=f*f*(3.-2.*f);
@@ -188,7 +208,7 @@ export class Terrain {
             tWorldN = normalize(texture2D(tTerrainNormal, tuv).xyz * 2. - 1.);
           }`,
         )
-        .replace("#include <map_fragment>", "terrainSample();\n diffuseColor.rgb *= tAlb;")
+        .replace("#include <map_fragment>", "groundHoles();\n terrainSample();\n diffuseColor.rgb *= tAlb;")
         .replace("#include <roughnessmap_fragment>", "float roughnessFactor = roughness * mix(0.78, 1.0, tArmV.g);")
         .replace("#include <metalnessmap_fragment>", "float metalnessFactor = 0.0;")
         .replace(
@@ -226,6 +246,31 @@ export class Terrain {
     });
     this.buildChunks();
     return this;
+  }
+  /** Road axis x(z) every 0.5 m (for the ditch openings) and the tunnel mouth, from scene.json. */
+  holeUniforms() {
+    const d = this.data, road = d.roads[0]?.points ?? [];
+    const step = 0.5, z0 = road.length ? road[0][2] : 0, z1 = road.length ? road[road.length - 1][2] : 1;
+    const n = Math.max(2, Math.ceil((z1 - z0) / step) + 1);
+    const xs = new Float32Array(n);
+    for (let i = 0, k = 0; i < n; i++) {
+      const z = z0 + i * step;
+      while (k < road.length - 2 && road[k + 1][2] < z) k++;
+      const [ax, , az] = road[k], [bx, , bz] = road[Math.min(k + 1, road.length - 1)];
+      xs[i] = bz > az ? ax + ((bx - ax) * (z - az)) / (bz - az) : ax;
+    }
+    const tex = new T.DataTexture(xs, n, 1, T.RedFormat, T.FloatType);
+    tex.minFilter = tex.magFilter = T.NearestFilter;
+    tex.needsUpdate = true;
+    const dd = d.ditch, tu = d.tunnel;
+    return {
+      tRoadX: { value: tex },
+      uRoadZ: { value: new T.Vector3(z0, step, n) },
+      // x = channel centre offset, y = half width of the opening (inner width + most of the wall tops), z/w = z range
+      uDitch: { value: dd ? new T.Vector4(dd.offset, dd.width / 2 + 0.07, dd.zRange[0], dd.zRange[1]) : new T.Vector4(0, -1, 1, 0) },
+      uTunnel: { value: tu ? new T.Vector4(tu.x, tu.z, tu.slope, tu.y) : new T.Vector4(0, -1e5, 0, -1e5) },
+      uTunnelSize: { value: new T.Vector2(tu?.halfWidth ?? 0, tu?.height ?? 0) },
+    };
   }
   /** Square chunks, three index-shared LODs, skirts to hide cracks. */
   buildChunks() {

@@ -426,6 +426,52 @@
    "color": "#e2ded2",
    "gain": 1.1,
    "roughness": 0.75
+  },
+  "lpg_grey": {
+   "color": "#8b8f8d",
+   "roughness": 0.55,
+   "metalness": 0.25
+  },
+  "tank_cream": {
+   "color": "#cdc4a6",
+   "roughness": 0.6,
+   "metalness": 0.1
+  },
+  "pole_vinyl": {
+   "color": "#9ec1ad",
+   "roughness": 0.3,
+   "metalness": 0.05
+  },
+  "tunnel_lining": {
+   "tex": "white_plaster_rough_01",
+   "size": 2.0,
+   "color": "#55524b",
+   "roughness": 0.95
+  },
+  "lamp_sodium": {
+   "color": "#3a2a14",
+   "emissive": "#ff9a3c",
+   "emissiveIntensity": 2.4,
+   "roughness": 0.4
+  },
+  "cloth_white": {
+   "color": "#e4e1d6",
+   "roughness": 0.95,
+   "doubleSided": true
+  },
+  "tunnel_dim": {
+   "tex": "white_plaster_rough_01",
+   "size": 2.0,
+   "color": "#2a2925",
+   "roughness": 0.95
+  },
+  "tunnel_dark": {
+   "color": "#0d0c0b",
+   "roughness": 1
+  },
+  "tunnel_end": {
+   "color": "#030303",
+   "roughness": 1
   }
  },
  "terrainLayers": [
@@ -493,12 +539,12 @@
    ]
   },
   {
-   "id": "worn_asphalt",
-   "size": 3.5,
+   "id": "asphalt_01",
+   "size": 4.0,
    "tint": [
-    1.5,
-    1.75,
-    2.0
+    1.0,
+    1.06,
+    1.14
    ]
   },
   {
@@ -518,6 +564,15 @@
     0.88,
     0.88,
     0.86
+   ]
+  },
+  {
+   "id": "asphalt_06",
+   "size": 3.0,
+   "tint": [
+    0.92,
+    0.93,
+    0.94
    ]
   }
  ],

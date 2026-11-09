@@ -290,7 +290,7 @@ function temizuya() {
   m.box("stone_granite", 0.08, 0.05, 0.5, 0.71, 1.03, 0);
   m.box("stone_granite", 0.08, 0.05, 0.5, -0.71, 1.03, 0);
   // bamboo rail with ladles
-  m.cyl("bamboo_green", 0.025, 0.025, 1.4, -0.7, 1.12, 0.0, 8, { rz: Math.PI / 2 });
+  m.cyl("bamboo_green", 0.025, 0.025, 1.4, 0, 1.12 - 0.7, 0.0, 8, { rz: Math.PI / 2 });   // centred at y 1.12
   for (let k = 0; k < 5; k++) {
     const x = -0.5 + k * 0.25;
     m.cyl("wood_light", 0.045, 0.045, 0.07, x, 1.1, 0.18, 10);
@@ -568,17 +568,36 @@ function minka(type, v) {
     }
   }
   // lean-to (geya) on the side for some houses
+  let lean = 0;
   if (r() < 0.6) {
     const s = r() < 0.5 ? -1 : 1;
+    lean = s;
     m.box("wood_siding", 2.4, 2.1, D * 0.6, s * (W / 2 + 1.2), F + 1.05 - 0.3, -D * 0.1);
     const g = new Model("geya");
     gableRoof(g, "roof_tin", { W: D * 0.6, over: 0.2, eaveY: 2.1, ridgeY: 2.6, frontRun: 2.6, backRun: 0.01, thick: 0.06 });
     m.merge(g, new THREE.Matrix4().makeRotationY(s * Math.PI / 2).setPosition(s * W / 2, F - 0.3, -D * 0.1));
   }
-  // laundry pole + stepping stone
-  if (r() < 0.5) {
-    for (const x of [W / 2 - 2.5, W / 2 - 0.3]) m.cyl("wood_old", 0.04, 0.04, 1.9, x, 0, front + 3.2, 6);
-    m.cyl("bamboo_green", 0.025, 0.025, 2.6, W / 2 - 2.7, 1.85, front + 3.2, 8, { rz: Math.PI / 2 });
+  // LP gas: two grey 50 kg cylinders chained to the wall on a concrete slab, with the regulator and
+  // the copper pipe into the kitchen, on the side without the lean-to; in Tohoku also the kerosene
+  // home tank (490 L, on legs) that feeds the bath boiler and the winter stoves
+  {
+    const s = lean ? -lean : r() < 0.5 ? -1 : 1, gx = s * (W / 2 + 0.42), gz = -D / 2 + 1.1;
+    m.box("concrete_old", 0.6, 0.08, 1.05, gx, 0.04, gz);
+    for (const dz of [-0.24, 0.24]) {
+      m.cyl("lpg_grey", 0.18, 0.18, 1.02, gx, 0.08, gz + dz, 14);
+      m.cyl("lpg_grey", 0.18, 0.12, 0.1, gx, 1.1, gz + dz, 14);
+      m.cyl("metal_dark", 0.1, 0.1, 0.16, gx, 1.2, gz + dz, 10, { open: true });
+    }
+    m.box("metal_dark", 0.04, 0.04, 0.62, gx - s * 0.2, 0.9, gz);                 // chain
+    m.box("brass", 0.1, 0.14, 0.08, gx - s * 0.16, 1.45, gz);                     // regulator
+    m.cyl("brass", 0.012, 0.012, 1.05, gx - s * 0.28, 0.4, gz, 4);
+    if (type !== "minka-kayabuki" || r() < 0.5) {
+      const tz = gz + 1.9;
+      for (const lx of [-0.22, 0.22]) for (const lz of [-0.6, 0.6]) m.box("metal_dark", 0.05, 0.42, 0.05, s * (W / 2 + 0.5) + lx, 0.21, tz + lz);
+      m.box("tank_cream", 0.62, 0.95, 1.35, s * (W / 2 + 0.5), 0.42 + 0.48, tz);
+      m.cyl("metal_dark", 0.06, 0.06, 0.08, s * (W / 2 + 0.5), 1.37, tz - 0.4, 8);
+      m.cyl("metal_grey", 0.015, 0.015, 0.9, s * (W / 2 + 0.24), 0.05, tz - 0.6, 4);
+    }
   }
   m.box("stone_granite", 0.8, 0.25, 0.5, -W / 2 + bayW / 2, 0.125, front + 0.5);
   // where evening smoke rises: the bath-stove chimney at the back (a galvanised pipe with a rain
@@ -809,6 +828,9 @@ function ditches() {
   const m = new Model("road-ditch");
   const pts = scene.roads[0].points, dd = scene.ditch;
   const r = rng(77);
+  // in the centre the ditch runs under concrete lids along its whole length (shop fronts, parking)
+  const machi = (scene.hamlets ?? []).find((hm) => hm.name === "machi");
+  const lidded = (z) => machi && Math.abs(z - machi.z) < machi.halfLength + 2;
   for (let i = 0; i < pts.length - 1; i++) {
     const [ax, ay, az] = pts[i], [bx, by, bz] = pts[i + 1];
     if (az < dd.zRange[0] || bz > dd.zRange[1]) continue;
@@ -816,13 +838,14 @@ function ditches() {
     const nx = -dirz, nz = dirx, yaw = Math.atan2(dirx, dirz);
     for (const side of [-1, 1]) {
       const cx = (ax + bx) / 2 + nx * side * dd.offset, cz = (az + bz) / 2 + nz * side * dd.offset;
-      const y = (ay + by) / 2 - 0.07;
+      // rim flush with the level shoulder (the terrain shader opens the ground over the channel)
+      const y = (ay + by) / 2 + 0.006;
       const L = len + 0.03, w = dd.width, wall = 0.1, dep = dd.depth;
       // two walls, floor (inner faces stained), and a concrete lid on some segments
-      for (const ws of [-1, 1]) m.box("concrete_old", L, dep + 0.35, wall, cx + nx * ws * (w / 2 + wall / 2), y - (dep + 0.35) / 2 + 0.03, cz + nz * ws * (w / 2 + wall / 2), { ry: yaw + Math.PI / 2 });
+      for (const ws of [-1, 1]) m.box("concrete_old", L, dep + 0.35, wall, cx + nx * ws * (w / 2 + wall / 2), y - (dep + 0.35) / 2, cz + nz * ws * (w / 2 + wall / 2), { ry: yaw + Math.PI / 2 });
       m.box("concrete_dark", L, 0.06, w, cx, y - dep, cz, { ry: yaw + Math.PI / 2 });
       const crossing = (dd.crossings ?? []).some((zc) => Math.abs(cz - zc) < 2.6);   // farm road over the ditch
-      if (crossing || r() < 0.22) m.box("concrete_old", L * 0.96 + (crossing ? 0.1 : 0), crossing ? 0.14 : 0.08, w + 0.16, cx, y + 0.01, cz, { ry: yaw + Math.PI / 2 });
+      if (crossing || lidded(cz) || r() < 0.22) m.box(lidded(cz) ? "concrete" : "concrete_old", L * 0.985 + (crossing ? 0.04 : 0), crossing ? 0.12 : 0.08, w + 0.22, cx, y + (crossing ? 0.06 : 0.04), cz, { ry: yaw + Math.PI / 2 });
     }
   }
   return m;
@@ -1339,8 +1362,106 @@ function riverWorks() {
   return m;
 }
 
+// ---------------------------------------------------------------- road tunnel (zuido)
+/** Concrete portal of a 1970s two-lane road tunnel at the head of the valley: a face wall with a
+ *  raised arch ring and coping, the name plaque over the crown, and the lined bore running on into
+ *  the hill (lit by sodium lamps, fading to black). Local origin = road level at the face, front
+ *  = +Z (south); the bore follows the road's heading (`slope` = dx/dz). */
+function tunnel(t) {
+  const m = new Model("tunnel");
+  const R = t.halfWidth - 0.05, ys = 2.4, FW = t.faceHalfWidth, top = t.faceTop, TH = 1.2;
+  const crown = ys + R;
+  // face wall with the horseshoe opening
+  const face = new THREE.Shape([new THREE.Vector2(-FW, -0.8), new THREE.Vector2(FW, -0.8), new THREE.Vector2(FW, top), new THREE.Vector2(-FW, top)]);
+  const hole = new THREE.Path();
+  // (the opening stops at the road: below it the face is solid, the floor of the reveal)
+  hole.moveTo(R, -0.02); hole.lineTo(R, ys); hole.absarc(0, ys, R, 0, Math.PI, false); hole.lineTo(-R, -0.02); hole.lineTo(R, -0.02);
+  face.holes.push(hole);
+  const fg = new THREE.ExtrudeGeometry(face, { depth: TH, bevelEnabled: false, curveSegments: 28 });
+  fg.translate(0, 0, -TH);
+  m.add("concrete", fg);
+  // arch ring standing 0.18 m proud of the face, and a coping along the top
+  const ring = new THREE.Shape();
+  ring.moveTo(R + 0.55, 0); ring.lineTo(R + 0.55, ys); ring.absarc(0, ys, R + 0.55, 0, Math.PI, false); ring.lineTo(-R - 0.55, 0);
+  ring.lineTo(-R, 0); ring.lineTo(-R, ys); ring.absarc(0, ys, R, Math.PI, 0, true); ring.lineTo(R, 0); ring.lineTo(R + 0.55, 0);
+  const rg = new THREE.ExtrudeGeometry(ring, { depth: 0.18, bevelEnabled: false, curveSegments: 28 });
+  m.add("concrete_old", rg);
+  m.box("concrete", 2 * FW + 0.4, 0.32, TH + 0.35, 0, top + 0.16, -TH / 2 + 0.17);
+  // pilasters at the ends of the face
+  for (const sx of [-1, 1]) m.box("concrete", 0.7, top + 0.8, 0.3, sx * (FW - 0.35), (top - 0.8) / 2, 0.15);
+  // name plaque (granite) over the crown; the lettering is drawn by src/world/signs.ts
+  const py = crown + (top - crown) / 2 + 0.1;
+  m.box("stone_granite", 2.9, 0.92, 0.14, 0, py, 0.25);
+  SIGN_ANCHORS["tunnel"] = [[0, py, 0.325, 2.6, 0.7, 0]];
+  // drip line of rust and damp under the coping: a darker band
+  m.box("concrete_dark", 2 * FW - 1.6, 0.06, 0.02, 0, top - 0.25, 0.005);
+  // the bore: horseshoe lining, raised inspection walkways, road slab with the centre line
+  const L = 96, step = 4;
+  const prof = [];
+  for (let k = 0; k <= 4; k++) prof.push([R, (ys * k) / 4]);
+  for (let k = 1; k <= 20; k++) { const a = (Math.PI * k) / 20; prof.push([R * Math.cos(a), ys + R * Math.sin(a)]); }
+  for (let k = 1; k <= 4; k++) prof.push([-R, ys - (ys * k) / 4]);
+  // (the lining starts behind the face wall: the opening's own reveal lines the first 1.2 m)
+  const bands = [["tunnel_lining", TH - 0.05, 16], ["tunnel_dim", 16, 44], ["tunnel_dark", 44, L]];
+  for (const [mat, d0, d1] of bands) {
+    const pos = [];
+    for (let d = d0; d < d1; d += step) {
+      const da = d, db = Math.min(d + step, d1);
+      const xa = -t.slope * da, xb = -t.slope * db;
+      for (let k = 0; k < prof.length - 1; k++) {
+        const [px0, py0] = prof[k], [px1, py1] = prof[k + 1];
+        // quad facing the bore axis (inward)
+        const A = [xa + px0, py0, -da], B = [xa + px1, py1, -da], C = [xb + px1, py1, -db], D = [xb + px0, py0, -db];
+        pos.push(...A, ...B, ...C, ...A, ...C, ...D);
+      }
+    }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+    g.computeVertexNormals();
+    m.add(mat, g);
+  }
+  const yaw = Math.atan2(-t.slope, 1);
+  const along = (d) => [-t.slope * d, -d];
+  for (let d = 0; d < L; d += 12) {
+    const len = Math.min(12, L - d), [cx, cz] = along(d + len / 2);
+    m.box("concrete_dark", 2 * R - 1.4, 0.06, len, cx, 0.0, cz, { ry: yaw });
+    for (const sx of [-1, 1]) m.box(d < 16 ? "concrete" : "tunnel_dim", 0.7, 0.22, len, cx + sx * (R - 0.35), 0.11, cz, { ry: yaw });
+    for (let k = 0; k < len; k += 6) {
+      const [lx, lz] = along(d + k + 1.5);
+      m.box("road_paint", 0.12, 0.012, 3.0, lx, 0.035, lz, { ry: yaw });
+    }
+  }
+  // sodium lamps along the left wall, below the springline of the arch
+  for (let d = 7; d < L - 4; d += 9) {
+    const [lx, lz] = along(d);
+    m.box("lamp_sodium", 0.16, 0.22, 0.7, lx - R + 0.12, ys + 1.4, lz, { ry: yaw });
+  }
+  const [ex, ez] = along(L);
+  m.box("tunnel_end", 2 * R + 0.4, crown + 0.6, 0.1, ex, crown / 2, ez, { ry: yaw });
+  return m;
+}
+
+/** Laundry poles (monohoshi): two T-shaped galvanised posts set in concrete and a pair of
+ *  vinyl-coated poles across them, the kind every farmhouse yard had. Local X = along the poles. */
+function monohoshi() {
+  const m = new Model("monohoshi");
+  for (const x of [-1.35, 1.35]) {
+    m.box("concrete_old", 0.32, 0.12, 0.32, x, 0.06, 0);
+    m.cyl("metal_grey", 0.03, 0.03, 1.72, x, 0.1, 0, 8);
+    m.box("metal_grey", 0.05, 0.05, 0.62, x, 1.8, 0);
+    for (const z of [-0.26, 0.26]) m.box("metal_grey", 0.06, 0.08, 0.04, x, 1.86, z);
+  }
+  for (const z of [-0.26, 0.26]) m.cyl("pole_vinyl", 0.016, 0.016, 3.4, 0, 1.88 - 1.7, z, 8, { rz: Math.PI / 2 });
+  // a towel and a work glove pair left out on one pole
+  m.box("cloth_white", 0.34, 0.5, 0.01, -0.6, 1.62, 0.26);
+  m.box("cloth_white", 0.12, 0.2, 0.01, 0.5, 1.78, -0.26);
+  return m;
+}
+
 // ---------------------------------------------------------------- build all
 await save("road-ditch", ditches());
+if (scene.tunnel) await save("tunnel", tunnel(scene.tunnel));
+await save("monohoshi", monohoshi());
 await save("torii-stone", torii("stone"));
 await save("torii-wood", torii("wood"));
 for (let v = 0; v < 2; v++) await save(v ? `toro_${v}` : "toro", toro(v));

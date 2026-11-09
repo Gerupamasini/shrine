@@ -30,8 +30,47 @@
           杉の木陰を抜けて、夕暮れの村を見渡す。<br />行き先も、時間も、あなたの歩幅で。
         </p>
         <button id="enter">山里を歩く <span>↗</span></button
-        ><small>WASD 移動　・　マウス 視点　・　Shift 走る　・　Space 跳ぶ</small>
+        ><small>WASD 移動　・　マウス 視点　・　Shift 走る　・　Space 跳ぶ　・　M 地図</small>
         <div id="loading">地形と風景を読み込んでいます…</div>
+      </section>
+      <div id="minimap-wrap" hidden>
+        <canvas id="minimap" aria-label="周辺の地図（クリックで全体図）" title="クリックで全体図（M）"></canvas>
+        <span>M 地図</span>
+      </div>
+      <section id="map" hidden aria-label="上沢地区の地図">
+        <canvas id="map-canvas"></canvas>
+        <div id="map-tip" hidden></div>
+        <div class="map-cartouche">
+          <h2>上沢地区</h2>
+          <p>平成六年八月　修正</p>
+          <div class="map-north"><span>北</span></div>
+        </div>
+        <div class="map-legend">
+          <h3>凡例</h3>
+          <ul>
+            <li><i class="lg road-pref"></i>県道</li>
+            <li><i class="lg road-town"></i>町道</li>
+            <li><i class="lg road-farm"></i>農道</li>
+            <li><i class="lg bld"></i>建物</li>
+            <li><i class="lg bld-c"></i>堅ろう建物</li>
+            <li><i class="lg sym">‖</i>田</li>
+            <li><i class="lg sym">∨</i>畑</li>
+            <li><i class="lg sym">Λ</i>針葉樹林</li>
+            <li><i class="lg sym">ᑫ</i>広葉樹林</li>
+            <li><i class="lg sym">⛩</i>神社</li>
+            <li><i class="lg sym circ">〒</i>郵便局</li>
+            <li><i class="lg sym">✕</i>駐在所</li>
+            <li><i class="lg contour"></i>等高線 10m</li>
+            <li><i class="lg place"></i>移動できる場所</li>
+          </ul>
+        </div>
+        <div class="map-tools">
+          <button id="map-here">現在地</button><button id="map-in" aria-label="拡大">＋</button><button id="map-out" aria-label="縮小">－</button><button id="map-close" aria-label="地図を閉じる">×</button>
+        </div>
+        <div class="map-foot">
+          <div id="map-scale" data-label="100 m"></div>
+          <p>ドラッグで移動　・　ホイールで拡大　・　◆をクリックでその場所へ　・　M / Esc で閉じる</p>
+        </div>
       </section>
       <div id="crosshair" hidden></div>
       <div id="resume" hidden>マウスを動かすと見回せます</div>
@@ -77,7 +116,12 @@
           ><button data-place="river">川に架かる橋</button
           ><button data-place="weir">堰と用水路</button>
         </div>
+        <div class="setting-row">
+          <span>地図</span><button id="open-map">全体図を開く（M）</button>
+        </div>
         <label class="check"
+          ><input id="show-minimap" type="checkbox" checked />ミニマップを表示</label
+        ><label class="check"
           ><input id="diagnostics" type="checkbox" />描画情報を表示</label
         >
         <p class="micro">
@@ -99,7 +143,7 @@
             <button id="sound-short" aria-label="環境音を切り替え">
               ♪ オフ
             </button></span
-          ><span class="control-hint">Space 跳ぶ　/　Esc 休憩　/　F 撮影　/　H 表示</span>
+          ><span class="control-hint">Space 跳ぶ　/　M 地図　/　Esc 休憩　/　F 撮影　/　H 表示</span>
         </div>
       </footer>
       <output id="stats" hidden></output>
