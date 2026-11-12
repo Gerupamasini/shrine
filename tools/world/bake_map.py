@@ -68,8 +68,11 @@ order_ = np.argsort(rp[:, 2])
 rp = rp[order_]
 rxc = np.interp(Z, rp[:, 2], rp[:, 0])
 rw = np.interp(Z, rp[:, 2], rp[:, 3])
-water_d = (rw[:, None] / 2) - np.abs(XX - rxc[:, None])      # >0 inside the water, metres
-water = water_d > 0
+ry = np.interp(Z, rp[:, 2], rp[:, 1])
+water_d = (rw[:, None] / 2) - np.abs(XX - rxc[:, None])      # >0 inside the bed, metres
+# only the wetted channel is water: the gravel bars beside it are land, as on a survey sheet
+water = (water_d > 0) & (h < ry[:, None] - 0.01)
+water = ndimage.binary_opening(water, iterations=1) | ((water_d > 0) & (h < ry[:, None] - 0.3))
 
 # ---- colours (linear blend in sRGB is fine for flat tints)
 def rgb(hexs):
@@ -193,16 +196,26 @@ for (x, y) in grid_points(32):
 
 # river edges, revetments, levee path, canal
 blue = (70, 125, 175, 255)
-left = [P(r_[0] - r_[3] / 2, r_[2]) for r_ in rp]
-right = [P(r_[0] + r_[3] / 2, r_[2]) for r_ in rp]
-dr.line(left, fill=blue, width=2)
-dr.line(right, fill=blue, width=2)
+# the water's edge
+edge_px = water & ~ndimage.binary_erosion(water)
+eyy, exx = np.nonzero(edge_px)
+for yy_, xx_ in zip(eyy, exx):
+    dr.point((int(xx_), int(yy_)), fill=blue)
 bed = scene["river"]["bed"]
 bp = np.array(bed["points"])
-for side in (-1, 1):
-    edge = [P(p[0] + side * (p[2] + bed["wallRun"]), p[1]) for p in bp]
-    dr.line(edge, fill=(120, 118, 110, 255), width=2)
-levee = [P(p[0] + p[2] + bed["wallRun"] + bed["capWidth"] + bed["pathWidth"] / 2, p[1]) for p in bp]
+# revetments (walls) only where the bank is built up; natural earth banks are left to the hillshade
+for side, ei in ((-1, 6), (1, 7)):
+    run = []
+    for p in bp:
+        if p[ei] < 0.5:
+            run.append(P(p[0] + side * (p[2] + bed["wallRun"]), p[1]))
+        elif run:
+            if len(run) > 1:
+                dr.line(run, fill=(110, 108, 100, 255), width=3)
+            run = []
+    if len(run) > 1:
+        dr.line(run, fill=(110, 108, 100, 255), width=3)
+levee = [P(x_, z_) for x_, z_ in bed.get("leveePath", [])]
 for a in range(0, len(levee) - 4, 8):         # dashed footpath on the levee
     dr.line(levee[a:a + 5], fill=(90, 80, 70, 255), width=2)
 canal = scene["river"]["canal"]["points"]

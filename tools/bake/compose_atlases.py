@@ -116,6 +116,36 @@ def atlas(cells, name):
     Nn.convert("RGB").save(OUT / f"{name}-normal.png", optimize=True)
 
 
+def ragged_outline(path: Path, seed=7):
+    """Break the smooth envelope of the broadleaf cluster cells (blob_mask) into single leaves.
+
+    The leaves are cut out one by one, but every cluster is clipped by a smooth rounded envelope,
+    and at a distance that clean curve is what reads: crowns look like piles of big rounded leaf
+    blobs. Leaf-sized bites are taken out of a band along the envelope, more of them towards the
+    edge, so the outline becomes a ragged fringe of single leaves and small sprays."""
+    from scipy import ndimage as nd
+    im = np.asarray(Image.open(path).convert("RGBA")).astype(np.float32)
+    a = im[..., 3] / 255
+    inside = a > 0.5
+    env = nd.binary_fill_holes(nd.binary_closing(inside, structure=np.ones((3, 3)), iterations=6))
+    depth = nd.distance_transform_edt(env)
+    r = np.random.default_rng(seed)
+
+    def noise(scale):
+        n = r.standard_normal((im.shape[0] // scale + 3, im.shape[1] // scale + 3))
+        n = nd.zoom(n, scale, order=3)[: im.shape[0], : im.shape[1]]
+        return (n - n.mean()) / n.std()
+
+    band = np.clip(26 + 14 * noise(56), 8, 52)   # px in the 2048 atlas (512 per cell)
+    t = np.clip(1 - depth / band, 0, 1)          # 1 on the envelope, 0 past the band
+    bites = 0.75 * noise(9) + 0.25 * noise(4)    # leaf- and spray-sized holes
+    keep = inside & (bites > t * 2.1 - 1.2)
+    soft = nd.gaussian_filter(keep.astype(np.float32), 0.5)
+    im[..., 3] = np.clip(np.minimum(soft, a) * 255, 0, 255)
+    Image.fromarray(np.uint8(im), "RGBA").save(path, optimize=True)
+    print("ragged outline", path.name, f"kept {keep.sum() / inside.sum():.2f} of the leaf texels")
+
+
 def main():
     fir = [load(f"fir-spray-{b}{k}") for b in range(3) for k in range(3)]
     pine = [load(f"pine-spray-{b}{k}") for b in range(3) for k in range(3)]
@@ -156,6 +186,7 @@ def main():
         mul = [(0.82, 0.92, 0.62), (0.75, 0.9, 0.55), (0.9, 0.95, 0.6), (0.7, 0.85, 0.55)][i % 4]
         cells.append((grade(a2, mul, sat=0.92), n2))
     atlas(cells, "leaf")
+    ragged_outline(OUT / "leaf-albedo.png")
     meta = {
         "cellsPerRow": 4,
         "needle": {"sugi": list(range(0, 8)), "hinoki": list(range(8, 12)), "sapling": [12, 13, 14, 15], "pivot": "cell centre (sugi), left-centre (hinoki fans)"},
@@ -168,4 +199,9 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    import sys
+    if "--ragged-leaf-only" in sys.argv:
+        # for a leaf atlas composed before ragged_outline() was part of main(); run once only
+        ragged_outline(OUT / "leaf-albedo.png")
+    else:
+        main()

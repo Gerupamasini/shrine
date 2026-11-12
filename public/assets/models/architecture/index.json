@@ -373,22 +373,27 @@
    ]
   },
   "stream-works": {
-   "triangles": 6464,
+   "triangles": 31556,
    "min": [
     -174.21,
-    3.055,
-    -402.48
+    1.083,
+    -413.412
    ],
    "max": [
-    27.315,
-    9.89,
-    221.23
+    57.645,
+    11.351,
+    558.05
    ],
    "materials": [
-    "concrete_old",
     "concrete_dark",
+    "concrete_cap",
+    "concrete_old",
     "concrete",
     "interior_dark",
+    "concrete_wet",
+    "steel_gate",
+    "metal_dark",
+    "steel_red",
     "porcelain"
    ]
   },
@@ -1571,25 +1576,24 @@
    ]
   },
   "river-works": {
-   "triangles": 24772,
+   "triangles": 16590,
    "min": [
-    -195.95,
-    -0.595,
-    -612.6
+    -189.279,
+    0.405,
+    -289.616
    ],
    "max": [
     -103.064,
-    9.366,
-    665.6
+    8.271,
+    595.516
    ],
    "materials": [
-    "revet_stone_wet",
-    "revet_stone",
-    "concrete_cap",
     "revet_block_wet",
     "revet_block",
+    "concrete_cap",
     "revet_kenchi",
-    "revet_kenchi_wet",
+    "revet_stone_wet",
+    "revet_stone",
     "concrete_wet",
     "interior_dark",
     "steel_red",
@@ -1599,6 +1603,27 @@
     "stone_paving_moss",
     "stone_step_b",
     "stone_old"
+   ]
+  },
+  "road-bridge": {
+   "triangles": 264,
+   "min": [
+    -4.82,
+    0,
+    -4.26
+   ],
+   "max": [
+    4.82,
+    1.52,
+    4.26
+   ],
+   "materials": [
+    "concrete",
+    "concrete_dark",
+    "road_paint",
+    "concrete_cap",
+    "metal_dark",
+    "concrete_old"
    ]
   },
   "stairs": {

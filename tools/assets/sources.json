@@ -5,9 +5,9 @@
     "licenceUrl": "https://polyhaven.com/license",
     "hdri": [
       {
-        "id": "evening_road_01_puresky",
+        "id": "kloppenheim_06_puresky",
         "res": "4k",
-        "use": "sky dome backdrop (clouds) and image based light"
+        "use": "sky dome backdrop (scattered summer cumulus, sun 4.7 deg) and image based light"
       }
     ],
     "textures": [

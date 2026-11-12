@@ -52,6 +52,15 @@ export function installAtmosphere() {
 #endif`,
     );
   if (!T.ShaderChunk.lights_physical_pars_fragment.includes("FOLIAGE")) console.warn("foliage lighting patch failed");
+  // Tree foliage cards carry crown-shaped normals (pointing out of the crown volume), not the
+  // normal of the card. Flipping them on back faces, as three.js does for double-sided
+  // materials, turned half the cards of every crown inside-out: the sunlit side of a tree came
+  // out patchy and the shaded side caught light. Materials with CROWN_NORMALS keep the normal.
+  T.ShaderChunk.normal_fragment_begin = T.ShaderChunk.normal_fragment_begin.replace(
+    "normal *= faceDirection;",
+    "#ifndef CROWN_NORMALS\n\t\tnormal *= faceDirection;\n\t#endif",
+  );
+  if (!T.ShaderChunk.normal_fragment_begin.includes("CROWN_NORMALS")) console.warn("crown normal patch failed");
   T.ShaderChunk.fog_pars_vertex = /* glsl */ `
 #ifdef USE_FOG
   varying vec3 vFogWorld;

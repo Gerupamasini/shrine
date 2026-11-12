@@ -146,14 +146,14 @@
   },
   {
    "text": "上沢川",
-   "x": -168.1,
+   "x": -161.5,
    "z": -300.0,
    "kind": "water",
    "vertical": true
   },
   {
    "text": "上沢川",
-   "x": -168.4,
+   "x": -176.4,
    "z": 480.0,
    "kind": "water",
    "vertical": true
@@ -178,7 +178,7 @@
   },
   {
    "text": "用水路",
-   "x": -159.8,
+   "x": -148.1,
    "z": 230.0,
    "kind": "water",
    "vertical": true

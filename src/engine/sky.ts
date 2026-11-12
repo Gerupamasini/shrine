@@ -8,7 +8,7 @@ export type SkyMeta = {
 };
 
 /**
- * Sky dome: CC0 photographic cloud panorama (Poly Haven evening_road_01_puresky)
+ * Sky dome: CC0 photographic cloud panorama (Poly Haven kloppenheim_06_puresky)
  * rotated so its glow sits at the computed sun azimuth, with the elevation
  * remapped near the horizon so the glow follows the sun's height. The sun disc
  * and its aureole are analytic so they move with the time of day.

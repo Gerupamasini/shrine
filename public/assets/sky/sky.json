@@ -1,17 +1,17 @@
 {
- "id": "evening_road_01_puresky",
- "source": "https://polyhaven.com/a/evening_road_01_puresky",
+ "id": "kloppenheim_06_puresky",
+ "source": "https://polyhaven.com/a/kloppenheim_06_puresky",
  "licence": "CC0 1.0",
  "backdrop": {
   "file": "backdrop.jpg",
-  "scale": 4.414927884615384,
+  "scale": 3.2439423076923073,
   "coverage": [
    90,
    -11.25
   ],
   "encoding": "sRGB, soft shoulder above 0.85"
  },
- "sourceSunPixelAzimuthDeg": 214.85,
- "sourceSunElevationDeg": 9.98,
+ "sourceSunPixelAzimuthDeg": 220.3,
+ "sourceSunElevationDeg": 4.61,
  "environment": "environment_1k.hdr"
 }

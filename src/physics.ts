@@ -94,6 +94,14 @@ export class Walker {
         const span = (o.span as number) ?? 12, wd = (o.width as number) ?? 3.2;
         for (const side of [-1, 1]) box(x, y + 0.4 + 0.35, z + side * (wd / 2 - 0.1), span / 2, 0.35, 0.12, yaw);
       }
+      if (o.asset === "road-bridge") {
+        // low parapets along both sides of the road over the brook (deck top = object y + 0.5)
+        const span = (o.span as number) ?? 3.5, wd = (o.width as number) ?? 9.4, cs = Math.cos(yaw), sn = Math.sin(yaw);
+        for (const side of [-1, 1]) {
+          const ox = side * (wd / 2 - 0.12);
+          box(x + ox * cs, y + 0.5 + 0.35, z - ox * sn, 0.12, 0.35, span / 2 + 0.3, yaw);
+        }
+      }
       if (o.asset.startsWith("torii"))
         for (const side of [-1, 1]) {
           const off = 2.55 * s * side;

@@ -56,39 +56,69 @@ test("shrine precinct overlooks the village from 30-50 m", () => {
   assert.ok(Math.abs(H((p.x0 + p.x1) / 2, (p.z0 + p.z1) / 2) - p.y) < 0.05);
 });
 
-test("the river falls downstream through drops, with a 3-6 m low-flow channel between gravel bars", () => {
-  const R = data.river, pts = R.points;
+test("the river: walled through the centre, a natural meandering course above and below it", () => {
+  const R = data.river, pts = R.points, bed = R.bed;
   for (let i = 1; i < pts.length; i++) {
     assert.ok(pts[i][2] > pts[i - 1][2], `rows sorted by z at ${pts[i][2]}`);
     assert.ok(pts[i][1] <= pts[i - 1][1] + 1e-6, `water rises at z=${pts[i][2]}`);
   }
-  // drop structures every ~100 m and a weir holding a pool
-  assert.ok(R.drops.length >= 8);
-  for (const d of R.drops) assert.ok(d.waterAbove - d.waterBelow >= (d.kind === "weir" ? 0.6 : 0.2), `drop at ${d.z}`);
+  assert.ok(pts[0].length === 6);
+  const [w0, w1] = bed.walled;
+  const walled = (z) => z > w0 - 5 && z < w1 + 5;
+  // drop structures and the weir only in the walled reach; the weir holds a pool
   const weir = R.drops.find((d) => d.kind === "weir");
-  assert.ok(weir);
-  const atSill = (z) => R.drops.some((d) => z > d.z - 2.5 && z < d.z + 3) || (z > weir.z - 100 && z < weir.z);
-  const nearDrop = (z) => R.drops.some((d) => z > d.z - 14 && z < d.z + 12) || (z > weir.z - 135 && z < weir.z);
-  // wetted width: where the water surface is above the bed, sampled across the bed
-  let ok = 0, n = 0;
-  for (const [x, y, z, w, fall] of pts) {
-    assert.ok(pts[0].length === 6);
-    if (fall || z < -440 || z > 560) continue;
-    let wet = 0;
-    for (let u = -w / 2; u <= w / 2; u += 0.2) if (H(x + u, z) < y) wet += 0.2;
-    n++;
-    // wall to wall at the sills and in the weir pool; a low-flow channel between bars elsewhere
-    if (atSill(z) ? wet > 0.8 * w : wet >= 2.5 && (nearDrop(z) || wet <= 7.5)) ok++;
+  assert.ok(weir && R.drops.length >= 3);
+  for (const d of R.drops) {
+    assert.ok(walled(d.z), `drop at ${d.z} inside the walled reach`);
+    assert.ok(d.waterAbove - d.waterBelow >= (d.kind === "weir" ? 0.5 : 0.2), `drop at ${d.z}`);
   }
-  assert.ok(ok / n > 0.93, `${ok}/${n} rows with a plausible wetted width`);
-  // revetments stand 1.0-2.5 m above the water (lowest beside the weir pool)
-  for (const [xc, z, B, top] of R.bed.points) {
+  const nearDrop = (z) => R.drops.some((d) => z > d.z - 14 && z < d.z + 12) || (z > weir.z - 135 && z < weir.z);
+  // wetted width and depth, sampled across the bed in the natural reaches: 4-8 m of water
+  // (wider in places), riffles 0.1-0.3 m deep, pools to 0.4-0.9 m
+  let ok = 0, n = 0, deepest = 0, shallow = 0;
+  for (const [x, y, z, w, fall] of pts) {
+    if (fall || z < -500 || z > 640 || walled(z) || nearDrop(z)) continue;
+    let wet = 0, depth = 0;
+    for (let u = -w / 2; u <= w / 2; u += 0.2) {
+      const g = H(x + u, z);
+      if (g < y) {
+        wet += 0.2;
+        depth = Math.max(depth, y - g);
+      }
+    }
+    n++;
+    if (wet >= 3.5 && wet <= 10) ok++;
+    deepest = Math.max(deepest, depth);
+    if (depth > 0.08 && depth < 0.32) shallow++;
+  }
+  assert.ok(ok / n > 0.9, `${ok}/${n} natural rows with 3.5-10 m of water`);
+  assert.ok(deepest > 0.45 && deepest < 1.0, `pools ${deepest.toFixed(2)} m deep`);
+  assert.ok(shallow / n > 0.1, `riffles: ${shallow}/${n} rows no deeper than 0.3 m`);
+  // the bed is 10-20 m between the banks; banks stand 1.0-2.5 m above the water
+  for (const [, z, B, top] of bed.points) {
     if (z < -440 || z > 560) continue;
     const y = pts.reduce((best, p) => (Math.abs(p[2] - z) < Math.abs(best[2] - z) ? p : best))[1];
     assert.ok(top - y > 0.9 && top - y < 2.5, `bank height ${top - y} at z=${z}`);
-    assert.ok(B > 3 && B < 8.5);
-    void xc;
+    assert.ok(B > 4.9 && B < 10.2, `bed half width ${B} at z=${z}`);
   }
+  // walls on both banks through the centre; outside it most of the banks are natural earth, with
+  // old stone walls only in places (some broken), and the river swings across its floor
+  const inCentre = bed.points.filter((p) => p[1] > w0 + 5 && p[1] < w1 - 5);
+  assert.ok(inCentre.every((p) => p[6] < 0.5 && p[7] < 0.5 && p[8] === 1 && p[9] === 1), "block walls through the centre");
+  const outside = bed.points.filter((p) => !walled(p[1]) && p[1] > -700 && p[1] < 700);
+  const earth = outside.filter((p) => p[6] > 0.5 && p[7] > 0.5).length / outside.length;
+  assert.ok(earth > 0.6 && earth < 0.97, `natural banks on ${(earth * 100).toFixed(0)}% of the open reaches`);
+  assert.ok(outside.some((p) => p[7] < 0.5 && p[9] === 0), "old dry-stone walls at some outer bends");
+  let runs = 0;
+  for (let i = 1; i < bed.points.length; i++) if (bed.points[i][7] < 0.5 && bed.points[i - 1][7] >= 0.5) runs++;
+  assert.ok(runs >= 4, `${runs} separate stretches of wall on the east bank`);
+  assert.ok(bed.points.some((p) => !walled(p[1]) && p[6] < 0.5), "an old wall on the west bank too");
+  // meanders: the centre line swings off a straight chord between bends by 8 m or more
+  const nat = bed.points.filter((p) => p[1] > 260 && p[1] < 640);
+  const a0 = nat[0], a1 = nat[nat.length - 1];
+  const off = Math.max(...nat.map((p) => Math.abs(p[0] - (a0[0] + ((a1[0] - a0[0]) * (p[1] - a0[1])) / (a1[1] - a0[1])))));
+  assert.ok(off > 8, `meander offset ${off.toFixed(1)} m`);
+  assert.ok(bed.leveePath.length > 100);
 });
 
 test("the weir intake feeds a canal that runs gently downhill above the river", () => {
@@ -106,6 +136,37 @@ test("the weir intake feeds a canal that runs gently downhill above the river", 
     assert.ok(y > rw, `canal water above the river at z=${z}`);
   }
   for (const s of R.washSteps) assert.ok(s.topY - s.toeY > 1.0);
+});
+
+test("irrigation: brook-fed canals along the high side of the floor, branch ditches to the river", () => {
+  const canals = data.canals ?? [];
+  assert.ok(canals.length >= 2, "two canals from the side brooks");
+  const road = data.roads.find((r) => r.class === "prefectural").points;
+  const roadAt = (z) => road.reduce((b, p) => (Math.abs(p[2] - z) < Math.abs(b[2] - z) ? p : b));
+  for (const c of canals) {
+    const cp = c.points;
+    for (let i = 1; i < cp.length; i++) assert.ok(cp[i][1] <= cp[i - 1][1] + 1e-6, `${c.name} runs downhill`);
+    // fed by an intake weir on its brook, higher than the water it delivers
+    assert.ok(c.intake.crestY >= cp[0][1] - 0.05, `${c.name} intake`);
+    assert.ok(cp.some((p) => p[4] === 1), `${c.name} passes under the road in a pipe`);
+    // along the road, its water stands above the fields beside it (the high edge of the floor)
+    let above = 0, k = 0;
+    // (house yards and the temple bench stand higher; the canal passes them in front)
+    const homes = data.objects.filter((o) => o.asset.startsWith("minka-") || o.asset.startsWith("tera-"));
+    for (const [x, y, z, , cov] of cp) {
+      if (cov || Math.abs(x - roadAt(z)[0]) > 9 || homes.some((o) => Math.hypot(o.position[0] - x, o.position[2] - z) < 30)) continue;
+      k++;
+      if (y > H(x - 6, z) + 0.05) above++;
+    }
+    assert.ok(k > 40 && above / k > 0.8, `${c.name}: water above the fields at ${above}/${k} points`);
+    assert.ok(cp.some((p) => p[4] === 2), `${c.name} covered where lanes cross`);
+  }
+  const ditches = data.streams.filter((st) => st.kind === "ditch");
+  assert.ok(ditches.length >= 5, `${ditches.length} branch ditches`);
+  for (const d of ditches) {
+    assert.ok(d.channel.bed1 < d.channel.bed0, `ditch at ${d.z} falls to the river`);
+    assert.ok(d.covers.length >= 1, `ditch at ${d.z} has a covered crossing`);
+  }
 });
 
 test("rice paddies are level fields with levees", () => {
@@ -206,13 +267,17 @@ test("hills and valley: eroded relief, a winding floor, side streams, temple and
   const rx = data.river.points.map((p) => p[0]);
   assert.ok(Math.max(...rx) - Math.min(...rx) > 60);
   // side streams: a brook that never runs uphill, a culvert under the prefectural road, water to draw
-  assert.ok(data.streams.length >= 2, "two side streams");
-  for (const st of data.streams) {
+  const brooks = data.streams.filter((st) => st.kind !== "ditch");
+  assert.ok(brooks.length >= 2, "two side streams");
+  for (const st of brooks) {
     for (let i = 1; i < st.brook.length; i++) assert.ok(st.brook[i][1] <= st.brook[i - 1][1] + 1e-6, `${st.name} falls downstream`);
-    assert.ok(st.covers.some((c) => c.kind === "road"), `${st.name} passes under the road`);
+    assert.ok(st.covers.some((c) => c.kind === "road" || c.kind === "bridge"), `${st.name} passes under the road`);
     assert.ok(st.water.length >= 2 && st.water.every((r) => r.length > 1));
     assert.ok(st.channel.bed1 < st.channel.bed0, `${st.name} channel falls to the river`);
   }
+  // the larger brook crosses the road on a short bridge, the smaller in a box culvert
+  assert.ok(brooks.some((st) => st.covers.some((c) => c.kind === "bridge")) && data.objects.some((o) => o.asset === "road-bridge" && o.collider));
+  assert.ok(brooks.some((st) => st.covers.some((c) => c.kind === "road")));
   // temple: hall, gate with its plaque, bell tower, graves; clinic at the south end of the village
   for (const a of ["tera-hondo", "tera-sanmon", "tera-shoro", "rokujizo"]) assert.ok(data.objects.some((o) => o.asset === a), a);
   assert.ok(data.objects.filter((o) => o.asset === "haka").length >= 8, "a graveyard");
@@ -250,8 +315,9 @@ test("road works: graded cut and fill slopes (no sheer walls), the road ends at 
   assert.ok(worst < 1.25, `steepest roadside slope ${worst.toFixed(2)} (1.0 = 45 degrees)`);
   // carriageway, shoulders and ditch rims are level across the road (the ditch lining sits flush)
   let off = 0;
+  const bridges = data.objects.filter((o) => o.asset === "road-bridge");
   for (const [x, y, z] of road.points) {
-    if (z > 540) continue;
+    if (z > 540 || bridges.some((o) => Math.abs(o.position[2] - z) < 4)) continue;    // the deck carries the road there
     for (const d of [-4.1, -3.75, -2, 0, 2, 3.75, 4.1]) off = Math.max(off, Math.abs(H(x + d, z) - y));
   }
   assert.ok(off < 0.08, `road cross-section level within ${off.toFixed(3)} m`);
