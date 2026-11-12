@@ -38,6 +38,24 @@ export class River implements System {
     const mat = this.material(land);
     this.add(land, this.river(R), mat);
     this.add(land, this.canal(R), mat);
+    const streams = land.world.data.streams ?? [];
+    if (streams.length) this.add(land, this.streams(streams), mat);
+  }
+  /** Side streams: the brook down its valley (shallow, broken water over cobbles) and the lined
+   *  channel across the paddies; each run of [x, waterY, z, halfWidth] is a ribbon along its path. */
+  private streams(list: { water: number[][][] }[]) {
+    const rows: Parameters<River["build"]>[0] = [];
+    for (const st of list)
+      st.water.forEach((run, ri) => {
+        run.forEach((p, i) => {
+          const a = run[Math.min(i + 1, run.length - 1)], b = run[Math.max(i - 1, 0)];
+          const dx = a[0] - b[0], dz = a[2] - b[2], l = Math.hypot(dx, dz) || 1;
+          const brook = ri === 0;
+          rows.push({ cx: p[0], y: p[1], z: p[2], ax: -dz / l, az: dx / l, half: p[3], dir: [dx / l, dz / l], fall: 0, foam: 0, riffle: brook ? 0.55 : 0.1,
+            bank: 0.6, fixed: brook ? 0 : 0.2, across: 3, skip: i === run.length - 1 });
+        });
+      });
+    return this.build(rows);
   }
   private add(land: Landscape, g: T.BufferGeometry, m: T.Material) {
     const mesh = new T.Mesh(g, m);

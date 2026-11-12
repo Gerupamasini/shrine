@@ -208,6 +208,11 @@ for a in range(0, len(levee) - 4, 8):         # dashed footpath on the levee
 canal = scene["river"]["canal"]["points"]
 dr.line([P(p[0], p[2]) for p in canal], fill=blue, width=max(3, px(1.2)))
 
+# side streams: the brook and the lined channel
+for st in scene.get("streams", []):
+    for run in st["water"]:
+        dr.line([P(p[0], p[2]) for p in run], fill=blue, width=3)
+
 # roads: casings first, fills second, so junctions read cleanly
 CLS = {
     "prefectural": dict(fill=(246, 214, 138, 255), case=(80, 62, 46, 255), w=6.0, cw=2),
@@ -270,8 +275,9 @@ dr.rectangle([P(pr["x0"], pr["z0"]), P(pr["x1"], pr["z1"])], outline=(120, 110, 
 
 # buildings
 SKIP = ("prop-", "torii", "toro", "komainu", "sekihi", "jizo", "denchu", "jihanki", "post", "phone-box", "block-wall", "ishigaki",
-        "kei-truck", "fence-lookout", "saisen", "ema", "shimenawa-tree", "bench", "bridge", "hinomi", "monohoshi", "tunnel", "road-ditch", "bus-stop")
-CONCRETE = {"post-office", "chuzaisho", "nokyo", "nokyo-soko", "shobo-shed"}
+        "kei-truck", "fence-lookout", "saisen", "ema", "shimenawa-tree", "bench", "bridge", "hinomi", "monohoshi", "tunnel", "road-ditch", "bus-stop",
+        "haka", "rokujizo", "tera-sanmon", "tera-shoro")
+CONCRETE = {"post-office", "chuzaisho", "nokyo", "nokyo-soko", "shobo-shed", "shinryojo"}
 bnum = {}
 for o in scene["objects"]:
     a = o["asset"]
@@ -323,6 +329,16 @@ def sym_shrine(x, z):
     dr.line([(cx - 11, cy - 4), (cx + 11, cy - 4)], fill=ink, width=3)
     for dx in (-7, 7):
         dr.line([(cx + dx, cy - 11), (cx + dx, cy + 12)], fill=ink, width=4)
+def sym_temple(x, z):
+    # manji, the survey-map symbol of a temple
+    cx, cy = P(x, z)
+    r = 11
+    dr.line([(cx - r, cy), (cx + r, cy)], fill=ink, width=3)
+    dr.line([(cx, cy - r), (cx, cy + r)], fill=ink, width=3)
+    dr.line([(cx, cy - r), (cx + r, cy - r)], fill=ink, width=3)
+    dr.line([(cx + r, cy), (cx + r, cy + r)], fill=ink, width=3)
+    dr.line([(cx, cy + r), (cx - r, cy + r)], fill=ink, width=3)
+    dr.line([(cx - r, cy), (cx - r, cy - r)], fill=ink, width=3)
 def sym_tower(x, z):
     cx, cy = P(x, z)
     dr.line([(cx - 8, cy + 10), (cx, cy - 12), (cx + 8, cy + 10)], fill=ink, width=3)
@@ -343,6 +359,11 @@ for o in scene["objects"]:
     elif a == "haiden":
         x, z = o["position"][0] + 4, o["position"][2] + 22
         sym_shrine(x, z); labels.append({"text": "熊野神社", "x": x, "z": z + 10, "kind": "facility"})
+    elif a == "tera-hondo":
+        x, z = o["position"][0] + 16, o["position"][2] + 4
+        sym_temple(x, z); labels.append({"text": "瑞雲寺", "x": x + 2, "z": z + 10, "kind": "facility"})
+    elif a == "shinryojo":
+        x, z = beside(o, 17); labels.append({"text": "診療所", "x": x, "z": z, "kind": "facility"})
     elif a == "hinomi":
         x, z = o["position"][0] + 8, o["position"][2]
         sym_tower(x, z); labels.append({"text": "火の見櫓", "x": x + 2, "z": z + 9, "kind": "facility"})
@@ -373,6 +394,7 @@ out.save(W_ / "map.webp", quality=88, method=6)
 
 # ---- names
 NAMES = {"kaminosawa": "奥沢", "nakazato": "中里", "miyashita": "宮下", "shimojuku": "下宿", "minamizawa": "南沢", "kawamuko": "川向"}
+_machi = next((hm for hm in scene.get("hamlets", []) if hm["name"] == "machi"), None)
 groups = {}
 for o in scene["objects"]:
     gname = o.get("group")
@@ -382,16 +404,17 @@ for gname, ps in groups.items():
     ps = np.array(ps)
     cx, cz = float(ps[:, 0].mean()), float(ps[:, 2].mean())
     if gname == "machi":
+        cz = _machi["z"] if _machi else cz
         labels.append({"text": "上沢", "x": road_x(cz) + 52, "z": cz - 12, "kind": "district"})
     elif gname in NAMES:
         side = -1 if gname == "kawamuko" or cx < road_x(cz) - 10 else 1
         lx = (ps[:, 0].min() - 22) if side < 0 else (ps[:, 0].max() + 22)
         labels.append({"text": NAMES[gname], "x": float(lx), "z": cz, "kind": "hamlet"})
 # the river (written down along it, as on a survey sheet), the road shields, the tunnel
-for zr in (-170.0, 330.0):
+for zr in (-300.0, 480.0):
     xr = float(np.interp(zr, rp[:, 2], rp[:, 0]))
     labels.append({"text": "上沢川", "x": xr - 16, "z": zr, "kind": "water", "vertical": True})
-for zr in (-120.0, 420.0):
+for zr in (-330.0, 600.0):
     labels.append({"text": "27", "x": road_x(zr) + 12, "z": zr, "kind": "route"})
 if tu:
     labels.append({"text": "上沢隧道", "x": tu["x"] + 20, "z": tu["z"] - 14, "kind": "facility"})

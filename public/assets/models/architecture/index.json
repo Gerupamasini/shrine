@@ -103,16 +103,16 @@
  },
  "assets": {
   "road-ditch": {
-   "triangles": 29796,
+   "triangles": 41460,
    "min": [
-    31.123,
-    2.775,
-    -342.246
+    -85.221,
+    1.901,
+    -558.847
    ],
    "max": [
-    91.415,
-    8.699,
-    538.342
+    72.3,
+    9.942,
+    689.416
    ],
    "materials": [
     "concrete_old",
@@ -123,14 +123,14 @@
   "tunnel": {
    "triangles": 2736,
    "min": [
-    -9.2,
+    -72.38,
     -0.8,
-    -96.395
+    -98.699
    ],
    "max": [
-    11.809,
+    9.2,
     9.12,
-    0.345
+    1.035
    ],
    "materials": [
     "concrete",
@@ -172,6 +172,224 @@
     "metal_grey",
     "pole_vinyl",
     "cloth_white"
+   ]
+  },
+  "shinryojo": {
+   "triangles": 3424,
+   "min": [
+    -8.2,
+    0,
+    -5.2
+   ],
+   "max": [
+    8.2,
+    5.844,
+    7.4
+   ],
+   "materials": [
+    "concrete",
+    "concrete_old",
+    "plaster_white",
+    "interior_lit",
+    "paper",
+    "glass",
+    "aluminium",
+    "interior_dark",
+    "interior_shop",
+    "metal_grey",
+    "roof_tin_blue",
+    "roof_soffit",
+    "metal_dark",
+    "lamp_bulb"
+   ],
+   "signs": [
+    [
+     0,
+     3.52,
+     7.26,
+     4.1,
+     0.62,
+     0
+    ]
+   ]
+  },
+  "tera-hondo": {
+   "triangles": 5984,
+   "min": [
+    -8.432,
+    0,
+    -7.138
+   ],
+   "max": [
+    8.432,
+    9,
+    10.2
+   ],
+   "materials": [
+    "stone_granite",
+    "wood_old",
+    "wood_siding",
+    "plaster_white",
+    "interior_dark",
+    "paper",
+    "interior_lit",
+    "roof_kawara",
+    "roof_soffit",
+    "roof_kawara_ridge"
+   ]
+  },
+  "tera-sanmon": {
+   "triangles": 1008,
+   "min": [
+    -5.35,
+    0,
+    -2
+   ],
+   "max": [
+    5.35,
+    4.455,
+    1.55
+   ],
+   "materials": [
+    "wood_old",
+    "stone_granite",
+    "wood_planks",
+    "plaster_white",
+    "roof_kawara",
+    "roof_soffit",
+    "wood_dark"
+   ],
+   "signs": [
+    [
+     0,
+     2.72,
+     0.225,
+     1.36,
+     0.42,
+     0
+    ]
+   ]
+  },
+  "tera-shoro": {
+   "triangles": 3172,
+   "min": [
+    -2.418,
+    0,
+    -2.415
+   ],
+   "max": [
+    2.418,
+    6.05,
+    2.415
+   ],
+   "materials": [
+    "stone_moss",
+    "stone_granite",
+    "wood_old",
+    "roof_kawara",
+    "roof_soffit",
+    "roof_kawara_ridge",
+    "bronze_dark",
+    "metal_dark",
+    "rope_straw"
+   ]
+  },
+  "haka_0": {
+   "triangles": 460,
+   "min": [
+    -1.704,
+    -0.03,
+    -0.48
+   ],
+   "max": [
+    1.65,
+    1.902,
+    0.52
+   ],
+   "materials": [
+    "stone_moss",
+    "stone_old",
+    "stone_granite",
+    "wood_light"
+   ]
+  },
+  "haka_1": {
+   "triangles": 424,
+   "min": [
+    -1.72,
+    -0.047,
+    -0.48
+   ],
+   "max": [
+    1.675,
+    1.947,
+    0.52
+   ],
+   "materials": [
+    "stone_granite",
+    "wood_light",
+    "stone_moss",
+    "stone_old"
+   ]
+  },
+  "haka_2": {
+   "triangles": 460,
+   "min": [
+    -1.673,
+    -0.03,
+    -0.48
+   ],
+   "max": [
+    1.65,
+    1.928,
+    0.52
+   ],
+   "materials": [
+    "stone_granite",
+    "wood_light",
+    "stone_moss",
+    "stone_old"
+   ]
+  },
+  "rokujizo": {
+   "triangles": 1240,
+   "min": [
+    -2.05,
+    0,
+    -0.5
+   ],
+   "max": [
+    2.05,
+    1.825,
+    0.62
+   ],
+   "materials": [
+    "stone_moss",
+    "stone_old",
+    "cloth_red",
+    "wood_old",
+    "roof_tin",
+    "roof_soffit"
+   ]
+  },
+  "stream-works": {
+   "triangles": 6464,
+   "min": [
+    -174.21,
+    3.055,
+    -402.48
+   ],
+   "max": [
+    27.315,
+    9.89,
+    221.23
+   ],
+   "materials": [
+    "concrete_old",
+    "concrete_dark",
+    "concrete",
+    "interior_dark",
+    "porcelain"
    ]
   },
   "torii-stone": {
@@ -1337,12 +1555,12 @@
    "min": [
     -7.46,
     -3.3,
-    -1.685
+    -1.66
    ],
    "max": [
     7.46,
     1.48,
-    1.685
+    1.66
    ],
    "materials": [
     "concrete",
@@ -1353,16 +1571,16 @@
    ]
   },
   "river-works": {
-   "triangles": 20546,
+   "triangles": 24772,
    "min": [
-    -215.001,
-    0.266,
-    -455.6
+    -195.95,
+    -0.595,
+    -612.6
    ],
    "max": [
-    -117.182,
-    8.391,
-    517.9
+    -103.064,
+    9.366,
+    665.6
    ],
    "materials": [
     "revet_stone_wet",
@@ -1843,16 +2061,16 @@
    ]
   },
   "road-markings": {
-   "triangles": 11028,
+   "triangles": 15708,
    "min": [
-    32.383,
-    3.361,
-    -344.689
+    -85.972,
+    2.394,
+    -560.606
    ],
    "max": [
-    90.155,
-    8.658,
-    578.28
+    71.04,
+    9.902,
+    729.098
    ],
    "materials": [
     "road_paint"

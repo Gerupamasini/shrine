@@ -39,6 +39,9 @@ export type WorldData = {
   hamlets?: { name: string; z: number; halfLength: number }[];
   /** roadside ditches: centre offset from the road axis, inner width, z range, farm-road crossings */
   ditch?: { offset: number; width: number; depth: number; zRange: [number, number]; crossings: number[] };
+  /** side streams: the brook [x, bedY, z] down its valley, then a lined channel to the river; water runs [x, waterY, z, halfWidth] */
+  streams?: { name: string; z: number; width: number; brook: number[][]; water: number[][][]; covers: { kind: string; x0: number; x1: number }[] }[];
+  temple?: { x: number; y: number; z: number; yaw: number; halfWidth: number; halfDepth: number };
   /** road tunnel portal: face front at (x, y, z), bore heading dx/dz = slope, opening half width and height */
   tunnel?: { x: number; y: number; z: number; slope: number; halfWidth: number; height: number; faceHalfWidth: number; faceTop: number };
   powerLine: { poles: [number, number, number][]; wires: number; sag: number };

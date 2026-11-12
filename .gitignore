@@ -4,3 +4,4 @@ dist/
 test-results/
 *.log
 .cache/
+__pycache__/

@@ -1458,10 +1458,237 @@ function monohoshi() {
   return m;
 }
 
+// ---------------------------------------------------------------- clinic, temple, stream works
+/** Village clinic (shinryojo) of the 1960s: a long single-storey building, white mortar over a
+ *  grey wainscot, steel-sash windows, a concrete porch with a flat canopy and the name board. */
+function shinryojo() {
+  const m = new Model("shinryojo");
+  const W = 15, D = 9, F = 0.4, H = 3.1;
+  m.box("concrete", W + 0.3, F, D + 0.3, 0, F / 2, 0);
+  for (const [w, d, x, z] of [[W, 0.16, 0, D / 2], [W, 0.16, 0, -D / 2], [0.16, D, W / 2, 0], [0.16, D, -W / 2, 0]]) {
+    m.box("concrete_old", w, 0.9, d, x, F + 0.45, z);
+    m.box("plaster_white", w, H - 0.9, d, x, F + 0.9 + (H - 0.9) / 2, z);
+  }
+  // windows of the waiting room and the consulting rooms (curtained, a little lit)
+  for (const x of [-5.6, -2.9, 2.9, 5.6]) {
+    m.box("interior_lit", 1.9, 1.25, 0.05, x, F + 1.75, D / 2 - 0.02);
+    m.box("paper", 1.86, 1.2, 0.02, x, F + 1.75, D / 2 + 0.05);
+    m.box("glass", 1.9, 1.25, 0.02, x, F + 1.75, D / 2 + 0.09);
+    for (const dx of [-0.95, 0, 0.95]) m.box("aluminium", 0.05, 1.3, 0.06, x + dx, F + 1.75, D / 2 + 0.1);
+    for (const dy of [-0.63, 0.63]) m.box("aluminium", 1.95, 0.05, 0.06, x, F + 1.75 + dy, D / 2 + 0.1);
+  }
+  for (const s of [-1, 1]) for (const z of [-2.2, 2.2]) {
+    m.box("interior_dark", 0.05, 1.1, 1.6, s * (W / 2 - 0.02), F + 1.8, z);
+    m.box("glass", 0.02, 1.1, 1.6, s * (W / 2 + 0.09), F + 1.8, z);
+  }
+  // entrance: glass double door, porch slab, flat canopy on two pipe columns, shoe step
+  m.box("interior_shop", 2.0, 2.15, 0.05, 0, F + 1.08, D / 2 - 0.02);
+  m.box("glass", 2.0, 2.15, 0.02, 0, F + 1.08, D / 2 + 0.09);
+  for (const dx of [-1.0, 0, 1.0]) m.box("aluminium", 0.06, 2.2, 0.07, dx, F + 1.1, D / 2 + 0.1);
+  m.box("concrete", 4.2, 0.3, 2.4, 0, 0.15, D / 2 + 1.2);
+  m.box("concrete", 3.0, 0.15, 0.5, 0, 0.075, D / 2 + 2.65);
+  m.box("concrete", 4.8, 0.16, 2.9, 0, F + 2.62, D / 2 + 1.35);
+  for (const s of [-1, 1]) m.cyl("metal_grey", 0.05, 0.05, 2.35, s * 2.0, 0.3, D / 2 + 2.45, 10);
+  hipRoof(m, "roof_tin_blue", { W, D, over: 0.7, eaveY: F + H + 0.05, ridgeY: F + H + 0.05 + (D / 2 + 0.7) * 0.42, sori: 0, thick: 0.1, gable: 1, ridgeMat: "roof_tin_blue", ridgeH: 0.16 });
+  // name board over the canopy, a wall lamp, the bicycle of the nurse
+  m.box("metal_dark", 4.3, 0.75, 0.06, 0, F + 3.12, D / 2 + 2.72);
+  SIGN_ANCHORS["shinryojo"] = [[0, F + 3.12, D / 2 + 2.76, 4.1, 0.62, 0]];
+  m.box("lamp_bulb", 0.3, 0.12, 0.12, 1.6, F + 2.45, D / 2 + 0.2);
+  return m;
+}
+
+/** Main hall (hondo) of a small Soto temple: a low wide hall under a big hipped tile roof with
+ *  deep eaves, a veranda all round, a stepped porch (kohai) and sliding lattice doors. */
+function teraHondo() {
+  const m = new Model("tera-hondo");
+  const W = 12.6, D = 10.0, FL = 0.9, WH = 2.9;
+  m.box("stone_granite", W + 2.6, 0.3, D + 2.6, 0, 0.15, 0);
+  m.box("wood_old", W + 2.2, 0.12, D + 2.2, 0, FL - 0.06, 0);
+  for (let i = 0; i <= 6; i++) for (const z of [-D / 2, D / 2]) {
+    m.box("wood_old", 0.2, WH + FL - 0.3, 0.2, -W / 2 + (W / 6) * i, 0.3 + (WH + FL - 0.3) / 2, z);
+    m.cyl("stone_granite", 0.2, 0.18, 0.16, -W / 2 + (W / 6) * i, 0.28, z, 8);
+  }
+  for (const s of [-1, 1]) for (let j = 1; j < 5; j++) m.box("wood_old", 0.2, WH + FL - 0.3, 0.2, s * W / 2, 0.3 + (WH + FL - 0.3) / 2, -D / 2 + (D / 5) * j);
+  // walls: white plaster above a board dado at the sides and back, lattice doors along the front
+  for (const s of [-1, 1]) {
+    m.box("wood_siding", 0.1, 1.0, D, s * W / 2, FL + 0.5, 0);
+    m.box("plaster_white", 0.1, WH - 1.0, D, s * W / 2, FL + 1.0 + (WH - 1.0) / 2, 0);
+  }
+  m.box("wood_siding", W, 1.0, 0.1, 0, FL + 0.5, -D / 2);
+  m.box("plaster_white", W, WH - 1.0, 0.1, 0, FL + 1.0 + (WH - 1.0) / 2, -D / 2);
+  m.box("interior_dark", W - 0.3, WH - 0.1, 0.05, 0, FL + (WH - 0.1) / 2, D / 2 - 0.25);
+  for (let i = 0; i < 6; i++) {
+    const cx = -W / 2 + (W / 6) * (i + 0.5), bw = W / 6 - 0.24;
+    if (i === 2 || i === 3) { m.box("interior_lit", bw, 1.6, 0.04, cx, FL + 1.0, D / 2 - 0.2); }
+    m.box("paper", bw, 0.9, 0.02, cx, FL + 1.75, D / 2 - 0.05);
+    m.box("wood_siding", bw, 0.75, 0.04, cx, FL + 0.42, D / 2 - 0.05);
+    for (let k = 1; k < 5; k++) m.box("wood_old", 0.03, 1.5, 0.03, cx - bw / 2 + (bw / 5) * k, FL + 1.45, D / 2 - 0.02);
+    for (let k = 0; k < 5; k++) m.box("wood_old", bw, 0.03, 0.03, cx, FL + 0.95 + k * 0.3, D / 2 - 0.02);
+  }
+  for (const y of [FL + 2.25, FL + WH]) {
+    m.box("wood_old", W + 0.3, 0.2, 0.22, 0, y, D / 2);
+    m.box("wood_old", W + 0.3, 0.2, 0.22, 0, y, -D / 2);
+    for (const s of [-1, 1]) m.box("wood_old", 0.22, 0.2, D + 0.3, s * W / 2, y, 0);
+  }
+  // veranda rail
+  for (let k = 0; k <= 10; k++) {
+    const x = -W / 2 - 1.0 + ((W + 2.0) / 10) * k;
+    if (k === 5) continue;
+    m.box("wood_old", 0.09, 0.6, 0.09, x, FL + 0.3, D / 2 + 1.0);
+    if (k < 10 && k !== 4) m.box("wood_old", (W + 2.0) / 10, 0.06, 0.07, x + (W + 2.0) / 20, FL + 0.58, D / 2 + 1.0);
+  }
+  for (let k = -18; k <= 18; k++) for (const s of [-1, 1]) m.box("wood_old", 0.09, 0.11, 2.2, k * 0.37, FL + WH + 0.32, s * (D / 2 + 0.95), { rx: s * 0.38 });
+  hipRoof(m, "roof_kawara", { W: W + 0.2, D: D + 0.2, over: 2.0, eaveY: FL + WH + 0.4, ridgeY: FL + WH + 0.4 + 4.3, sori: 0.38, thick: 0.3, gable: 1, uv: 1, ridgeMat: "roof_kawara_ridge", ridgeH: 0.55, ridgeW: 0.5 });
+  // porch: two posts, a beam, a lean-to roof, five timber steps, the offertory box
+  for (const s of [-1, 1]) {
+    m.cyl("wood_old", 0.13, 0.13, 3.0, s * 1.7, 0.3, D / 2 + 2.9, 12);
+    m.cyl("stone_granite", 0.2, 0.18, 0.16, s * 1.7, 0.28, D / 2 + 2.9, 8);
+  }
+  m.box("wood_old", 3.9, 0.22, 0.2, 0, 3.3, D / 2 + 2.9);
+  const kh = new Model("kohai");
+  gableRoof(kh, "roof_kawara", { W: 3.8, over: 0.4, eaveY: 3.55, ridgeY: 4.3, frontRun: 2.0, backRun: 0.01, thick: 0.24 });
+  m.merge(kh, new THREE.Matrix4().setPosition(0, 0, D / 2 + 3.2));
+  for (let k = 0; k < 5; k++) m.box("wood_old", 3.2, 0.08, 0.32, 0, 0.32 + k * 0.125, D / 2 + 2.6 - k * 0.3);
+  m.box("wood_old", 1.3, 0.55, 0.6, 0, FL + 0.28, D / 2 + 0.5);
+  return m;
+}
+
+/** Temple gate (a small yakui-mon): two main posts and two rear posts, a tiled gable roof, open
+ *  board doors, a name plaque under the eave; low plastered walls run off to each side. */
+function teraSanmon() {
+  const m = new Model("tera-sanmon");
+  for (const s of [-1, 1]) {
+    m.box("wood_old", 0.3, 3.3, 0.3, s * 1.55, 1.65, 0.0);
+    m.box("wood_old", 0.2, 2.9, 0.2, s * 1.55, 1.45, -1.3);
+    m.box("stone_granite", 0.5, 0.2, 0.5, s * 1.55, 0.1, 0.0);
+    m.box("wood_planks", 1.3, 2.4, 0.07, s * 2.1, 1.35, -0.75, { ry: s * 1.2 });       // doors standing open
+    m.box("plaster_white", 3.4, 1.5, 0.3, s * 3.45, 0.95, 0.0);                          // side walls
+    m.box("stone_granite", 3.5, 0.2, 0.42, s * 3.45, 0.1, 0.0);
+    const wr = new Model("wall-roof");
+    gableRoof(wr, "roof_kawara", { W: 3.5, over: 0.05, eaveY: 1.72, ridgeY: 1.95, frontRun: 0.36, backRun: 0.36, thick: 0.1 });
+    m.merge(wr, new THREE.Matrix4().setPosition(s * 3.45, 0, 0));
+  }
+  m.box("wood_old", 3.7, 0.26, 0.24, 0, 3.05, 0.0);
+  m.box("wood_old", 3.5, 0.2, 0.18, 0, 2.75, -1.3);
+  for (const s of [-1, 1]) m.box("wood_old", 0.16, 0.18, 1.5, s * 1.55, 2.95, -0.65);
+  gableRoof(m, "roof_kawara", { W: 4.6, over: 0.35, eaveY: 3.3, ridgeY: 4.25, frontRun: 1.55, backRun: 2.0, thick: 0.24 });
+  m.box("wood_dark", 1.5, 0.52, 0.06, 0, 2.72, 0.19);
+  SIGN_ANCHORS["tera-sanmon"] = [[0, 2.72, 0.225, 1.36, 0.42, 0]];
+  return m;
+}
+
+/** Bell tower (shoro): four leaning posts on a stone base, a hipped tile roof, the bronze bell
+ *  (bonsho) and its striking beam hung on ropes. */
+function teraShoro() {
+  const m = new Model("tera-shoro");
+  m.box("stone_moss", 3.8, 0.7, 3.8, 0, 0.35, 0);
+  m.box("stone_granite", 3.4, 0.14, 3.4, 0, 0.77, 0);
+  for (const [sx, sz] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) strut(m, "wood_old", V(sx * 1.35, 0.84, sz * 1.35), V(sx * 1.05, 4.1, sz * 1.05), 0.24);
+  for (const y of [1.5, 3.9]) for (let k = 0; k < 4; k++) {
+    const a = [[-1, -1], [1, -1], [1, 1], [-1, 1]][k], b = [[-1, -1], [1, -1], [1, 1], [-1, 1]][(k + 1) % 4];
+    const r = 1.35 - ((y - 0.84) / 3.26) * 0.3;
+    strut(m, "wood_old", V(a[0] * r, y, a[1] * r), V(b[0] * r, y, b[1] * r), 0.13);
+  }
+  hipRoof(m, "roof_kawara", { W: 2.4, D: 2.4, over: 1.15, eaveY: 4.15, ridgeY: 5.75, sori: 0.3, thick: 0.24, gable: 1, ridgeMat: "roof_kawara_ridge", ridgeH: 0.35, ridgeHalf: 0.25 });
+  m.add("bronze_dark", lathe([[0.001, 0.0], [0.5, 0.0], [0.47, 0.12], [0.43, 0.9], [0.36, 1.2], [0.18, 1.36], [0.001, 1.4]], 22), { uv: "box", matrix: new THREE.Matrix4().makeTranslation(0, 2.2, 0) });
+  m.cyl("metal_dark", 0.03, 0.03, 0.45, 0, 3.6, 0, 6);
+  m.cyl("wood_old", 0.08, 0.08, 1.9, 1.1, 2.75 - 0.95, 0, 10, { rz: Math.PI / 2 });
+  for (const x of [0.6, 1.6]) m.cyl("rope_straw", 0.012, 0.012, 1.25, x, 2.78, 0, 5);
+  return m;
+}
+
+/** A row of family graves: stepped granite stones (saoishi on two plinths) of different ages
+ *  and heights, flower holders, wooden sotoba boards standing behind some of them. */
+function haka(v) {
+  const m = new Model(`haka_${v}`);
+  const r = rng(300 + v * 17);
+  let x = -1.35;
+  for (let i = 0; i < 4; i++) {
+    const w = 0.62 + r() * 0.14, old = r() < 0.4, mat = old ? "stone_moss" : "stone_granite";
+    const hh = 0.7 + r() * 0.35;
+    m.box(mat, w, 0.22, w, x, 0.11, 0);
+    m.box(mat, w * 0.72, 0.2, w * 0.72, x, 0.32, 0);
+    m.box(old ? "stone_old" : "stone_granite", w * 0.42, hh, w * 0.42, x, 0.42 + hh / 2, 0, { rz: old ? (r() - 0.5) * 0.06 : 0 });
+    for (const s of [-1, 1]) m.cyl("stone_granite", 0.045, 0.045, 0.16, x + s * w * 0.3, 0.22, w * 0.36, 8);
+    if (r() < 0.55) for (let k = 0; k < 1 + Math.floor(r() * 3); k++) m.box("wood_light", 0.08, 1.7 + r() * 0.3, 0.012, x - 0.12 + k * 0.11, 0.95, -w * 0.5 - 0.05, { rz: (r() - 0.5) * 0.08 });
+    x += w + 0.12 + r() * 0.1;
+  }
+  m.box("stone_old", 3.3, 0.1, 1.0, 0, 0.02, 0.02);
+  return m;
+}
+
+/** Six Jizo (roku-jizo) in red bibs on a stone step under a little tin-roofed shelter. */
+function rokujizo() {
+  const m = new Model("rokujizo");
+  m.box("stone_moss", 3.3, 0.22, 0.7, 0, 0.11, 0);
+  for (let i = 0; i < 6; i++) {
+    const x = -1.3 + i * 0.52;
+    m.add("stone_old", lathe([[0.001, 0], [0.12, 0], [0.13, 0.12], [0.1, 0.42], [0.07, 0.5], [0.09, 0.56], [0.085, 0.66], [0.001, 0.72]], 10), { uv: "box", matrix: new THREE.Matrix4().makeTranslation(x, 0.22, 0) });
+    m.box("cloth_red", 0.19, 0.16, 0.02, x, 0.62, 0.105);
+  }
+  for (const s of [-1, 1]) for (const z of [-0.36, 0.36]) m.box("wood_old", 0.08, 1.35, 0.08, s * 1.62, 0.675, z);
+  const rf = new Model("rf");
+  gableRoof(rf, "roof_tin", { W: 3.7, over: 0.1, eaveY: 1.35, ridgeY: 1.62, frontRun: 0.62, backRun: 0.5, thick: 0.05 });
+  m.merge(rf, new THREE.Matrix4());
+  return m;
+}
+
+/** Works of the side streams in world coordinates (scene.json "streams"): the concrete-lined
+ *  channel across the paddies (two walls and a bed), the box culvert under the prefectural road
+ *  with its headwalls and guard pipes, slab covers where the farm road and the levee path cross,
+ *  and the outfall in the river wall. */
+function streamWorks() {
+  const m = new Model("stream-works");
+  for (const st of scene.streams ?? []) {
+    const ch = st.channel, z = st.z, w = st.width, wall = 0.16;
+    const topAt = (x) => {
+      const t = ch.tops;
+      for (let i = 0; i < t.length - 1; i++) if (x <= t[i + 1][0]) { const f = (x - t[i][0]) / (t[i + 1][0] - t[i][0]); return t[i][1] + (t[i + 1][1] - t[i][1]) * Math.max(0, Math.min(1, f)); }
+      return t[t.length - 1][1];
+    };
+    const bedAt = (x) => ch.bed0 + (ch.bed1 - ch.bed0) * ((ch.x0 - x) / (ch.x0 - ch.xRiver));
+    const covered = (x) => st.covers.some((c) => x > c.x0 - 0.05 && x < c.x1 + 0.05);
+    for (let x = ch.x1; x < ch.x0 - 0.01; x += 2.0) {
+      const xa = x, xb = Math.min(x + 2.0, ch.x0), cx = (xa + xb) / 2, L = xb - xa;
+      if (covered(cx)) continue;
+      const top = topAt(cx), bed = bedAt(cx), hgt = top - bed + 0.12;
+      for (const s of [-1, 1]) m.box("concrete_old", L + 0.02, hgt, wall, cx, bed - 0.12 + hgt / 2, z + s * (w / 2 + wall / 2));
+      m.box("concrete_dark", L + 0.02, 0.12, w, cx, bed - 0.06, z);
+    }
+    for (const c of st.covers) {
+      const cx = (c.x0 + c.x1) / 2, L = c.x1 - c.x0;
+      if (c.kind === "road") {
+        // box culvert: headwalls flush with the edge of the verge, wing walls, white guard pipes
+        for (const [hx, dir] of [[c.x1, 1], [c.x0, -1]]) {
+          const top = st.roadY + 0.12, bed = (dir > 0 ? st.brook[st.brook.length - 1][1] : ch.bed0) - 0.15;
+          m.box("concrete", 0.3, top - bed, w + 2.6, hx, (top + bed) / 2, z);
+          m.box("interior_dark", 0.05, Math.min(1.25, top - bed - 0.45), w, hx + dir * 0.16, bed + 0.15 + Math.min(1.25, top - bed - 0.45) / 2, z);
+          for (const s of [-1, 1]) m.box("concrete", 1.6, top - bed - 0.2, 0.22, hx + dir * 0.8, (top + bed) / 2 - 0.1, z + s * (w / 2 + 1.25), { ry: -dir * s * 0.5 });
+          for (const s of [-1, 1]) m.cyl("porcelain", 0.045, 0.045, 0.8, hx - dir * 0.05, top, z + s * (w / 2 + 1.1), 8);
+          for (const y of [0.42, 0.74]) m.cyl("porcelain", 0.03, 0.03, w + 2.2, hx - dir * 0.05, top + y - (w + 2.2) / 2, z, 8, { rx: Math.PI / 2 });
+        }
+      } else {
+        // slab cover with a kerb, the channel walls running on underneath
+        const top = topAt(cx);
+        m.box("concrete_old", L, 0.16, w + 0.9, cx, top + 0.02, z);
+        for (const hx of [c.x0, c.x1]) m.box("concrete", 0.22, 0.5, w + 0.5, hx, top - 0.2, z);
+      }
+    }
+  }
+  return m;
+}
+
 // ---------------------------------------------------------------- build all
 await save("road-ditch", ditches());
 if (scene.tunnel) await save("tunnel", tunnel(scene.tunnel));
 await save("monohoshi", monohoshi());
+await save("shinryojo", shinryojo());
+await save("tera-hondo", teraHondo());
+await save("tera-sanmon", teraSanmon());
+await save("tera-shoro", teraShoro());
+for (let v = 0; v < 3; v++) await save(`haka_${v}`, haka(v));
+await save("rokujizo", rokujizo());
+await save("stream-works", streamWorks());
 await save("torii-stone", torii("stone"));
 await save("torii-wood", torii("wood"));
 for (let v = 0; v < 2; v++) await save(v ? `toro_${v}` : "toro", toro(v));

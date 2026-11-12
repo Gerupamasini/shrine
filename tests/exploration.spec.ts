@@ -64,8 +64,8 @@ test("foot torii → 200-step climb → precinct → lookout; collisions, settin
   });
   expect(sheet.alpha).toBeGreaterThan(0);
   await page.screenshot({ path: "artifacts/test-map.png", timeout: 600000 });
-  const ppm = (Math.min(sheet.w, sheet.h) * 0.9) / 1200;
-  const lk = await page.evaluate(() => (window as any).__satoyama.world.landmarks.lookout);
+  const [lk, extent] = await page.evaluate(() => [(window as any).__satoyama.world.landmarks.lookout, (window as any).__satoyama.world.extent]);
+  const ppm = (Math.min(sheet.w, sheet.h) * 0.9) / extent;
   await page.mouse.click(sheet.w / 2 + lk[0] * ppm, sheet.h / 2 + lk[2] * ppm);
   await expect(page.locator("#map")).toBeHidden();
   const there = await page.evaluate(() => (window as any).__satoyama.state);
