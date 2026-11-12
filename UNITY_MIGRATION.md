@@ -21,8 +21,8 @@
 
 `public/world/scene.json` の `heightEncoding` を参照します。
 
-1. `TerrainData.heightmapResolution = 1025`、`size = (1200, 420, 1200)` にし、Terrainの位置を `(−600, −20, −600)` にする。
-2. `heightmap.r16` を読む。ヘッダーなし、uint16 little-endian、行優先、1行目がz=−600（北端）、1列目がx=−600。
+1. `TerrainData.heightmapResolution = 1281`（Unityは2^n+1のみ対応のため、2049へ補間して読み込む）、`size = (1500, 420, 1500)` にし、Terrainの位置を `(−600, −20, −600)` にする。
+2. `heightmap.r16` を読む。ヘッダーなし、uint16 little-endian、行優先、1行目がz=−750（北端）、1列目がx=−750。
    - 高さは `y = raw / 65535 × 420 − 20`、Unityに入れる値は `raw / 65535f`。
 3. Z反転のため、`heights[row, col]` に入れる際に行を逆順にする（Unityの行0は南端になる）。
 4. `splat0.png`・`splat1.png`・`splat2.png`（RGBA×3、うち11層を使用）をAlphamapにする。層の順番と使うテクスチャは `materials.json` の `terrainLayers` にある。

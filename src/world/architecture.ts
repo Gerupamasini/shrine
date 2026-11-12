@@ -51,6 +51,7 @@ export class Architecture implements System {
     if (a === "toro") return [`architecture/${i % 3 === 0 ? "toro_1" : "toro"}`];
     if (a === "komainu") return [`architecture/komainu-${v}`];
     if (a === "jihanki") return [`architecture/jihanki_${v}`];
+    if (a === "haka") return [`architecture/haka_${v}`];
     if (a === "denchu") return [`architecture/${i % 3 === 1 ? "denchu-trans" : "denchu"}`];
     if (PROPS[a]) return [PROPS[a]];
     return [`architecture/${a}`];
@@ -91,6 +92,7 @@ export class Architecture implements System {
     inst.push({ file: "architecture/road-ditch", matrix: new T.Matrix4() });
     inst.push({ file: "architecture/river-works", matrix: new T.Matrix4() });
     inst.push({ file: "architecture/road-markings", matrix: new T.Matrix4() });
+    if ((data.streams ?? []).length) inst.push({ file: "architecture/stream-works", matrix: new T.Matrix4() });
     const byFile = new Map<string, T.Matrix4[]>();
     for (const it of inst) {
       if (!byFile.has(it.file)) byFile.set(it.file, []);
@@ -114,7 +116,7 @@ export class Architecture implements System {
           mesh.computeBoundingSphere();
           o.geometry.computeBoundingSphere();
           const r = o.geometry.boundingSphere!.radius;
-          this.meshes.push({ mesh, matrices, centers: matrices.map((m) => new T.Vector3().setFromMatrixPosition(m)), far: file.includes("props") ? 120 : file.includes("stairs") || file.includes("road-ditch") || file.includes("river-works") || file.includes("road-markings") ? 1e9 : 400 + r * 40 });
+          this.meshes.push({ mesh, matrices, centers: matrices.map((m) => new T.Vector3().setFromMatrixPosition(m)), far: file.includes("props") ? 120 : file.includes("stairs") || file.includes("road-ditch") || file.includes("river-works") || file.includes("road-markings") || file.includes("stream-works") ? 1e9 : 400 + r * 40 });
           this.land.scene.add(mesh);
         });
         progress(++done / byFile.size);
@@ -157,8 +159,11 @@ export class Architecture implements System {
     this.land.scene.add(lines);
   }
   frame = 0;
+  private culledAt = new T.Vector3(1e9, 0, 0);
   update(_dt: number, _t: number, cam: T.PerspectiveCamera) {
-    if (this.frame++ % 15) return;
+    // every 15th frame, or at once when the view has jumped (a teleport, a capture)
+    if (this.frame++ % 15 && cam.position.distanceToSquared(this.culledAt) < 64) return;
+    this.culledAt.copy(cam.position);
     // distance culling of small instanced parts (props, far houses keep rendering)
     for (const m of this.meshes) {
       if (m.far > 1e8) continue;

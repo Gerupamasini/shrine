@@ -291,7 +291,7 @@ export class VillageMap {
     // grid ticks every 100 m on the margin
     g.fillStyle = INK;
     g.font = `9px ${SERIF}`;
-    for (let v = -500; v <= 500; v += 100) {
+    for (let v = -Math.floor(m.extent / 200) * 100; v <= m.extent / 2; v += 100) {
       const [tx] = this.toScreen(v, 0), [, ty] = this.toScreen(0, v);
       g.fillRect(tx - 0.5, y0 - 8, 1, 8);
       g.fillRect(tx - 0.5, y0 + side, 1, 8);

@@ -4,5 +4,13 @@
  "extent": 14000.0,
  "minHeight": 0,
  "range": 1600,
- "note": "Distant ranges for the horizon. The inner 1.2 km is covered by the detailed terrain."
+ "mid": {
+  "file": "mid-heightmap.png",
+  "cover": "mid-cover.png",
+  "resolution": 769,
+  "extent": 4800.0,
+  "minHeight": -40.0,
+  "range": 1000.0
+ },
+ "note": "Far: ranges for the horizon. Mid: the eroded hills for 1.6 km around the map. The map itself is covered by the detailed terrain."
 }

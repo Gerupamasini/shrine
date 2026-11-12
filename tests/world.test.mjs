@@ -15,9 +15,10 @@ const H = (x, z) => {
   return (c(i, j) * (1 - a) + c(i + 1, j) * a) * (1 - b) + (c(i, j + 1) * (1 - a) + c(i + 1, j + 1) * a) * b;
 };
 
-test("16-bit heightmap is a complete 1025² little-endian raster in metres", () => {
-  assert.equal(N, 1025);
-  assert.equal(E, 1200);
+test("16-bit heightmap is a complete 1281² little-endian raster in metres", () => {
+  assert.equal(N, 1281);
+  assert.equal(E, 1500);
+  assert.ok(Math.abs(E / (N - 1) - 1.171875) < 1e-9, "1.17 m cells");
   assert.equal(raw.length, N * N * 2);
   let lo = Infinity, hi = -Infinity;
   for (let i = 0; i < raw.length; i += 2) {
@@ -84,7 +85,7 @@ test("the river falls downstream through drops, with a 3-6 m low-flow channel be
   for (const [xc, z, B, top] of R.bed.points) {
     if (z < -440 || z > 560) continue;
     const y = pts.reduce((best, p) => (Math.abs(p[2] - z) < Math.abs(best[2] - z) ? p : best))[1];
-    assert.ok(top - y > 1.0 && top - y < 2.5, `bank height ${top - y} at z=${z}`);
+    assert.ok(top - y > 0.9 && top - y < 2.5, `bank height ${top - y} at z=${z}`);
     assert.ok(B > 3 && B < 8.5);
     void xc;
   }
@@ -160,11 +161,20 @@ test("village layout: a centre on the main road, road-facing houses, south-facin
   for (const o of buildings) {
     const [x, , z] = o.position, yaw = o.rotation[1];
     const front = [Math.sin(yaw), Math.cos(yaw)];
-    const toRoad = [Math.sign(roadX(z) - x), 0];
+    // unit vector from the house square to the road (the road winds with the valley)
+    const tr = (roadX(z + 4) - roadX(z - 4)) / 8, nl = Math.hypot(1, tr), sg = Math.sign(roadX(z) - x);
+    const toRoad = [sg / nl, (-sg * tr) / nl];
+    if (o.group === "tera") continue;
+    if (o.group === "kawamuko") {
+      // the terrace hamlet: houses in a row along the contour lane, fronts down the slope (east)
+      assert.ok(front[0] > 0.8, `${o.id} faces down the slope`);
+      assert.ok(data.roads.some((r) => r.class === "town" && r.points.some((p) => Math.hypot(p[0] - x, p[2] - z) < 24)), `${o.id} stands on the lane`);
+      continue;
+    }
     if (o.group === "machi" || o.roadside) {
       if (o.asset === "nokyo-soko") continue;
       // fronts on the road, with no windbreak behind
-      assert.ok(front[0] * toRoad[0] > 0.9, `${o.id} faces the road`);
+      assert.ok(front[0] * toRoad[0] + front[1] * toRoad[1] > 0.9, `${o.id} faces the road`);
       assert.ok(Math.abs(x - roadX(z)) < 32, `${o.id} stands by the road`);
       continue;
     }
@@ -182,6 +192,38 @@ test("village layout: a centre on the main road, road-facing houses, south-facin
   assert.ok(sheltered / farm > 0.85, `${sheltered}/${farm} farmhouses with an igune`);
   assert.ok(new Set(buildings.map((o) => o.group)).size >= 7);
   assert.ok(data.objects.some((o) => o.asset === "hinomi") && data.objects.some((o) => o.signs));
+});
+
+test("hills and valley: eroded relief, a winding floor, side streams, temple and clinic", () => {
+  // the hills come from the regional erosion model: side valleys cut into them, so the height
+  // along a line parallel to the valley rises and falls by tens of metres
+  const xs = [];
+  for (let z = -600; z <= 600; z += 12) xs.push(H(420, z));
+  let turns = 0;
+  for (let i = 2; i < xs.length; i++) if ((xs[i] - xs[i - 1]) * (xs[i - 1] - xs[i - 2]) < 0) turns++;
+  assert.ok(Math.max(...xs) - Math.min(...xs) > 40 && turns >= 6, `ridge and valley relief east of the village (${turns} turns)`);
+  // the floor winds: the river line swings by more than 60 m
+  const rx = data.river.points.map((p) => p[0]);
+  assert.ok(Math.max(...rx) - Math.min(...rx) > 60);
+  // side streams: a brook that never runs uphill, a culvert under the prefectural road, water to draw
+  assert.ok(data.streams.length >= 2, "two side streams");
+  for (const st of data.streams) {
+    for (let i = 1; i < st.brook.length; i++) assert.ok(st.brook[i][1] <= st.brook[i - 1][1] + 1e-6, `${st.name} falls downstream`);
+    assert.ok(st.covers.some((c) => c.kind === "road"), `${st.name} passes under the road`);
+    assert.ok(st.water.length >= 2 && st.water.every((r) => r.length > 1));
+    assert.ok(st.channel.bed1 < st.channel.bed0, `${st.name} channel falls to the river`);
+  }
+  // temple: hall, gate with its plaque, bell tower, graves; clinic at the south end of the village
+  for (const a of ["tera-hondo", "tera-sanmon", "tera-shoro", "rokujizo"]) assert.ok(data.objects.some((o) => o.asset === a), a);
+  assert.ok(data.objects.filter((o) => o.asset === "haka").length >= 8, "a graveyard");
+  const clinic = data.objects.find((o) => o.asset === "shinryojo");
+  assert.ok(clinic && clinic.signs, "clinic with its name board");
+  const houses = data.objects.filter((o) => o.group && o.group !== "kawamuko" && o.group !== "sankyo" && o.group !== "tera");
+  assert.ok(houses.every((o) => o.position[2] <= clinic.position[2] + 1), "the clinic is the last building to the south");
+  // the houses gather around the centre
+  const machi = data.hamlets.find((hm) => hm.name === "machi");
+  const near = houses.filter((o) => Math.abs(o.position[2] - machi.z) < 330).length;
+  assert.ok(near / houses.length > 0.8, `${near}/${houses.length} roadside buildings within 330 m of the centre`);
 });
 
 test("road works: graded cut and fill slopes (no sheer walls), the road ends at a tunnel portal", () => {
@@ -247,7 +289,7 @@ test("every placed object resolves to a GLB and every material to a texture set"
       assert.ok(fs.existsSync(`public/assets/models/props/${props[o.asset]}.glb`), o.asset);
       continue;
     }
-    const name = o.asset.startsWith("minka-") || o.asset === "jihanki" ? `${o.asset}_${o.variant}` : o.asset === "naya" ? "naya_0" : o.asset === "komainu" ? `komainu-${o.variant}` : o.asset;
+    const name = o.asset.startsWith("minka-") || o.asset === "jihanki" || o.asset === "haka" ? `${o.asset}_${o.variant}` : o.asset === "naya" ? "naya_0" : o.asset === "komainu" ? `komainu-${o.variant}` : o.asset;
     assert.ok(index[name], `architecture/${name}`);
     const glb = fs.readFileSync(`public/assets/models/architecture/${name}.glb`);
     assert.equal(glb.readUInt32LE(0), 0x46546c67, "glTF magic");

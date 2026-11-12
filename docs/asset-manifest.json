@@ -271,7 +271,7 @@
  {
   "path": "assets/models/architecture/bridge.glb",
   "bytes": 29920,
-  "sha256": "427ee7dc230cd7623f0df93715c5ee15d530b7d23caf51762aeb584b3ebd928d",
+  "sha256": "76de1f1edac3e2b265ca24c6aef5f599e328ce9fe09db86e014b0f86d37a62b7",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/architecture/build.mjs"
@@ -333,6 +333,30 @@
   "tool": "tools/architecture/build.mjs"
  },
  {
+  "path": "assets/models/architecture/haka_0.glb",
+  "bytes": 22192,
+  "sha256": "eabee9c8c950f1bb5a67803a64493115c6ecedd085755171a079121314172c00",
+  "origin": "original (this repo)",
+  "licence": "CC0 1.0",
+  "tool": "tools/architecture/build.mjs"
+ },
+ {
+  "path": "assets/models/architecture/haka_1.glb",
+  "bytes": 20620,
+  "sha256": "599b38acd512f484bfa2571c06bf03ba83d1a513583ccd6e2d3c4ce234f8579d",
+  "origin": "original (this repo)",
+  "licence": "CC0 1.0",
+  "tool": "tools/architecture/build.mjs"
+ },
+ {
+  "path": "assets/models/architecture/haka_2.glb",
+  "bytes": 22192,
+  "sha256": "ce9809c64db0620b27dc4338f7d08d20283142ef29de24b09cab9c17b3eef6f1",
+  "origin": "original (this repo)",
+  "licence": "CC0 1.0",
+  "tool": "tools/architecture/build.mjs"
+ },
+ {
   "path": "assets/models/architecture/hinomi.glb",
   "bytes": 92192,
   "sha256": "e1d5b9342a466eefc9fee79bd93af5515f4d5e576ece23918200d8b02aec9faa",
@@ -350,8 +374,8 @@
  },
  {
   "path": "assets/models/architecture/index.json",
-  "bytes": 23965,
-  "sha256": "9db781ad417d7ac2ee3aa92eccff399302f758870f06259103cd71a92a304493",
+  "bytes": 26773,
+  "sha256": "12409f2f0a8e95403f8ac21cf78c40bccdba89cc00735a994ea255b633a456f0",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/architecture/build.mjs"
@@ -614,24 +638,32 @@
  },
  {
   "path": "assets/models/architecture/river-works.glb",
-  "bytes": 1204380,
-  "sha256": "4b8246032074e76996bebf08d2559c2c339c9adbab454b41292a79703996db83",
+  "bytes": 1461308,
+  "sha256": "78c17b0138adef8f61c52718859fc525e995f2bd6cf6f23347016b60f3744ce7",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/architecture/build.mjs"
  },
  {
   "path": "assets/models/architecture/road-ditch.glb",
-  "bytes": 1611488,
-  "sha256": "15fe5cd23fe9d5bce57d9cee3573286c1f2e01fab0ea7dc42c4318329413cb51",
+  "bytes": 2241344,
+  "sha256": "611c57571556565d670b18123250186bdb330c2036b65a36fdf84e965b2b9b14",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/architecture/build.mjs"
  },
  {
   "path": "assets/models/architecture/road-markings.glb",
-  "bytes": 596748,
-  "sha256": "b59f00e84cec7d04d6f2ea2462bdd1bdaadbc50608a8a4b67345e2941502f0c7",
+  "bytes": 849464,
+  "sha256": "94277eb87b262d9791882fe669da22248fb1da4fdceb86de681a053bf758c1ad",
+  "origin": "original (this repo)",
+  "licence": "CC0 1.0",
+  "tool": "tools/architecture/build.mjs"
+ },
+ {
+  "path": "assets/models/architecture/rokujizo.glb",
+  "bytes": 43976,
+  "sha256": "3ef8e5bc4bfba6efaed3c74d08127816fe41fe66209e52989208d6f7ce28e154",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/architecture/build.mjs"
@@ -664,6 +696,14 @@
   "path": "assets/models/architecture/shimenawa-tree.glb",
   "bytes": 31568,
   "sha256": "072c04dda8332b0bdab0e7602945a263e4a751603a9aca818d6b666c3ba2271b",
+  "origin": "original (this repo)",
+  "licence": "CC0 1.0",
+  "tool": "tools/architecture/build.mjs"
+ },
+ {
+  "path": "assets/models/architecture/shinryojo.glb",
+  "bytes": 109488,
+  "sha256": "ae2223524bcd1b560186c4ca8f5ce3bbdb874401b951a0e12a44004fa71f7309",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/architecture/build.mjs"
@@ -709,9 +749,41 @@
   "tool": "tools/architecture/build.mjs"
  },
  {
+  "path": "assets/models/architecture/stream-works.glb",
+  "bytes": 342056,
+  "sha256": "69ec8ecc64785fcd31c37731ac95e8dcbfe69cac1fc2ca07281db7052d6b4304",
+  "origin": "original (this repo)",
+  "licence": "CC0 1.0",
+  "tool": "tools/architecture/build.mjs"
+ },
+ {
   "path": "assets/models/architecture/temizuya.glb",
   "bytes": 42168,
   "sha256": "3f7496850f362b6fa3d3e7803662740bebd45de892ef3a1ea29c854213b3ffec",
+  "origin": "original (this repo)",
+  "licence": "CC0 1.0",
+  "tool": "tools/architecture/build.mjs"
+ },
+ {
+  "path": "assets/models/architecture/tera-hondo.glb",
+  "bytes": 241400,
+  "sha256": "ee45a8479e9934a55b8d2f94ae99e65da5dc70e0bcb09ae5e9314a50d79d6762",
+  "origin": "original (this repo)",
+  "licence": "CC0 1.0",
+  "tool": "tools/architecture/build.mjs"
+ },
+ {
+  "path": "assets/models/architecture/tera-sanmon.glb",
+  "bytes": 40996,
+  "sha256": "22cd9cd2c7945d2b360be41d0447441bc6c77545dadfa443fcd046a9d4f5ff49",
+  "origin": "original (this repo)",
+  "licence": "CC0 1.0",
+  "tool": "tools/architecture/build.mjs"
+ },
+ {
+  "path": "assets/models/architecture/tera-shoro.glb",
+  "bytes": 99372,
+  "sha256": "06145e01e03699a02feb0057d4790a7286a380deea77a2940315d349c2234d7a",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/architecture/build.mjs"
@@ -750,8 +822,8 @@
  },
  {
   "path": "assets/models/architecture/tunnel.glb",
-  "bytes": 143136,
-  "sha256": "27e52e382c1513f04758e30a24bf40efdde586f6f711e6719bf1cd290224fbb0",
+  "bytes": 146068,
+  "sha256": "57c5e197fb1f8b62d67a0fe60d5e5b8d704e8984086f0fd6fe16f192114cab6a",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/architecture/build.mjs"
@@ -2299,56 +2371,56 @@
  },
  {
   "path": "world/clutter.json",
-  "bytes": 2158633,
-  "sha256": "32a11f77a5bde9b503f3184ddc2f013ec89d62f6a78621576aadcabd2cd1781d",
+  "bytes": 3209923,
+  "sha256": "d7def016d309e07e19962cfa255e4161f6086e79594de51a51dfe1a679d7fa5c",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/world/generate_world.py"
  },
  {
   "path": "world/far-heightmap.png",
-  "bytes": 104938,
-  "sha256": "93eeaea1074370ba9e39f90b490a54f26086103892e49a7c4d4f40dde29b3115",
+  "bytes": 105239,
+  "sha256": "e6c43bb054e2a1f9fc3f9d28f9a8b2851934ab057811ae8c588ea56a84da4277",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/world/generate_world.py"
  },
  {
   "path": "world/far-terrain.json",
-  "bytes": 202,
-  "sha256": "d88fd2237fc0586cf5f83894ff1ca2329301f4e2114191878dfaeab6495dd9a1",
+  "bytes": 400,
+  "sha256": "a6743b1590e0b5c996de7be75f6c47a3ebd60bee7601cf94ec738b2b5276294d",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/world/generate_world.py"
  },
  {
   "path": "world/heightmap.png",
-  "bytes": 965125,
-  "sha256": "f820fa70da83074770fc1ad7a7021b78521cafc79d9563d4cbe6534d9e01041f",
+  "bytes": 1577421,
+  "sha256": "40134a2664b9d247cffd62c6ae0668fdd2fb5dbe8e152b120be2977627949f4a",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/world/generate_world.py"
  },
  {
   "path": "world/heightmap.r16",
-  "bytes": 2101250,
-  "sha256": "4d373c5dc1b71928d7d9817833ca07af29f7aedfa72a26c8923937a917400ecc",
+  "bytes": 3281922,
+  "sha256": "8e14d74610ce17112a3cdddaa6a5e854651d23235aa647d2e73bf03eecfe550a",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/world/generate_world.py"
  },
  {
   "path": "world/map.json",
-  "bytes": 2440,
-  "sha256": "d0a600df874dc8c9fdb8bbccdec2f00f4ad945ca8a9391b3361e6109ded6980e",
+  "bytes": 2677,
+  "sha256": "d2dbaa5b1b34adb51f62eb4fae1524e15f9d1934b5d6512fafdf0be90a001ee2",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/world/generate_world.py"
  },
  {
   "path": "world/map.webp",
-  "bytes": 768024,
-  "sha256": "9c918513a04d7044ee26dac61b53bd9605d79907cf89674713acd54b19fe4d80",
+  "bytes": 791480,
+  "sha256": "d84076507191dbe9c5f1243bf27232f7992227b6bc6832b41b2ececc480fe538",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/world/generate_world.py"
@@ -2362,57 +2434,73 @@
   "tool": "tools/world/generate_world.py"
  },
  {
+  "path": "world/mid-cover.png",
+  "bytes": 21115,
+  "sha256": "74e2b8728f664a2a955168bee396033cc07d192e19d46a46de6ee52c5d963784",
+  "origin": "original (this repo)",
+  "licence": "CC0 1.0",
+  "tool": "tools/world/generate_world.py"
+ },
+ {
+  "path": "world/mid-heightmap.png",
+  "bytes": 758188,
+  "sha256": "37a685593ffc1e386808f3b91d38f69c2f9ec3a04c9fbba93a9166139fa86c6e",
+  "origin": "original (this repo)",
+  "licence": "CC0 1.0",
+  "tool": "tools/world/generate_world.py"
+ },
+ {
   "path": "world/paddy-level.png",
-  "bytes": 17169,
-  "sha256": "099d8d392e1679ae3e4972801e445d098c79416936dd320a6c2c687bd568e71b",
+  "bytes": 49106,
+  "sha256": "cf2fe4d10affa4fea6dbec91fd56bcc5b8dd0697a5d17728d9130264197bbb3a",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/world/generate_world.py"
  },
  {
   "path": "world/scene.json",
-  "bytes": 447119,
-  "sha256": "193efb542a3649668e146324f9800d3595b9bb8ca210e1172b1eb503a57d6e47",
+  "bytes": 691866,
+  "sha256": "384039c0115ebd114ba687743015922376c6b78ba6eaba6d0a1356044ac012f8",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/world/generate_world.py"
  },
  {
   "path": "world/splat0.png",
-  "bytes": 321421,
-  "sha256": "5c806ffb283b907a0dddf4222b298373f420c26f2f3e471564754394f9b9d5d5",
+  "bytes": 487962,
+  "sha256": "4864dda3396494b059167987ac21d7a15bcaaacaf5ab1386f2fe6d405fce3ec6",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/world/generate_world.py"
  },
  {
   "path": "world/splat1.png",
-  "bytes": 28632,
-  "sha256": "edb141c1137ad65fc528776deb2baa904c8860d089b815d25d9c75b632d1bf30",
+  "bytes": 147867,
+  "sha256": "0f044468e41ce3595348b4044293d7542f10fc6822b604c8a85bb5e9acf2edb8",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/world/generate_world.py"
  },
  {
   "path": "world/splat2.png",
-  "bytes": 19101,
-  "sha256": "6e73ce2037104ca11adf309d0886e623eff2c9cf20493021c5c739f61168f870",
+  "bytes": 30741,
+  "sha256": "02c8f5bc8f4bd69ec9edb9fdf5bc14c518a36c42f16f1a21d6d9d651d864f5e8",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/world/generate_world.py"
  },
  {
   "path": "world/vegetation-mask.png",
-  "bytes": 306085,
-  "sha256": "60e6356df6f6357ad3504ee1511db9b2f46e5c8cd84aea53bf8c0fdec9a35ac3",
+  "bytes": 636644,
+  "sha256": "3dd6ca3c35e3b47c73fe55ae136af974712f3f03c77819b9353eee2257895749",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/world/generate_world.py"
  },
  {
   "path": "world/vegetation.json",
-  "bytes": 1779089,
-  "sha256": "8a63c896e351d3c4c665a5ac92e86e397f1baabfd51e19cb50ac31aac347e7a2",
+  "bytes": 2615380,
+  "sha256": "2393fc90dc7b64c800ac5b9135af9829b0f2a2750a15af5092f3aedcbf52fc91",
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/world/generate_world.py"
