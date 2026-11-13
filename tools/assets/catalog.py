@@ -23,6 +23,9 @@ def ph(asset_id):
 
 def origin(rel: str):
     p = rel.split("/")
+    vehicle_ids = {"kei-truck", "kei-hatch", "crown-sedan", "light-truck", "utility-wagon"}
+    if rel.startswith("assets/textures/vehicles/") or (rel.startswith("assets/models/architecture/") and Path(rel).stem.removesuffix("-lod1") in vehicle_ids):
+        return {"origin": "Original vehicle geometry and microsurface maps authored in this repository", "licence": "CC0 1.0", "tool": "tools/vehicles/source/build.py + tools/vehicles/source/trucks.py + tools/vehicles/build.mjs"}
     if rel.startswith("assets/textures/"):
         tid = p[2]
         if tid == "vermilion_paint":

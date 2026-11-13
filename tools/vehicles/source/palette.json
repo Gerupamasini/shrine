@@ -1,0 +1,148 @@
+{
+  "vehicle_ivory": {
+    "color": "#cfcfc0",
+    "roughness": 0.28,
+    "metalness": 0.22,
+    "coat": 0.85
+  },
+  "vehicle_silver": {
+    "color": "#8c989a",
+    "roughness": 0.25,
+    "metalness": 0.7,
+    "coat": 1
+  },
+  "vehicle_red": {
+    "color": "#6c1618",
+    "roughness": 0.23,
+    "metalness": 0.25,
+    "coat": 1
+  },
+  "vehicle_pearl": {
+    "color": "#c6c5b6",
+    "roughness": 0.22,
+    "metalness": 0.5,
+    "coat": 1
+  },
+  "vehicle_blue": {
+    "color": "#244f5b",
+    "roughness": 0.32,
+    "metalness": 0.25,
+    "coat": 0.7
+  },
+  "vehicle_beige": {
+    "color": "#8c8e7a",
+    "roughness": 0.28,
+    "metalness": 0.5,
+    "coat": 0.85
+  },
+  "vehicle_lower": {
+    "color": "#525e60",
+    "roughness": 0.32,
+    "metalness": 0.45,
+    "coat": 0.6
+  },
+  "vehicle_rubber": {
+    "color": "#161819",
+    "roughness": 0.82,
+    "detail": "rubber"
+  },
+  "vehicle_trim": {
+    "color": "#232827",
+    "roughness": 0.52,
+    "detail": "rubber"
+  },
+  "vehicle_chrome": {
+    "color": "#bcc2c2",
+    "roughness": 0.19,
+    "metalness": 1
+  },
+  "vehicle_alloy": {
+    "color": "#949ca0",
+    "roughness": 0.32,
+    "metalness": 0.88
+  },
+  "vehicle_steel": {
+    "color": "#40494a",
+    "roughness": 0.7,
+    "metalness": 0.65
+  },
+  "vehicle_glass": {
+    "color": "#586f71",
+    "roughness": 0.09,
+    "metalness": 0.18,
+    "opacity": 0.48,
+    "doubleSided": true,
+    "coat": 1
+  },
+  "vehicle_glass_edge": {
+    "color": "#111d20",
+    "roughness": 0.2
+  },
+  "vehicle_headlamp": {
+    "color": "#b8c1c3",
+    "roughness": 0.16,
+    "metalness": 0.65
+  },
+  "vehicle_lens": {
+    "color": "#bdc7c7",
+    "roughness": 0.14,
+    "opacity": 0.25,
+    "doubleSided": true
+  },
+  "vehicle_amber": {
+    "color": "#b9550c",
+    "roughness": 0.24,
+    "metalness": 0.2,
+    "coat": 1
+  },
+  "vehicle_tail": {
+    "color": "#780c0f",
+    "roughness": 0.22,
+    "metalness": 0.2,
+    "coat": 1
+  },
+  "vehicle_reverse": {
+    "color": "#b8bab4",
+    "roughness": 0.25,
+    "metalness": 0.3
+  },
+  "vehicle_seat": {
+    "color": "#343c3e",
+    "roughness": 0.96,
+    "detail": "fabric"
+  },
+  "vehicle_dash": {
+    "color": "#222d2c",
+    "roughness": 0.72,
+    "detail": "rubber"
+  },
+  "vehicle_plate_yellow": {
+    "color": "#c4a53b",
+    "roughness": 0.49
+  },
+  "vehicle_plate_white": {
+    "color": "#d1d5c8",
+    "roughness": 0.49
+  },
+  "vehicle_plate_ink": {
+    "color": "#253b31",
+    "roughness": 0.6
+  },
+  "vehicle_dial": {
+    "color": "#d1cdb4",
+    "roughness": 0.6
+  },
+  "vehicle_bed": {
+    "color": "#65716c",
+    "roughness": 0.68,
+    "metalness": 0.4
+  },
+  "vehicle_carry_glass": {
+    "color": "#586f71",
+    "roughness": 0.045,
+    "metalness": 0.18,
+    "opacity": 0.24,
+    "doubleSided": true,
+    "coat": 1
+  }
+}

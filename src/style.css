@@ -658,3 +658,33 @@ body:not(.exploring) #minimap-wrap,
     right: 16px;
   }
 }
+
+/* A late-1980s/early-1990s instrument: keep the road and dashboard unobstructed. */
+#vehicle-prompt {
+  position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%);
+  padding: 10px 18px; background: #142820d9; border: 1px solid #e9dfbe45;
+  border-radius: 3px; text-align: center; font: 13px/1.7 system-ui, sans-serif;
+  pointer-events: none;
+}
+#vehicle-prompt kbd { font: inherit; border: 1px solid #e9dfbe80; padding: 1px 5px; margin-right: 6px; }
+#vehicle-hud {
+  --instrument-ink: #d4e7de;
+  position: fixed; right: 26px; bottom: 20px; width: clamp(180px, 19vw, 236px);
+  color: var(--instrument-ink); pointer-events: none; font-family: Arial, sans-serif;
+  filter: drop-shadow(0 3px 8px #0009);
+}
+#vehicle-hud svg { display: block; width: 100%; overflow: visible; }
+.dial-number { fill: var(--instrument-ink); font: 18px Arial, sans-serif; text-anchor: middle; }
+.dial-unit { fill: var(--instrument-ink); font: 11px Arial, sans-serif; }
+.dial-gear { fill: #bacfc4; font: 15px Arial, sans-serif; text-anchor: middle; }
+.dial-odometer { fill: #183d35; font: 18px 'Courier New', monospace; letter-spacing: .2px; text-anchor: end; }
+.dial-trip { fill: #254b40; font: 13px 'Courier New', monospace; text-anchor: end; }
+.dial-trip-label { fill: #34554b; font: 6px Arial, sans-serif; }
+.dial-controls { display: flex; gap: 16px; justify-content: center; margin-top: -9px; font-size: 10px; letter-spacing: .08em; color: #e1e5daaf; text-shadow: 0 1px 3px #000; }
+#vehicle-notice { position: absolute; right: 0; bottom: 100%; width: 280px; padding-bottom: 8px; text-align: right; color: #f3e2b8; font-size: 12px; text-shadow: 0 1px 4px #000; }
+#vehicle-notice:empty { display: none; }
+.vehicle-destination { width: 100%; padding: 9px; margin-bottom: 10px; }
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+.driving footer, .driving .title, .hide-ui #vehicle-hud, .hide-ui #vehicle-prompt { display: none; }
+.driving #settings-button { margin-left: auto; }
+@media (max-width: 650px) { #vehicle-hud { width: 160px; right: 12px; bottom: 16px; } }

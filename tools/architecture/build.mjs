@@ -663,27 +663,6 @@ function denchu(withTransformer) {
   }
   return m;
 }
-function keiTruck() {
-  const m = new Model("kei-truck");
-  // cab-over light truck (generic), local +Z forward
-  m.box("car_paint", 1.38, 0.95, 1.15, 0, 1.25, 1.1);
-  m.box("car_paint", 1.38, 0.5, 1.25, 0, 0.75, 1.15);
-  m.box("glass_dark", 1.26, 0.5, 0.04, 0, 1.45, 1.68, { rx: -0.12 });
-  for (const s of [-1, 1]) m.box("glass_dark", 0.04, 0.42, 0.7, s * 0.7, 1.45, 1.2);
-  m.box("metal_grey", 1.4, 0.12, 2.0, 0, 0.62, -0.55);
-  for (const s of [-1, 1]) m.box("car_paint", 0.05, 0.32, 2.0, s * 0.68, 0.84, -0.55);
-  m.box("car_paint", 1.4, 0.32, 0.05, 0, 0.84, -1.55);
-  m.box("car_paint", 1.4, 0.75, 0.05, 0, 1.0, 0.45);
-  for (const z of [1.15, -1.0]) for (const s of [-1, 1]) {
-    const w = new THREE.CylinderGeometry(0.27, 0.27, 0.17, 16);
-    w.rotateZ(Math.PI / 2);
-    w.translate(s * 0.62, 0.27, z);
-    m.add("rubber", w);
-  }
-  m.box("metal_grey", 1.3, 0.12, 0.08, 0, 0.6, 1.72);
-  for (const s of [-1, 1]) m.box("light_lens", 0.18, 0.12, 0.03, s * 0.5, 0.85, 1.79);
-  return m;
-}
 function busStop() {
   const m = new Model("bus-stop");
   m.cyl("metal_grey", 0.04, 0.04, 2.3, 0, 0, 0, 8);
@@ -1798,7 +1777,6 @@ await save("block-wall", blockWall());
 await save("ishigaki", ishigaki());
 await save("denchu", denchu(false));
 await save("denchu-trans", denchu(true));
-await save("kei-truck", keiTruck());
 await save("bus-stop", busStop());
 for (let v = 0; v < 2; v++) await save(`jihanki_${v}`, jihanki(v));
 const bo = scene.objects.find((o) => o.asset === "bridge");
@@ -1863,3 +1841,6 @@ for (const f of fs.readdirSync(OUT).filter((f) => f.endsWith(".glb"))) {
   total += fs.statSync(path.join(OUT, f)).size;
 }
 console.log("architecture bytes", total);
+
+// Vehicles share the architecture registry; rebuild after the main index is written.
+await import("../vehicles/build.mjs");

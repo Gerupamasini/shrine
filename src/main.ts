@@ -9,6 +9,8 @@ import { populate } from "./world/populate";
 import { Walker } from "./physics";
 import { Soundscape } from "./audio";
 import { VillageMap } from "./map";
+import { VehicleFleet } from "./vehicles/fleet";
+import { DrivingHud } from "./vehicles/hud";
 
 installAtmosphere();
 const $ = <E extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as E;
@@ -21,12 +23,14 @@ const camera = new T.PerspectiveCamera(55, innerWidth / innerHeight, 0.1, 9000);
 camera.rotation.order = "YXZ";
 const audio = new Soundscape();
 let renderer: T.WebGLRenderer, land: Landscape, walker: Walker, post: Post;
+let vehicles: VehicleFleet;
 let yaw = Math.PI / 2, pitch = 0, started = false, locked = false, settingsOpen = false, mapOpen = false, ready = false;
 /** the walk is on hold while the settings panel or the map sheet is open */
 const paused = () => settingsOpen || mapOpen;
 let villageMap: VillageMap | null = null;
 let elapsed = 0, fps = 0, frames = 0, measure = 0, acc = 0, timeOfDay = 18;
 const keys = new Set<string>();
+const drivingHud = new DrivingHud($("vehicle-hud"));
 
 function fail(e: unknown) {
   console.error(e);
@@ -58,6 +62,7 @@ function requestLook() {
 }
 function setSettings(open: boolean) {
   settingsOpen = open;
+  keys.clear();
   $("settings").hidden = !open;
   if (open) document.exitPointerLock();
   $("resume").hidden = true;
@@ -115,6 +120,7 @@ addEventListener("mousemove", (e) => {
   hover.y = e.clientY / innerHeight;
   hover.inside = !overUi(e.target);
   if (locked || dragging || hover.inside) {
+    if (vehicles?.active) { vehicles.look(e.movementX, e.movementY); return; }
     yaw -= e.movementX * 0.0018;
     pitch = T.MathUtils.clamp(pitch - e.movementY * 0.0018, -1.45, 1.45);
   }
@@ -122,6 +128,7 @@ addEventListener("mousemove", (e) => {
 document.addEventListener("mouseleave", () => (hover.inside = false));
 addEventListener("blur", () => (hover.inside = false));
 function edgeTurn(dt: number) {
+  if (vehicles?.active) return;
   if (locked || !hover.inside || !started || paused()) return;
   const EDGE = 0.06;
   const l = 1 - Math.min(hover.x / EDGE, 1), r = 1 - Math.min((1 - hover.x) / EDGE, 1);
@@ -129,6 +136,7 @@ function edgeTurn(dt: number) {
 }
 let bookmark: number[] | null = null;
 function setFree(v: boolean) {
+  if (vehicles?.active) { $<HTMLInputElement>("free").checked = false; return; }
   if (v && !walker.free) bookmark = walker.position.toArray();
   walker.free = v;
   if (!v && bookmark) walker.teleport(bookmark);
@@ -136,21 +144,36 @@ function setFree(v: boolean) {
 }
 addEventListener("keydown", (e) => {
   if ((e.target as HTMLElement).matches("input,select")) return;
-  if (["KeyW", "KeyA", "KeyS", "KeyD", "Space", "ArrowUp", "ArrowDown"].includes(e.code)) e.preventDefault();
+  if (["KeyW", "KeyA", "KeyS", "KeyD", "Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.code)) e.preventDefault();
   keys.add(e.code);
   if (e.repeat) return;
+  if (ready && started && !paused() && !walker.free) {
+    if (e.code === "KeyE") {
+      if (vehicles.active) {
+        const q = vehicles.active.sim.rotation;
+        if (vehicles.exit()) { yaw = new T.Euler().setFromQuaternion(q, "YXZ").y + Math.PI; pitch = 0; }
+      } else vehicles.enter();
+      keys.clear(); updateCamera(0); updateVehicleHud();
+    }
+    if (e.code === "KeyV" && vehicles.active) { vehicles.toggleView(); updateCamera(0); updateVehicleHud(); }
+    if (e.code === "KeyR" && vehicles.active) { vehicles.reset(); keys.clear(); updateCamera(0); }
+  }
   if (e.code === "KeyF" && ready) setFree(!walker.free);
-  if (e.code === "Space" && ready && started && !walker.free && !paused()) walker.jump();
+  if (e.code === "Space" && ready && started && !walker.free && !paused() && !vehicles.active) walker.jump();
   if (e.code === "KeyM" && ready && started && !settingsOpen) villageMap?.toggle();
   if (e.code === "KeyH") document.body.classList.toggle("hide-ui");
   if (e.code === "Escape") {
     keys.clear();
     if (mapOpen) villageMap?.toggle(false);
     else if (settingsOpen) setSettings(false);
+    else if (started) setSettings(true);
   }
 });
 addEventListener("keyup", (e) => keys.delete(e.code));
 addEventListener("blur", () => keys.clear());
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden && vehicles?.active) { keys.clear(); setSettings(true); }
+});
 $<HTMLInputElement>("free").onchange = (e) => setFree((e.target as HTMLInputElement).checked);
 function clockLabel(h: number) {
   const m = Math.round(h * 60);
@@ -200,6 +223,7 @@ miniBox.onchange = () => setMini(miniBox.checked);
 function goto(name: string) {
   const l = land.world.data.landmarks[name];
   if (!l) return;
+  vehicles?.leaveForTravel();
   walker.teleport(l);
   yaw = -T.MathUtils.degToRad(l[3] ?? 0); // compass azimuth -> camera yaw (forward = -Z at yaw 0)
   pitch = T.MathUtils.degToRad(l[4] ?? 0);
@@ -209,6 +233,7 @@ function goto(name: string) {
 document.querySelectorAll<HTMLButtonElement>("[data-place]").forEach((b) => (b.onclick = () => (goto(b.dataset.place!), setSettings(false))));
 
 function updateCamera(dt: number) {
+  if (vehicles?.updateCamera(camera, dt)) return;
   edgeTurn(dt);
   camera.position.copy(walker.position);
   if (!walker.free && walker.grounded && walker.speed > 0.2) camera.position.y += Math.sin(walker.bob * Math.PI * 2) * 0.018 * Math.min(1, walker.speed / 1.5);
@@ -243,6 +268,27 @@ function placeName(): [string, string] {
   return ["", ""];
 }
 const EYE_OFFSET = 1.62;
+function visitVehicle() {
+  if (!ready) return;
+  if (walker.free) setFree(false);
+  const car = vehicles.visitNearest();
+  if (car) { const p = car.sim.position.clone().sub(walker.position); yaw = Math.atan2(-p.x, -p.z); pitch = -.12; }
+  keys.clear(); setSettings(false); updateCamera(0); updateVehicleHud();
+}
+$("find-vehicle").onclick = visitVehicle;
+function updateVehicleHud() {
+  const active = vehicles.active;
+  document.body.classList.toggle("driving", !!active);
+  $("vehicle-hud").hidden = !started || paused() || !active;
+  $("vehicle-prompt").hidden = !started || paused() || !!active || !vehicles.nearest();
+  if (active) {
+    const speed = active.sim.speed;
+    if (Math.abs(speed) < .3 && vehicles.message === "停車してから E で降りる") vehicles.message = "";
+    drivingHud.update(speed, active.sim.distance);
+    $("vehicle-view").textContent = vehicles.view === "first" ? "一人称" : "三人称";
+    $("vehicle-notice").textContent = vehicles.message;
+  }
+}
 function intent() {
   const d = new T.Vector3(
     (keys.has("KeyD") ? 1 : 0) - (keys.has("KeyA") ? 1 : 0),
@@ -258,14 +304,14 @@ function frame(dt: number, wall: number) {
   elapsed += dt;
   if (!ready) return;
   acc = Math.min(acc + dt, 0.2);
-  const dir = started && !paused() ? intent() : new T.Vector3();
-  const run = keys.has("ShiftLeft") || keys.has("ShiftRight");
   while (acc >= 1 / 60) {
-    walker.move(dir, 1 / 60, run);
+    simulationStep(1 / 60);
     acc -= 1 / 60;
   }
   updateCamera(dt);
-  villageMap?.update(walker.position.x, walker.position.z, yaw, performance.now());
+  vehicles.sync(); updateVehicleHud();
+  const heading = vehicles.active ? new T.Euler().setFromQuaternion(vehicles.active.sim.rotation, "YXZ").y + Math.PI : yaw;
+  villageMap?.update(walker.position.x, walker.position.z, heading, performance.now());
   land.update(dt, elapsed);
   audio.update(camera, land.world, timeOfDay);
   post.updateRays(camera, land.lighting.sunDir, land.lighting.elevation, quality);
@@ -285,6 +331,16 @@ function frame(dt: number, wall: number) {
       .map((v) => v.toFixed(1))
       .join(", ")}\n${walker.free ? "FREE" : walker.grounded ? "GROUNDED" : "AIR"} · ${audio.status}`;
   }
+}
+function simulationStep(dt: number) {
+  if (vehicles.active) {
+    if (!started || paused()) return;
+    vehicles.step(dt, {
+      throttle: (keys.has("KeyW") || keys.has("ArrowUp") ? 1 : 0) - (keys.has("KeyS") || keys.has("ArrowDown") ? 1 : 0),
+      steer: (keys.has("KeyD") || keys.has("ArrowRight") ? 1 : 0) - (keys.has("KeyA") || keys.has("ArrowLeft") ? 1 : 0),
+      brake: keys.has("Space"),
+    });
+  } else walker.move(started && !paused() ? intent() : new T.Vector3(), dt, keys.has("ShiftLeft") || keys.has("ShiftRight"));
 }
 let last = performance.now();
 const CAPTURE = params.has("capture");
@@ -325,6 +381,9 @@ async function boot() {
   await land.load(progress);
   await populate(land, progress);
   walker = await physics;
+  vehicles = new VehicleFleet(land, walker);
+  progress(.96, "車両を準備しています");
+  await vehicles.load();
   progress(0.98, "仕上げています");
   await land.lib.ready();
   const start = params.get("place") ?? "foot";
@@ -367,6 +426,7 @@ async function boot() {
         steps: world.data.steps.length,
         time: timeOfDay,
         place: placeName()[0],
+        vehicle: vehicles.state,
       };
     },
     teleport: (name: string) => goto(name),
@@ -387,7 +447,15 @@ async function boot() {
       updateCamera(0);
       return walker.position.toArray();
     },
-    place: (x: number, y: number, z: number) => walker.teleport([x, y, z]),
+    place: (x: number, y: number, z: number) => { vehicles.leaveForTravel(); walker.teleport([x, y, z]); },
+    visitVehicle,
+    /** Deterministic stepping uses the same keyboard, pause and physics path as live play. */
+    advance: (n: number) => {
+      for (let i = 0; i < n; i++) simulationStep(1 / 60);
+      vehicles.sync(); updateCamera(0); updateVehicleHud();
+      return vehicles.state;
+    },
+    get vehicleSystem() { return vehicles; },
     jumpWalk: (x: number, z: number, n: number, run = true) => {
       const d = new T.Vector3(x, 0, z);
       if (d.lengthSq()) d.normalize();
@@ -409,13 +477,15 @@ async function boot() {
     setQuality,
     renderFrames: (n: number) => {
       for (let i = 0; i < n; i++) {
+        vehicles.sync(); updateVehicleHud();
         updateCamera(0);
         land.update(1 / 60, (elapsed += 1 / 60));
         post.updateRays(camera, land.lighting.sunDir, land.lighting.elevation, quality);
         renderer.info.reset();
         post.draw(1 / 60);
       }
-      villageMap?.update(walker.position.x, walker.position.z, yaw, performance.now(), true);
+      const heading = vehicles.active ? new T.Euler().setFromQuaternion(vehicles.active.sim.rotation, "YXZ").y + Math.PI : yaw;
+      villageMap?.update(walker.position.x, walker.position.z, heading, performance.now(), true);
       return renderer.info.render.triangles;
     },
     /** main-pass triangle estimate per system (before frustum culling), shadow casters separately */

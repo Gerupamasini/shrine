@@ -1,6 +1,7 @@
 import RAPIER from "@dimforge/rapier3d-compat";
 import * as T from "three";
 import type { World } from "./world/data";
+import { isVehicle } from "./vehicles/specs";
 
 const EYE = 1.62;
 const HALF = 0.55, RADIUS = 0.3; // capsule: total 1.7 m
@@ -73,6 +74,7 @@ export class Walker {
     box((p.x0 + p.x1) / 2, p.y - 0.25, (p.z0 + p.z1) / 2, (p.x1 - p.x0) / 2, 0.25, (p.z1 - p.z0) / 2);
     box((96 + st.x0) / 2, st.footY - 0.21, st.z, (st.x0 - 96) / 2, 0.25, 4.5);
     for (const o of data.objects) {
+      if (isVehicle(o.asset)) continue; // the fleet creates colliders attached to each movable body
       const c = o.collider;
       if (!c) continue;
       const [x, y, z] = o.position, s = o.scale[0], yaw = o.rotation[1];

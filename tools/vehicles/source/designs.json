@@ -1,0 +1,262 @@
+[
+  {
+    "id": "kei-truck",
+    "label": "軽トラック / 1991 DC51型",
+    "reference": "Suzuki official 1991 DC51T KA 2WD specifications, photo img_13-103; front overhang and deck height estimated from photograph",
+    "w": 1.395,
+    "l": 3.295,
+    "h": 1.715,
+    "wheelbase": 1.855,
+    "frontAxle": 1.06,
+    "r": 0.263,
+    "tire": 0.145,
+    "kind": "pickup",
+    "paint": "vehicle_ivory",
+    "kei": true,
+    "belt": 1.035,
+    "cabin": [
+      0.27,
+      1.52,
+      0.37,
+      1.28
+    ],
+    "hood": 0,
+    "sections": [
+      [
+        -1.6475,
+        0.67,
+        0.73
+      ],
+      [
+        0.27,
+        0.69,
+        1.035
+      ],
+      [
+        1.35,
+        0.69,
+        1.035
+      ],
+      [
+        1.6475,
+        0.645,
+        0.89
+      ]
+    ],
+    "track": 1.205,
+    "bedLength": 1.94,
+    "bedWidth": 1.33,
+    "bedSide": 0.29,
+    "deck": 0.66
+  },
+  {
+    "id": "kei-hatch",
+    "label": "軽ハッチバック / 1991",
+    "reference": "1991 Suzuki Alto CR22S proportions; original unbranded body",
+    "w": 1.395,
+    "l": 3.295,
+    "h": 1.385,
+    "wheelbase": 2.335,
+    "frontAxle": 1.025,
+    "r": 0.267,
+    "tire": 0.155,
+    "kind": "hatch",
+    "paint": "vehicle_red",
+    "kei": true,
+    "belt": 0.91,
+    "cabin": [
+      -1.43,
+      0.78,
+      -0.99,
+      0.28
+    ],
+    "hood": 0.78,
+    "sections": [
+      [
+        -1.6475,
+        0.61,
+        0.83
+      ],
+      [
+        -1.38,
+        0.685,
+        0.91
+      ],
+      [
+        -0.9,
+        0.6975,
+        0.91
+      ],
+      [
+        0.78,
+        0.6975,
+        0.91
+      ],
+      [
+        1.38,
+        0.66,
+        0.8
+      ],
+      [
+        1.6475,
+        0.61,
+        0.7
+      ]
+    ]
+  },
+  {
+    "id": "crown-sedan",
+    "label": "クラウン風セダン / 1990",
+    "reference": "S130 5-number hardtop proportions; original unbranded body",
+    "w": 1.695,
+    "l": 4.69,
+    "h": 1.41,
+    "wheelbase": 2.73,
+    "frontAxle": 1.49,
+    "r": 0.315,
+    "tire": 0.195,
+    "kind": "sedan",
+    "paint": "vehicle_pearl",
+    "kei": false,
+    "belt": 0.965,
+    "cabin": [
+      -1.38,
+      1.03,
+      -0.86,
+      0.48
+    ],
+    "hood": 1.03,
+    "sections": [
+      [
+        -2.345,
+        0.765,
+        0.85
+      ],
+      [
+        -2.09,
+        0.825,
+        0.92
+      ],
+      [
+        -1.38,
+        0.8475,
+        0.965
+      ],
+      [
+        1.03,
+        0.8475,
+        0.965
+      ],
+      [
+        2.08,
+        0.81,
+        0.86
+      ],
+      [
+        2.345,
+        0.765,
+        0.785
+      ]
+    ]
+  },
+  {
+    "id": "light-truck",
+    "label": "小型平ボディ / 1984–86年型",
+    "reference": "1984–1986 Isuzu Elf fourth-generation NHR54/150 photo: separate upper horizontal grille, five lower ports, dual rectangular lamps. Dimensions are authoring estimates, not confirmed NHR54 specifications.",
+    "w": 1.695,
+    "l": 4.69,
+    "h": 2.1,
+    "wheelbase": 2.46,
+    "frontAxle": 1.66,
+    "r": 0.335,
+    "tire": 0.185,
+    "kind": "pickup",
+    "paint": "vehicle_blue",
+    "kei": false,
+    "belt": 1.19,
+    "cabin": [
+      0.7,
+      2.24,
+      0.79,
+      1.99
+    ],
+    "hood": 0,
+    "sections": [
+      [
+        -2.345,
+        0.8,
+        0.78
+      ],
+      [
+        0.7,
+        0.8475,
+        1.19
+      ],
+      [
+        2.08,
+        0.8475,
+        1.19
+      ],
+      [
+        2.345,
+        0.78,
+        1.05
+      ]
+    ],
+    "track": 1.385,
+    "bedLength": 2.85,
+    "bedWidth": 1.6,
+    "bedSide": 0.33,
+    "deck": 0.81
+  },
+  {
+    "id": "utility-wagon",
+    "label": "実用ワゴン / 1992",
+    "reference": "1992 Nissan AD Y10 proportions; original unbranded body",
+    "w": 1.665,
+    "l": 4.175,
+    "h": 1.48,
+    "wheelbase": 2.4,
+    "frontAxle": 1.23,
+    "r": 0.295,
+    "tire": 0.165,
+    "kind": "wagon",
+    "paint": "vehicle_beige",
+    "kei": false,
+    "belt": 0.945,
+    "cabin": [
+      -1.89,
+      0.87,
+      -1.65,
+      0.36
+    ],
+    "hood": 0.87,
+    "sections": [
+      [
+        -2.0875,
+        0.74,
+        0.85
+      ],
+      [
+        -1.84,
+        0.82,
+        0.945
+      ],
+      [
+        0.87,
+        0.8325,
+        0.945
+      ],
+      [
+        1.83,
+        0.79,
+        0.81
+      ],
+      [
+        2.0875,
+        0.735,
+        0.73
+      ]
+    ]
+  }
+]
