@@ -76,6 +76,8 @@
       </section>
       <div id="crosshair" hidden></div>
       <div id="resume" hidden>マウスを動かすと見回せます</div>
+      <div id="vehicle-prompt" hidden><kbd>E</kbd> 軽トラに乗る</div>
+      <section id="vehicle-hud" hidden aria-label="運転情報"></section>
       <aside id="settings" hidden>
         <div class="panel-top">
           <h2>散策のしおり</h2>
@@ -108,6 +110,8 @@
           フリーカメラ：WASD移動・Q/E上下・Shiftで速く<br />時刻は天文計算（1994年8月8日、宮城付近）
         </p>
         <h3>場所へ移動</h3>
+        <button id="find-vehicle" class="vehicle-destination">近くの軽トラへ移動</button>
+        <p class="micro">車のそばで E：乗降<br>運転：W/S 前進・制動・後退、A/D ハンドル<br>Space ブレーキ、V 視点切替、R 駐車位置へ戻す</p>
         <div class="destinations">
           <button data-place="foot">麓の鳥居</button
           ><button data-place="stairs">石段の途中</button
@@ -149,7 +153,7 @@
             <button id="sound-short" aria-label="環境音を切り替え">
               ♪ オフ
             </button></span
-          ><span class="control-hint">Space 跳ぶ　/　M 地図　/　Esc 休憩　/　F 撮影　/　H 表示</span>
+          ><span class="control-hint">E 車に乗る　/　Space 跳ぶ　/　M 地図　/　F 撮影　/　H 表示</span>
         </div>
       </footer>
       <output id="stats" hidden></output>

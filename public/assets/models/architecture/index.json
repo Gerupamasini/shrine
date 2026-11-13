@@ -1466,24 +1466,52 @@
    ]
   },
   "kei-truck": {
-   "triangles": 412,
+   "triangles": 92562,
    "min": [
-    -0.72,
+    -0.8174999952316284,
     0,
-    -1.575
+    -1.6777000120993095
    ],
    "max": [
-    0.72,
-    1.725,
-    1.805
+    0.8174999356269836,
+    1.715000033378601,
+    1.7294999361038208
    ],
    "materials": [
-    "car_paint",
-    "glass_dark",
-    "metal_grey",
-    "rubber",
-    "light_lens"
-   ]
+    "vehicle_ivory",
+    "vehicle_carry_glass",
+    "vehicle_glass_edge",
+    "vehicle_trim",
+    "vehicle_chrome",
+    "vehicle_dash",
+    "vehicle_seat",
+    "vehicle_dial",
+    "vehicle_steel",
+    "vehicle_rubber",
+    "vehicle_alloy",
+    "vehicle_tail",
+    "vehicle_amber",
+    "vehicle_headlamp",
+    "vehicle_lens",
+    "vehicle_reverse",
+    "vehicle_plate_yellow",
+    "vehicle_plate_ink"
+   ],
+   "label": "軽トラック / 1991 DC51型",
+   "period": 1994,
+   "collider": {
+    "type": "box",
+    "halfExtents": [
+     0.6975,
+     0.8575,
+     1.6475
+    ]
+   },
+   "lod": {
+    "file": "kei-truck-lod1.glb",
+    "triangles": 52172,
+    "distance": 45
+   }
   },
   "bus-stop": {
    "triangles": 176,
@@ -2174,6 +2202,194 @@
    "materials": [
     "road_paint"
    ]
+  },
+  "kei-hatch": {
+   "triangles": 94372,
+   "min": [
+    -0.8274999856948853,
+    -0.0006000000284984708,
+    -1.7200000286102295
+   ],
+   "max": [
+    0.8274999856948853,
+    1.3849999904632568,
+    1.7200000286102295
+   ],
+   "materials": [
+    "vehicle_red",
+    "vehicle_glass",
+    "vehicle_glass_edge",
+    "vehicle_trim",
+    "vehicle_dash",
+    "vehicle_seat",
+    "vehicle_steel",
+    "vehicle_chrome",
+    "vehicle_rubber",
+    "vehicle_alloy",
+    "vehicle_headlamp",
+    "vehicle_lens",
+    "vehicle_amber",
+    "vehicle_tail",
+    "vehicle_reverse",
+    "vehicle_plate_yellow",
+    "vehicle_plate_ink"
+   ],
+   "label": "軽ハッチバック / 1991",
+   "period": 1994,
+   "collider": {
+    "type": "box",
+    "halfExtents": [
+     0.6975,
+     0.6925,
+     1.6475
+    ]
+   },
+   "lod": {
+    "file": "kei-hatch-lod1.glb",
+    "triangles": 35295,
+    "distance": 45
+   }
+  },
+  "crown-sedan": {
+   "triangles": 99958,
+   "min": [
+    -0.9775000214576721,
+    -0.0006000000284984708,
+    -2.4174997806549072
+   ],
+   "max": [
+    0.9775000214576721,
+    1.409999966621399,
+    2.4174997806549072
+   ],
+   "materials": [
+    "vehicle_pearl",
+    "vehicle_glass",
+    "vehicle_glass_edge",
+    "vehicle_chrome",
+    "vehicle_dash",
+    "vehicle_seat",
+    "vehicle_steel",
+    "vehicle_trim",
+    "vehicle_rubber",
+    "vehicle_alloy",
+    "vehicle_headlamp",
+    "vehicle_lens",
+    "vehicle_amber",
+    "vehicle_tail",
+    "vehicle_reverse",
+    "vehicle_lower",
+    "vehicle_plate_white",
+    "vehicle_plate_ink"
+   ],
+   "label": "クラウン風セダン / 1990",
+   "period": 1994,
+   "collider": {
+    "type": "box",
+    "halfExtents": [
+     0.8475,
+     0.705,
+     2.345
+    ]
+   },
+   "lod": {
+    "file": "crown-sedan-lod1.glb",
+    "triangles": 39118,
+    "distance": 45
+   }
+  },
+  "light-truck": {
+   "triangles": 117082,
+   "min": [
+    -1.1225000321865082,
+    0,
+    -2.3752000025007796
+   ],
+   "max": [
+    1.1225000619888306,
+    2.0999999046325684,
+    2.4589998722076416
+   ],
+   "materials": [
+    "vehicle_blue",
+    "vehicle_glass",
+    "vehicle_glass_edge",
+    "vehicle_trim",
+    "vehicle_chrome",
+    "vehicle_steel",
+    "vehicle_dash",
+    "vehicle_seat",
+    "vehicle_rubber",
+    "vehicle_tail",
+    "vehicle_amber",
+    "vehicle_headlamp",
+    "vehicle_lens",
+    "vehicle_alloy",
+    "vehicle_plate_white",
+    "vehicle_plate_ink"
+   ],
+   "label": "小型平ボディ / 1984–86年型",
+   "period": 1994,
+   "collider": {
+    "type": "box",
+    "halfExtents": [
+     0.8475,
+     1.05,
+     2.345
+    ]
+   },
+   "lod": {
+    "file": "light-truck-lod1.glb",
+    "triangles": 60027,
+    "distance": 45
+   }
+  },
+  "utility-wagon": {
+   "triangles": 99728,
+   "min": [
+    -0.9624999761581421,
+    -0.0006000000284984708,
+    -2.1599998474121094
+   ],
+   "max": [
+    0.9624999761581421,
+    1.4800000190734863,
+    2.1599998474121094
+   ],
+   "materials": [
+    "vehicle_beige",
+    "vehicle_glass",
+    "vehicle_glass_edge",
+    "vehicle_trim",
+    "vehicle_dash",
+    "vehicle_seat",
+    "vehicle_steel",
+    "vehicle_chrome",
+    "vehicle_rubber",
+    "vehicle_alloy",
+    "vehicle_headlamp",
+    "vehicle_lens",
+    "vehicle_amber",
+    "vehicle_tail",
+    "vehicle_reverse",
+    "vehicle_plate_white",
+    "vehicle_plate_ink"
+   ],
+   "label": "実用ワゴン / 1992",
+   "period": 1994,
+   "collider": {
+    "type": "box",
+    "halfExtents": [
+     0.8325,
+     0.74,
+     2.0875
+    ]
+   },
+   "lod": {
+    "file": "utility-wagon-lod1.glb",
+    "triangles": 36625,
+    "distance": 45
+   }
   }
  }
 }

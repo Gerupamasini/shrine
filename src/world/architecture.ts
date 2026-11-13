@@ -4,6 +4,7 @@ import { publicUrl } from "../urls";
 import type { Landscape, System } from "./landscape";
 import type { Placement } from "./data";
 import { MATERIALS } from "./materials";
+import { isVehicle } from "../vehicles/specs";
 
 const PROPS: Record<string, string> = {
   "prop-bucket": "props/wooden_bucket_01",
@@ -19,12 +20,19 @@ type Inst = { file: string; matrix: T.Matrix4 };
 export class Architecture implements System {
   materials = new Map<string, T.Material>();
   dusk: { m: T.MeshStandardMaterial; base: number; ramp: number[] }[] = [];
-  meshes: { mesh: T.InstancedMesh; centers: T.Vector3[]; far: number; matrices: T.Matrix4[] }[] = [];
+  meshes: { mesh: T.InstancedMesh; centers: T.Vector3[]; far: number; near?: number; matrices: T.Matrix4[] }[] = [];
   constructor(public land: Landscape) {}
   material(src: T.Material): T.Material {
     const name = src.name;
     let m = this.materials.get(name);
     if (m) return m;
+    // Vehicle GLBs carry their own clearcoat, micro-normal and roughness maps.
+    // Replacing them with the generic architecture table would erase the authored finish.
+    if (name.startsWith("vehicle_")) {
+      const authored = this.land.lib.finish(src as T.MeshStandardMaterial);
+      this.materials.set(name, authored);
+      return authored;
+    }
     const def = MATERIALS[name];
     if (def) {
       const std = this.land.lib.pbr(def) as T.MeshStandardMaterial;
@@ -62,6 +70,8 @@ export class Architecture implements System {
     const inst: Inst[] = [];
     const q = new T.Quaternion(), up = new T.Vector3(0, 1, 0);
     data.objects.forEach((o, i) => {
+      // Movable cars are owned by VehicleFleet, never duplicated in static batches.
+      if (isVehicle(o.asset)) return;
       const [x, y, z] = o.position;
       const yaw = o.rotation[1], s = o.scale[0];
       q.setFromAxisAngle(up, yaw);
@@ -102,7 +112,10 @@ export class Architecture implements System {
     let done = 0;
     await Promise.all(
       [...byFile].map(async ([file, mats]) => {
-        const g = await loader.loadAsync(publicUrl(`assets/models/${file}.glb`));
+        const vehicle = /architecture\/(kei-truck|kei-hatch|crown-sedan|light-truck|utility-wagon)$/.test(file);
+        const levels = vehicle ? [0, 1] : [0];
+        for (const level of levels) {
+        const g = await loader.loadAsync(publicUrl(`assets/models/${file}${level ? "-lod1" : ""}.glb`));
         g.scene.updateMatrixWorld(true);
         g.scene.traverse((o) => {
           if (!(o instanceof T.Mesh)) return;
@@ -110,15 +123,16 @@ export class Architecture implements System {
           const mesh = new T.InstancedMesh(o.geometry, this.material(o.material as T.Material), matrices.length);
           matrices.forEach((m, k) => mesh.setMatrixAt(k, m));
           mesh.instanceMatrix.needsUpdate = true;
-          mesh.castShadow = true;
+          mesh.castShadow = !(mesh.material as T.Material).transparent;
           mesh.receiveShadow = true;
           mesh.name = file;
           mesh.computeBoundingSphere();
           o.geometry.computeBoundingSphere();
           const r = o.geometry.boundingSphere!.radius;
-          this.meshes.push({ mesh, matrices, centers: matrices.map((m) => new T.Vector3().setFromMatrixPosition(m)), far: file.includes("props") ? 120 : file.includes("stairs") || file.includes("road-ditch") || file.includes("river-works") || file.includes("road-markings") || file.includes("stream-works") ? 1e9 : 400 + r * 40 });
+          this.meshes.push({ mesh, matrices, near: level ? 45 : 0, centers: matrices.map((m) => new T.Vector3().setFromMatrixPosition(m)), far: vehicle && !level ? 45 : file.includes("props") ? 120 : file.includes("stairs") || file.includes("road-ditch") || file.includes("river-works") || file.includes("road-markings") || file.includes("stream-works") ? 1e9 : 400 + r * 40 });
           this.land.scene.add(mesh);
         });
+        }
         progress(++done / byFile.size);
       }),
     );
@@ -169,7 +183,8 @@ export class Architecture implements System {
       if (m.far > 1e8) continue;
       let n = 0;
       for (let k = 0; k < m.matrices.length; k++) {
-        if (m.centers[k].distanceTo(cam.position) > m.far) continue;
+        const distance = m.centers[k].distanceTo(cam.position);
+        if (distance >= m.far || distance < (m.near ?? 0)) continue;
         m.mesh.setMatrixAt(n++, m.matrices[k]);
       }
       m.mesh.count = n;
