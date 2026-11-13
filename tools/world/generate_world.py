@@ -608,6 +608,19 @@ h = h + 0.75 * smoothstep(river_x(Z) + 25.0, road_x(Z) - 25.0, X)
 _M = mountains(X, Z)
 # small-scale relief the 6 m regional grid cannot hold: hummocks, old slips, tree-throw mounds
 h = h + _M + 0.55 * fbm(P5, X, Z, 16, 3) * smoothstep(3.0, 28.0, _M)
+# Where a side valley opens onto the floor, its brook has spread gravel out of the mouth in a low
+# fan: a cone about 2.4 m high at the apex, ~110 m across, opening towards the floor. (The road,
+# the hamlets and the fields then sit on it: the road runs in a shallow cut across the fan.)
+for (_ma, _mb, _str, _mhw) in SAWA_SEEDS:
+    _ux, _uz = _ma[0] - _mb[0], _ma[1] - _mb[1]
+    _ul = math.hypot(_ux, _uz)
+    _ux, _uz = _ux / _ul, _uz / _ul                      # out of the valley, onto the floor
+    _ax, _az = _ma[0] - 14.0 * _ux, _ma[1] - 14.0 * _uz  # apex a little inside the mouth
+    _r = np.hypot(X - _ax, Z - _az)
+    _cos = ((X - _ax) * _ux + (Z - _az) * _uz) / np.maximum(_r, 1e-3)
+    _fan = 2.4 * np.clip(1 - _r / 112.0, 0, 1) ** 1.5 * smoothstep(-0.45, 0.2, _cos) * (1 + 0.15 * fbm(P3, X, Z, 30, 2))
+    _fan = _fan * smoothstep(7.0, 22.0, np.abs(X - road_x(Z)))   # the road runs through it in a cutting
+    h = h + _fan * (1 - smoothstep(1.0, 8.0, _M))
 # (the spur itself is stamped exactly; the ridge behind it is left to the regional model)
 _sp = shrine_spur(X, Z) * (1 - smoothstep(312.0, 345.0, X))
 h = np.maximum(h, _sp + 3.5 * fbm(P2, X, Z, 50, 4) * smoothstep(0.0, 25.0, _sp))
@@ -754,8 +767,33 @@ def farm_road_dist(x, z):
             best = min(best, math.hypot(x - ax_ - vx * t_, z - az_ - vz * t_))
     return best
 
+# The old road (kyudo) through Shimojuku. The prefectural road was laid out straighter across the
+# floor in the 1960s; the old post road keeps to the hill foot a little east of it and the houses of
+# Shimojuku still front it, close together. It leaves the new road just south of the Miyazawa
+# bridge and rejoins it at the south end of the hamlet. (4 m, paved, no markings.)
+KYUDO_Z = (232.0, 352.0)
+def kyudo_off(z):
+    z = np.asarray(z, dtype=np.float64)
+    s_ = smoothstep(KYUDO_Z[0], KYUDO_Z[0] + 24.0, z) * (1 - smoothstep(KYUDO_Z[1] - 26.0, KYUDO_Z[1], z))
+    return (28.0 + 3.0 * np.sin(z * 0.06)) * s_
+kyudo = [(float(road_x(z_)) + float(kyudo_off(z_)), float(z_)) for z_ in np.arange(KYUDO_Z[0], KYUDO_Z[1] + 0.01, 3.0)]
+def kyudo_dist(x, z):
+    best = 1e9
+    for (ax_, az_), (bx_, bz_) in zip(kyudo, kyudo[1:]):
+        vx, vz = bx_ - ax_, bz_ - az_
+        t_ = min(max(((x - ax_) * vx + (z - az_) * vz) / (vx * vx + vz * vz), 0), 1)
+        best = min(best, math.hypot(x - ax_ - vx * t_, z - az_ - vz * t_))
+    return best
+def kyudo_at(z):
+    """(x, unit direction) of the old road at z."""
+    x0_, x1_ = float(road_x(z - 1) + kyudo_off(z - 1)), float(road_x(z + 1) + kyudo_off(z + 1))
+    l_ = math.hypot(x1_ - x0_, 2.0)
+    return (x0_ + x1_) / 2, ((x1_ - x0_) / l_, 2.0 / l_)
+
 def house_ok(x, z, gap=23.0, road_gap=11.0):
     if farm_road_dist(x, z) < 14:
+        return False
+    if KYUDO_Z[0] - 5 < z < KYUDO_Z[1] + 5 and kyudo_dist(x, z) < 8.5:
         return False
     if abs(z - STAIR_Z) < 20 and x > float(road_x(z)) - 4:
         return False
@@ -897,8 +935,51 @@ _mz = -70.0
 _mx = float(road_x(_mz)) + 17.0
 if house_ok(_mx, _mz):
     add_house(_mx, _mz, "shop", facing_road_yaw(_mx, _mz), "miyashita", 1, asset="kominkan", w=12.0, d=9.0, storeys=1, front=6.0, back=4.0, variant=0)
+# Facilities of the hamlets (placed before the houses so they get their sites):
+#  * the branch school (bunko) of the upper valley, between Kaminosawa and Nakazato, set back from
+#    the road behind its own level schoolyard
+#  * the fire brigade post (shobodan tsumesho) on the old road through Shimojuku
+#  * a communal work barn (kyodo sagyosho) of Minamizawa beside the road
+def _place_facility(zs, offs, asset, w, d, group, front, back, storeys=1, scale=1.0, gap=34.0):
+    for z_ in zs:
+        for side_, off_ in offs:
+            x_ = float(road_x(z_)) + side_ * off_
+            if not house_ok(x_, z_, gap) or at(slope0, x_, z_) > 14:
+                continue
+            hs_ = add_house(x_, z_, "shop", facing_road_yaw(x_, z_), group, side_, asset=asset, w=w, d=d, storeys=storeys, front=front, back=back, variant=0)
+            hs_["scale"] = scale
+            return hs_
+    return None
+_place_facility(np.arange(-340.0, -318.0, 4.0), [(1, 34.0), (1, 40.0), (-1, 32.0)], "bunko", 26.0, 8.5, "nakazato", 22.0, 4.0, gap=40.0)
+# the fire brigade post on the old road through Shimojuku, facing it
+for _z in np.arange(262.0, 300.0, 5.0):
+    _ox, (_dx, _dz) = kyudo_at(_z)
+    _x = _ox - 10.5                                  # west side of the old road
+    if house_ok(_x, _z, 20.0):
+        _hs = add_house(_x, _z, "shop", math.atan2(_ox - _x, 0.0), "shimojuku", 1, asset="shobo-tsumesho", w=6.0, d=5.4, storeys=2, front=3.0, back=3.0, variant=0)
+        _hs["oldroad"] = True
+        break
+_place_facility(np.arange(410.0, 380.0, -6.0), [(-1, 16.0), (1, 17.0)], "naya", 9.5, 7.5, "minamizawa", 6.0, 3.0, scale=1.7, gap=26.0)
 for name, cz, half, count, down, kinds in HAMLETS:
     placed, tries = 0, 0
+    if name == "shimojuku":
+        # the old post road: houses in a close row on both sides, fronts on the road (small front yards)
+        while placed < count and tries < 2500:
+            tries += 1
+            z = rng.uniform(KYUDO_Z[0] + 22.0, KYUDO_Z[1] - 22.0)
+            ox_, (dx_, dz_) = kyudo_at(z)
+            side = -1 if rng.random() < 0.5 else 1
+            nx_, nz_ = dz_ * side, -dx_ * side                 # unit normal to this side of the old road
+            off = rng.uniform(10.0, 11.5)
+            x, zz = ox_ + nx_ * off, z + nz_ * off
+            if not house_ok(x, zz, 13.5) or at(slope0, x, zz) > 22:
+                continue
+            hs = add_house(x, zz, kinds[placed % len(kinds)], math.atan2(-nx_, -nz_) + rng.normal(0, 0.03), name, side)
+            hs["roadside"] = True
+            hs["oldroad"] = True
+            hs["front"] = max(2.5, off - hs["d"] / 2 - 2.4)
+            placed += 1
+        continue
     while placed < count and tries < 2500:
         tries += 1
         z = cz + rng.uniform(-half, half)
@@ -1017,6 +1098,10 @@ for hs in houses:
     fx, fz = yard_front(hs)
     zr = fz
     main_d = abs(fx - float(road_x(zr))) - ROAD_HALF
+    if hs.get("oldroad"):
+        d_, q_ = nearest_on(kyudo, fx, fz)
+        lanes.append([(fx, fz, hs["y"]), (q_[0], q_[1], None)])
+        continue
     if hs["roadside"]:
         ex = float(road_x(zr)) + math.copysign(ROAD_HALF + 0.3, fx - float(road_x(zr)))
         lanes.append([(fx, fz, hs["y"]), (ex, zr, road_level(zr))])
@@ -1064,6 +1149,9 @@ for fr in farm_roads:
     h = grade_line(h, [(x_, z_, None) for x_, z_ in fr], 3.0, farm_d, raise_=0.25)
 h = grade_line(h, trunk, 3.5, town_d)
 h = grade_line(h, branch_k, 3.0, town_d)
+_ky = [(x_, z_, (road_level(z_) if k_ in (0, len(kyudo) - 1) else None)) for k_, (x_, z_) in enumerate(kyudo)]
+h = grade_line(h, _ky, 4.0, town_d, raise_=0.15)
+ditch_crossings += [KYUDO_Z[0], KYUDO_Z[1]]
 for ln in lanes:
     h = grade_line(h, ln, 2.6, lane_d)
 # the main road keeps its level through junctions, yards and driveways: carriageway, shoulders and
@@ -1284,6 +1372,27 @@ for b in np.unique(band[paddy_region]):
     k = np.clip(np.searchsorted(cuts, tt), 1, len(cuts) - 1)
     label[sel] = b * 1000 + k
     d_fld[sel] = np.minimum(d_fld[sel], np.minimum(tt - cuts[k - 1], cuts[k] - tt) / np.maximum(_gt[sel], 0.5))
+# Along the river and at the foot of the hills the old, unconsolidated fields remain: small
+# irregular plots (cells of jittered seeds ~22 m apart in warped coordinates, so their sides bow and
+# kink), where the land consolidation of the middle of the floor never reached. Boundaries stay
+# smooth distances: the cell bisectors, and the line where the zone meets the strips.
+from scipy.spatial import cKDTree as _KDi
+_hill_d = ndimage.distance_transform_edt(_M <= 0.6) * CELL
+_zf = np.minimum(rd - (RIVER_KEEP + 34.0 + 12.0 * fbm(P4, X, Z, 140, 2)), _hill_d - (36.0 + 14.0 * fbm(P1, X, Z, 120, 2)))
+_irr = paddy_region & (_zf < 0)
+_ir = np.random.default_rng(SEED + 52)
+_sd = []
+for _sz in np.arange(-HALF, HALF, 22.0):
+    for _sx in np.arange(-HALF, HALF, 22.0):
+        _sd.append((_sx + _ir.uniform(-8, 8), _sz + _ir.uniform(-8, 8)))
+_ikd = _KDi(np.array(_sd))
+_wx = X + 6.0 * fbm(P2, X, Z, 26, 2)
+_wz = Z + 6.0 * fbm(P3, X, Z, 26, 2)
+_dd, _ii = _ikd.query(np.stack([_wx[_irr], _wz[_irr]], -1), k=2)
+label[_irr] = 300000 + _ii[:, 0]
+d_fld[_irr] = np.minimum((_dd[:, 1] - _dd[:, 0]) / 2.0, np.abs(_zf[_irr]))
+_strip = paddy_region & ~_irr
+d_fld[_strip] = np.minimum(d_fld[_strip], np.abs(_zf[_strip]))
 # Terraces (tanada / yatsuda): contour benches on gentle ground above the floor.
 TERRACE0 = 700000
 rise = h - floor_base(Z)
@@ -1344,7 +1453,7 @@ for _pass in range(2):
     label = _drop(label, (label >= 0) & (np.abs(h - lvl_map) > (1.4 if _pass == 0 else 1.6)))
     comp, ids_ = _compact(label)
     area_ = np.bincount(comp.ravel(), minlength=len(ids_) + 1)[1:] * CELL * CELL
-    small = area_ < np.where(ids_ >= TERRACE0, 150, 300)
+    small = area_ < np.where(ids_ >= 300000, 150, 300)          # terraces and the old irregular plots may be small
     label = _drop(label, np.concatenate([[False], small])[comp])
 comp, ids_ = _compact(label)
 K = len(ids_)
@@ -1777,6 +1886,10 @@ grass_density = np.clip(wgt["grass"] * (1 - 0.6 * forest_density) + wgt["forest"
 # nothing grows through the revetments, the canal or the wet margin; sparse tufts on the dry gravel
 grass_density = grass_density * (1 - wall_band) * (1 - riverbed) * (1 - 0.8 * wgt["bar"]) * ~(in_canal & (cdx < CANAL_W / 2 + 0.3))
 grass_density = grass_density * (stream_d > STREAM_W / 2 + 0.3) * (1 - 0.9 * (temple_d < 0))
+# road verges: a strip mown short beside the ditch; the cut and fill banks beyond left long
+_onroad = Z > ROAD_Z0 - 0.6
+grass_density = np.where(_onroad & (road_d > DITCH_OFF + 0.3) & (road_d < DITCH_OFF + 1.9), grass_density * 0.45, grass_density)
+grass_density = np.where(_onroad & (road_d > W_FLAT + 0.6) & (road_d < W_FLAT + 7.0) & ~is_paddy, np.maximum(grass_density, 0.9 * wgt["grass"]), grass_density)
 pid = np.where(is_paddy, (label * 2654435761 % 251 + 3), 0) % 255
 # B: signed distance to the edge of the rice, 0.5 at the edge, +-2 m over the range (rice fields only)
 rice_sdf = np.where(is_paddy & (field_type == 1), np.clip(0.5 + (d_fld - RICE_EDGE) / 4.0, 0, 1), 0.0)
@@ -1948,6 +2061,23 @@ for k in range(16):
     for i in range(int(rv.integers(60, 140))):
         x = cx + rv.normal(0, 9)
         z = cz + rv.normal(0, 6)
+        if blocked(x, z) or cell(is_paddy_f, x, z) > 0.5 or abs(x - float(road_x(z))) < 9:
+            continue
+        add_tree("bamboo", x, z, rv.uniform(0.75, 1.1), lean=rv.normal(0, 0.05))
+# Bamboo at the foot of the hills near the hamlets, where the wood meets the fields and yards
+_bg = 0
+for _try in range(400):
+    if _bg >= 14:
+        break
+    hs = houses[int(rv.integers(0, len(houses)))]
+    cx, cz = hs["x"] + rv.uniform(-90, 90), hs["z"] + rv.uniform(-70, 70)
+    _mf, _fd = cell(mountain_factor, cx, cz), cell(forest_density, cx, cz)
+    if not (1.0 < _mf < 9.0 and 0.2 < _fd < 0.75) or cell(is_paddy_f, cx, cz) > 0.5 or blocked(cx, cz):
+        continue
+    _bg += 1
+    for i in range(int(rv.integers(50, 110))):
+        x = cx + rv.normal(0, 7)
+        z = cz + rv.normal(0, 5)
         if blocked(x, z) or cell(is_paddy_f, x, z) > 0.5 or abs(x - float(road_x(z))) < 9:
             continue
         add_tree("bamboo", x, z, rv.uniform(0.75, 1.1), lean=rv.normal(0, 0.05))
@@ -2326,13 +2456,15 @@ for i, hs in enumerate(houses):
         extra["smoke"] = True
     if hs["roadside"]:
         extra["roadside"] = True
+    if hs.get("oldroad"):
+        extra["oldRoad"] = True
     if shop and asset in SIGNS and machi:
         extra["signs"] = [{"text": t, "style": st} for t, st in SIGNS[asset]]
-    if shop and not machi:
+    if shop and not machi and asset == "kominkan":
         extra["hall"] = "shukaijo"              # a hamlet's meeting hall (the community-hall model, no sign)
-    obj(asset, hs["x"], hs["y"], hs["z"], hs["yaw"], 1.0, variant=hs["variant"], size=[round(hs["w"], 2), round(hs["d"], 2)],
+    obj(asset, hs["x"], hs["y"], hs["z"], hs["yaw"], hs.get("scale", 1.0), variant=hs["variant"], size=[round(hs["w"], 2), round(hs["d"], 2)],
         group=hs["group"], **extra,
-        collider={"type": "box", "halfExtents": [W2 + 0.3, 3.0 * hs["storeys"], D2 + 0.3]},
+        collider={"type": "box", "halfExtents": [round((W2 + 0.3) / hs.get("scale", 1.0), 3), round(3.0 * hs["storeys"] / hs.get("scale", 1.0), 3), round((D2 + 0.3) / hs.get("scale", 1.0), 3)]},
         **({"wing": {"offset": hs["wing"][:2], "halfExtents": [hs["wing"][2] / 2 + 0.3, 2.6, hs["wing"][3] / 2 + 0.3]}} if hs.get("wing") else {}))
     c, s_ = math.cos(hs["yaw"]), math.sin(hs["yaw"])
     def local(lx, lz):
@@ -2481,6 +2613,38 @@ for _side in (1.0, -1.0):
             _flush()
     _flush()
 print("retaining walls", _ret)
+# Water inlets (mizuguchi): each rice field takes its water from the ditch or canal beside it
+# through a small concrete box in the levee, shut with a board.
+_inl = 0
+def _runs_along(pts_, probe):
+    """Contiguous runs of rice fields beside a line: yields the middle point of each run."""
+    cur, start = None, None
+    for i_, (x_, z_) in enumerate(pts_):
+        px_, pz_ = probe(x_, z_)
+        lab_ = int(at(label, px_, pz_)) if at(field_type, px_, pz_) == 1 else -1
+        if lab_ != cur:
+            if cur is not None and cur >= 0 and i_ - start >= 4:
+                yield pts_[(start + i_) // 2]
+            cur, start = lab_, i_
+    if cur is not None and cur >= 0 and len(pts_) - start >= 4:
+        yield pts_[(start + len(pts_)) // 2]
+for _dt in irr_ditches:
+    _zd = _dt["z"]
+    _xs = [(float(x_), _zd) for x_ in np.arange(_dt["x1"] + 1.0, _dt["x0"] - 1.0, 1.0)]
+    for (_x, _z) in _runs_along(_xs, lambda x_, z_: (x_, z_ - 2.4)):
+        if any(a_ - 1.0 < _x < b_ + 1.0 for _k_, a_, b_ in _dt["covers"]):
+            continue
+        _iz = _z - (IRR_DITCH_W / 2 + 0.42)
+        obj("mizuguchi", _x, sample(_x, _iz) - 0.12, _iz, math.pi, 1.0)
+        _inl += 1
+for _c in canals:
+    _p = _c["pts"]
+    _xs = [(float(q_[0]), float(q_[1])) for q_ in _p if q_[3] == 0 and abs(q_[0] - float(road_x(q_[1]))) < 9.5]
+    for (_x, _z) in _runs_along(_xs, lambda x_, z_: (x_ - 3.6, z_)):
+        _ix = _x - (CANAL2_W / 2 + 0.5)
+        obj("mizuguchi", _ix, sample(_ix, _z) - 0.12, _z, -math.pi / 2, 1.0)
+        _inl += 1
+print("water inlets", _inl)
 # Road bridge where the prefectural road crosses Miyazawa: a short concrete slab with low parapets
 for st in streams:
     if any(c_[0] == "bridge" for c_ in st["covers"]):
@@ -2691,7 +2855,9 @@ meta = {
               {"id": "town-kawamuko", "class": "town", "width": 3.5, "surface": "asphalt",
                "points": [[round(x_, 2), round(sample(x_, z_), 3), round(z_, 2)] for x_, z_, _ in trunk]},
               {"id": "town-kawamuko-north", "class": "town", "width": 3.0, "surface": "asphalt",
-               "points": [[round(x_, 2), round(sample(x_, z_), 3), round(z_, 2)] for x_, z_, _ in branch_k]}]
+               "points": [[round(x_, 2), round(sample(x_, z_), 3), round(z_, 2)] for x_, z_, _ in branch_k]},
+              {"id": "kyudo-shimojuku", "class": "town", "old": True, "width": 4.0, "surface": "asphalt",
+               "points": [[round(x_, 2), round(sample(x_, z_), 3), round(z_, 2)] for x_, z_ in kyudo]}]
              + [{"id": f"farm-{i:02}", "class": "farm", "width": 3.0, "surface": "gravel",
                  "points": [[round(x_, 2), round(sample(x_, z_), 3), round(z_, 2)] for x_, z_ in fr]} for i, fr in enumerate(farm_roads)]
              + [{"id": f"lane-{i:02}", "class": "driveway", "width": 2.6, "surface": "gravel", "points": [[round(x_, 2), round(sample(x_, z_), 3), round(z_, 2)] for x_, z_, _ in ln]}
