@@ -81,7 +81,7 @@ def connected_fields(labels, terrace0):
     ids, inverse = np.unique(labels, return_inverse=True)
     compact = inverse.reshape(labels.shape) + 1
     boxes = ndimage.find_objects(compact)
-    serial = {False: 0, True: terrace0}
+    serial = {0: 0, 300000: 300000, terrace0: terrace0}
     for idx, fid in enumerate(ids):
         if fid < 0:
             continue
@@ -92,7 +92,7 @@ def connected_fields(labels, terrace0):
             # A parcel must have room for a cultivated interior, not just a thin sliver.
             if ndimage.distance_transform_edt(np.pad(mask, 1)).max() < 2.5:
                 continue
-            terraced = fid >= terrace0
-            result[box][mask] = serial[terraced]
-            serial[terraced] += 1
+            category = terrace0 if fid >= terrace0 else 300000 if fid >= 300000 else 0
+            result[box][mask] = serial[category]
+            serial[category] += 1
     return result

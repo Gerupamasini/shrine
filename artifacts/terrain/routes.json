@@ -1,6 +1,6 @@
 {
   "east": {
-    "circuitMetres": 1789,
+    "circuitMetres": 1591,
     "newRoads": [
       "miyazawa-farm",
       "east-forest",
@@ -8,7 +8,7 @@
     ]
   },
   "north": {
-    "circuitMetres": 768,
+    "circuitMetres": 809,
     "newRoads": [
       "okusawa-farm",
       "north-forest"
@@ -22,5 +22,6 @@
       "kawamuko-south-farm"
     ]
   },
-  "terraces": 300
+  "terraces": 283,
+  "oldPlots": 225
 }

@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="ja"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>夏陰 / 車両造形</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#d9dcd8;color:#25312f;font-family:system-ui,sans-serif}header{padding:25px 36px 20px;display:flex;justify-content:space-between;align-items:center}h1{font-size:23px;letter-spacing:.12em;margin:0}header p{font-size:12px;color:#596761;margin:8px 0 0}#grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1px;padding:0 24px 24px}.card{height:370px;position:relative;background:#d1d6d1;overflow:hidden}.label{position:absolute;bottom:18px;left:20px;pointer-events:none}.label strong{font-size:15px;font-weight:500}.label small{display:block;font:10px monospace;letter-spacing:.13em;color:#64716b;margin-top:7px}canvas{display:block;width:100%;height:100%}body.hero #grid{grid-template-columns:1fr}body.hero .card{height:calc(100vh - 120px)}a{color:inherit;font-size:12px}@media(max-width:800px){#grid{grid-template-columns:1fr}}
+</style>
+<header><div><h1>夏陰　車両造形</h1><p>1994年の山里 ／ 五つの車体　　ドラッグ：回転 · ホイール：拡大</p></div><a href="?">全車種</a></header><div id="grid"></div>
+<script type="module">
+import * as T from 'three';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+import {RGBELoader} from 'three/addons/loaders/RGBELoader.js';
+const cars=[['kei-truck','軽トラック','1991 · 660 cc · CAB OVER'],['kei-hatch','軽ハッチバック','1991 · 660 cc · THREE DOOR'],['crown-sedan','クラウン風セダン','1990 · FOUR DOOR HARDTOP'],['light-truck','小型平ボディトラック','1984–86 · COMMERCIAL'],['utility-wagon','実用ステーションワゴン','1992 · FIVE DOOR']];
+const params=new URLSearchParams(location.search),single=params.get('model'),selection=single?cars.filter(c=>c[0]===single):cars;
+if(single)document.body.classList.add('hero');
+window.expectedModels=selection.length;window.loaded=0;window.errors=[];window.views=[];
+const hdr=await new RGBELoader().loadAsync('/assets/sky/environment_1k.hdr');
+for(const [id,label,sub] of selection){
+ const card=document.createElement('div');card.className='card';document.querySelector('#grid').append(card);
+ const renderer=new T.WebGLRenderer({antialias:true});renderer.setPixelRatio(1.5);renderer.setSize(card.clientWidth,card.clientHeight);renderer.setClearColor('#d1d6d1');renderer.shadowMap.enabled=true;renderer.shadowMap.type=T.PCFSoftShadowMap;renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=1.05;card.append(renderer.domElement);
+ const text=document.createElement('div');text.className='label';text.innerHTML=`<strong>${label}</strong><small>${sub}</small>`;card.append(text);
+ const scene=new T.Scene(),pmrem=new T.PMREMGenerator(renderer);scene.environment=pmrem.fromEquirectangular(hdr).texture;scene.environmentIntensity=.75;scene.environmentRotation.y=.8;pmrem.dispose();
+ scene.add(new T.HemisphereLight('#dce5ee','#746d60',.25));
+ const sun=new T.DirectionalLight('#fff2da',2.4);sun.position.set(-3,7,5);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);sun.shadow.camera.left=-4;sun.shadow.camera.right=4;sun.shadow.camera.top=4;sun.shadow.camera.bottom=-4;sun.shadow.normalBias=.002;sun.shadow.bias=-.0001;sun.shadow.radius=3;scene.add(sun);
+ const floor=new T.Mesh(new T.PlaneGeometry(200,200),new T.MeshStandardMaterial({color:'#c2c9c2',roughness:.88}));floor.rotation.x=-Math.PI/2;floor.receiveShadow=true;floor.position.y=-.012;scene.add(floor);
+ const view=params.get('view'),ortho=view==='side'||view==='front';const aspect=card.clientWidth/card.clientHeight;const camera=ortho?new T.OrthographicCamera(-2.9,2.9,2.9/aspect,-2.9/aspect,.05,80):new T.PerspectiveCamera(32,aspect,.05,80);
+ const controls=new OrbitControls(camera,renderer.domElement);controls.target.set(0,.8,0);controls.enableDamping=true;controls.minDistance=2;controls.maxDistance=15;controls.maxPolarAngle=Math.PI*.49;
+ const long=!id.startsWith('kei'),dist=long?1: .81;
+ camera.position.set(5.4*dist,2.8*dist,6.7*dist);if(params.get('view')==='rear')camera.position.z*=-1;if(view==='side'){camera.position.set(7,.85,0);controls.target.set(0,.85,0);}if(view==='front'){camera.position.set(0,.85,7);controls.target.set(0,.85,0);}controls.update();
+ new GLTFLoader().load('/assets/models/architecture/'+id+'.glb',g=>{g.scene.traverse(o=>{if(o.isMesh){o.castShadow=!o.material.transparent;o.receiveShadow=!o.material.transparent;if(o.material.transparent)o.material.depthWrite=false;}});scene.add(g.scene);window.loaded++;},undefined,e=>window.errors.push(String(e)));
+ renderer.setAnimationLoop(()=>{controls.update();renderer.render(scene,camera);});window.views.push({id,scene,camera,renderer});
+ window.addEventListener('resize',()=>{renderer.setSize(card.clientWidth,card.clientHeight);camera.aspect=card.clientWidth/card.clientHeight;camera.updateProjectionMatrix();});
+}
+</script></html>

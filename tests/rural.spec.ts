@@ -7,6 +7,7 @@ test('rural circuits: walk every new lane in both directions with real collision
   await page.goto('/?capture&quality=low');
   await page.waitForFunction(() => (window as any).__satoyama?.ready, null, { timeout: 600000 });
   const ids = await page.evaluate(() => (window as any).__satoyama.world.ruralLoops.map((l: any) => l.id));
+  console.log('Rural world ready; testing complete circuits');
   for (const id of ids) {
     for (const reverse of [false, true]) {
       const result = await page.evaluate(({id, reverse}) => {
@@ -35,6 +36,7 @@ test('rural circuits: walk every new lane in both directions with real collision
         return {ok:true,id,reverse};
       }, {id,reverse});
       expect(result, JSON.stringify(result)).toMatchObject({ok:true});
+      console.log(`Circuit ${id}, ${reverse ? 'reverse' : 'forward'} passed`);
     }
   }
   await page.evaluate(() => {

@@ -293,6 +293,22 @@
   "tool": "tools/architecture/build.mjs"
  },
  {
+  "path": "assets/models/architecture/crown-sedan-lod1.glb",
+  "bytes": 3022452,
+  "sha256": "914cecffdfbef694babf578f2b2975899b522654d30c54337f33b5f4be8d8740",
+  "origin": "Original vehicle geometry and microsurface maps authored in this repository",
+  "licence": "CC0 1.0",
+  "tool": "tools/vehicles/source/build.py + tools/vehicles/source/trucks.py + tools/vehicles/build.mjs"
+ },
+ {
+  "path": "assets/models/architecture/crown-sedan.glb",
+  "bytes": 4417752,
+  "sha256": "3812ec16c72b90f97ca79806e722b741d49ecfa19fe64c86e9a6ffade92e520d",
+  "origin": "Original vehicle geometry and microsurface maps authored in this repository",
+  "licence": "CC0 1.0",
+  "tool": "tools/vehicles/source/build.py + tools/vehicles/source/trucks.py + tools/vehicles/build.mjs"
+ },
+ {
   "path": "assets/models/architecture/denchu-trans.glb",
   "bytes": 17772,
   "sha256": "5d029d5ac1c83c1ce0ab343f05085284eb2b8505e0060d29e25aaf4be6c25ea0",
@@ -413,12 +429,36 @@
   "tool": "tools/architecture/build.mjs"
  },
  {
-  "path": "assets/models/architecture/kei-truck.glb",
-  "bytes": 20256,
-  "sha256": "11c338f18a504a5faf1a21344561eba8dd283b92339e0f581c83b3d6fc9e5b86",
-  "origin": "original (this repo)",
+  "path": "assets/models/architecture/kei-hatch-lod1.glb",
+  "bytes": 2842080,
+  "sha256": "e57762ce58381b609d5f41d843e2d61becbd12c3a66957b2f97c71569457f866",
+  "origin": "Original vehicle geometry and microsurface maps authored in this repository",
   "licence": "CC0 1.0",
-  "tool": "tools/architecture/build.mjs"
+  "tool": "tools/vehicles/source/build.py + tools/vehicles/source/trucks.py + tools/vehicles/build.mjs"
+ },
+ {
+  "path": "assets/models/architecture/kei-hatch.glb",
+  "bytes": 4201636,
+  "sha256": "2bcd90e1f9cd2664693b485849bd2c3e520333796890ae8b9bcc38190cdc74c5",
+  "origin": "Original vehicle geometry and microsurface maps authored in this repository",
+  "licence": "CC0 1.0",
+  "tool": "tools/vehicles/source/build.py + tools/vehicles/source/trucks.py + tools/vehicles/build.mjs"
+ },
+ {
+  "path": "assets/models/architecture/kei-truck-lod1.glb",
+  "bytes": 3997572,
+  "sha256": "183add83cf4677d2512b252066dad9aeb22463f67c0e8a188c7c3ebb1f6ac3ee",
+  "origin": "Original vehicle geometry and microsurface maps authored in this repository",
+  "licence": "CC0 1.0",
+  "tool": "tools/vehicles/source/build.py + tools/vehicles/source/trucks.py + tools/vehicles/build.mjs"
+ },
+ {
+  "path": "assets/models/architecture/kei-truck.glb",
+  "bytes": 4750152,
+  "sha256": "ca3af228fd492c9323499ba9ea2ec05b8a63b017def3dd3738b3a9d6ecf03c73",
+  "origin": "Original vehicle geometry and microsurface maps authored in this repository",
+  "licence": "CC0 1.0",
+  "tool": "tools/vehicles/source/build.py + tools/vehicles/source/trucks.py + tools/vehicles/build.mjs"
  },
  {
   "path": "assets/models/architecture/komainu-a.glb",
@@ -443,6 +483,22 @@
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/architecture/build.mjs"
+ },
+ {
+  "path": "assets/models/architecture/light-truck-lod1.glb",
+  "bytes": 4484012,
+  "sha256": "8ba1736086961e7cfab0d6f02c0ffc1b9a2abece77d3052f0c49af7006e1ca09",
+  "origin": "Original vehicle geometry and microsurface maps authored in this repository",
+  "licence": "CC0 1.0",
+  "tool": "tools/vehicles/source/build.py + tools/vehicles/source/trucks.py + tools/vehicles/build.mjs"
+ },
+ {
+  "path": "assets/models/architecture/light-truck.glb",
+  "bytes": 5856992,
+  "sha256": "b521ee7558182ad0ac0aa1d748a4db65baf96e1ec57b94a5152b1ca941297d2f",
+  "origin": "Original vehicle geometry and microsurface maps authored in this repository",
+  "licence": "CC0 1.0",
+  "tool": "tools/vehicles/source/build.py + tools/vehicles/source/trucks.py + tools/vehicles/build.mjs"
  },
  {
   "path": "assets/models/architecture/minka-kawara_0.glb",
@@ -835,6 +891,22 @@
   "origin": "original (this repo)",
   "licence": "CC0 1.0",
   "tool": "tools/architecture/build.mjs"
+ },
+ {
+  "path": "assets/models/architecture/utility-wagon-lod1.glb",
+  "bytes": 2914768,
+  "sha256": "da36ec7f35c335b6ca27410ad2906e6e8fd93c6f6251913cbbbd381866ccbcf3",
+  "origin": "Original vehicle geometry and microsurface maps authored in this repository",
+  "licence": "CC0 1.0",
+  "tool": "tools/vehicles/source/build.py + tools/vehicles/source/trucks.py + tools/vehicles/build.mjs"
+ },
+ {
+  "path": "assets/models/architecture/utility-wagon.glb",
+  "bytes": 4364652,
+  "sha256": "58c184d8ff6ead98651ae8db9952b74b31e898c82f60a152041f945271d89d3b",
+  "origin": "Original vehicle geometry and microsurface maps authored in this repository",
+  "licence": "CC0 1.0",
+  "tool": "tools/vehicles/source/build.py + tools/vehicles/source/trucks.py + tools/vehicles/build.mjs"
  },
  {
   "path": "assets/models/props/crop-bush.glb",
@@ -2241,6 +2313,54 @@
   ],
   "licence": "CC0 1.0",
   "processing": "resized/re-encoded, ARM packed (tools/assets/process_textures.py)"
+ },
+ {
+  "path": "assets/textures/vehicles/fabric-normal.png",
+  "bytes": 463528,
+  "sha256": "d34882187cc1ad912f1e334b061efb458302aac93fbda53665776eb330f2fce8",
+  "origin": "Original vehicle geometry and microsurface maps authored in this repository",
+  "licence": "CC0 1.0",
+  "tool": "tools/vehicles/source/build.py + tools/vehicles/source/trucks.py + tools/vehicles/build.mjs"
+ },
+ {
+  "path": "assets/textures/vehicles/fabric-orm.png",
+  "bytes": 104361,
+  "sha256": "5ff25fe7d5b20cfde21b20461f30c4e38a21a4ee4daa6461f182f722c46ce6f3",
+  "origin": "Original vehicle geometry and microsurface maps authored in this repository",
+  "licence": "CC0 1.0",
+  "tool": "tools/vehicles/source/build.py + tools/vehicles/source/trucks.py + tools/vehicles/build.mjs"
+ },
+ {
+  "path": "assets/textures/vehicles/paint-normal.png",
+  "bytes": 325588,
+  "sha256": "7b40165e32abfb06fe36ffd872d37bdcb73b7ff674dfca6aec38939d4dbc4ead",
+  "origin": "Original vehicle geometry and microsurface maps authored in this repository",
+  "licence": "CC0 1.0",
+  "tool": "tools/vehicles/source/build.py + tools/vehicles/source/trucks.py + tools/vehicles/build.mjs"
+ },
+ {
+  "path": "assets/textures/vehicles/paint-orm.png",
+  "bytes": 78594,
+  "sha256": "b3fc27ee8ff97b63183ff95984836815e4e667b6e92900a900604194517bcff5",
+  "origin": "Original vehicle geometry and microsurface maps authored in this repository",
+  "licence": "CC0 1.0",
+  "tool": "tools/vehicles/source/build.py + tools/vehicles/source/trucks.py + tools/vehicles/build.mjs"
+ },
+ {
+  "path": "assets/textures/vehicles/rubber-normal.png",
+  "bytes": 459574,
+  "sha256": "1796a2b66a2593813b2573b32afb54b7ee30c1d0cfa672b55718e9f7ba5518a9",
+  "origin": "Original vehicle geometry and microsurface maps authored in this repository",
+  "licence": "CC0 1.0",
+  "tool": "tools/vehicles/source/build.py + tools/vehicles/source/trucks.py + tools/vehicles/build.mjs"
+ },
+ {
+  "path": "assets/textures/vehicles/rubber-orm.png",
+  "bytes": 137780,
+  "sha256": "872029c1534ebb5813f64c09a28b7f7829c6d1137aabde0812fadb3201500789",
+  "origin": "Original vehicle geometry and microsurface maps authored in this repository",
+  "licence": "CC0 1.0",
+  "tool": "tools/vehicles/source/build.py + tools/vehicles/source/trucks.py + tools/vehicles/build.mjs"
  },
  {
   "path": "assets/textures/vermilion_paint/albedo.jpg",

@@ -10,10 +10,14 @@ const ROOT = path.resolve(import.meta.dirname, "../..");
 const OUT = path.join(ROOT, "public/assets/models/architecture");
 fs.mkdirSync(OUT, { recursive: true });
 const scene = JSON.parse(fs.readFileSync(path.join(ROOT, "public/world/scene.json"), "utf8"));
-const index = {};
+// Regenerate terrain-dependent works without re-authoring the vehicle fleet.
+const WORLD_ONLY = process.argv.includes('--world-only');
+const WORLD_ASSETS = new Set(['stairs', 'river-works', 'road-ditch', 'stream-works', 'road-markings', 'road-bridge', 'tunnel']);
+const index = WORLD_ONLY ? JSON.parse(fs.readFileSync(path.join(OUT, 'index.json'), 'utf8')).assets : {};
 const M4 = (x = 0, y = 0, z = 0, ry = 0, s = 1) => new THREE.Matrix4().compose(V(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(0, ry, 0)), V(s, s, s));
 
 async function save(name, model) {
+  if (WORLD_ONLY && !WORLD_ASSETS.has(name)) return;
   await writeModel(model, path.join(OUT, `${name}.glb`));
   const box = new THREE.Box3();
   for (const gs of model.parts.values()) for (const g of gs) { g.computeBoundingBox(); box.union(g.boundingBox); }
@@ -663,27 +667,6 @@ function denchu(withTransformer) {
   }
   return m;
 }
-function keiTruck() {
-  const m = new Model("kei-truck");
-  // cab-over light truck (generic), local +Z forward
-  m.box("car_paint", 1.38, 0.95, 1.15, 0, 1.25, 1.1);
-  m.box("car_paint", 1.38, 0.5, 1.25, 0, 0.75, 1.15);
-  m.box("glass_dark", 1.26, 0.5, 0.04, 0, 1.45, 1.68, { rx: -0.12 });
-  for (const s of [-1, 1]) m.box("glass_dark", 0.04, 0.42, 0.7, s * 0.7, 1.45, 1.2);
-  m.box("metal_grey", 1.4, 0.12, 2.0, 0, 0.62, -0.55);
-  for (const s of [-1, 1]) m.box("car_paint", 0.05, 0.32, 2.0, s * 0.68, 0.84, -0.55);
-  m.box("car_paint", 1.4, 0.32, 0.05, 0, 0.84, -1.55);
-  m.box("car_paint", 1.4, 0.75, 0.05, 0, 1.0, 0.45);
-  for (const z of [1.15, -1.0]) for (const s of [-1, 1]) {
-    const w = new THREE.CylinderGeometry(0.27, 0.27, 0.17, 16);
-    w.rotateZ(Math.PI / 2);
-    w.translate(s * 0.62, 0.27, z);
-    m.add("rubber", w);
-  }
-  m.box("metal_grey", 1.3, 0.12, 0.08, 0, 0.6, 1.72);
-  for (const s of [-1, 1]) m.box("light_lens", 0.18, 0.12, 0.03, s * 0.5, 0.85, 1.79);
-  return m;
-}
 function busStop() {
   const m = new Model("bus-stop");
   m.cyl("metal_grey", 0.04, 0.04, 2.3, 0, 0, 0, 8);
@@ -949,6 +932,91 @@ function shoboShed() {
   m.box("concrete", W - 1.0, 0.42, 0.06, 0, Hw - 0.15, D / 2 + 0.04);
   m.box("porcelain", 1.2, 0.22, 0.02, 0, Hw - 0.15, D / 2 + 0.08);
   gableRoof(m, "roof_tin", { W: W + 0.3, over: 0.25, eaveY: Hw, ridgeY: Hw + 0.6, frontRun: D / 2 + 0.35, backRun: D / 2 + 0.35, thick: 0.06 });
+  return m;
+}
+/** Fire brigade post of a hamlet (shobodan tsumesho): the pump shed below with its red shutter, a
+ *  small meeting room above, a steel hose-drying tower with the alarm bell beside it. Front +Z. */
+function shoboTsumesho() {
+  const m = new Model("shobo-tsumesho");
+  const W = 6.0, D = 5.4, H1 = 3.0, H2 = 2.5;
+  m.box("concrete", W + 0.3, 0.18, D + 0.3, 0, 0.09, 0);
+  // ground floor: block walls, the pump bay behind a red shutter, a side door
+  m.box("concrete_block", W, H1, 0.18, 0, H1 / 2, -D / 2);
+  for (const sx of [-1, 1]) m.box("concrete_block", 0.18, H1, D, sx * W / 2, H1 / 2, 0);
+  m.box("concrete_block", 1.4, H1, 0.18, W / 2 - 0.7, H1 / 2, D / 2);
+  m.box("concrete_block", 0.5, H1, 0.18, -W / 2 + 0.25, H1 / 2, D / 2);
+  m.box("steel_red", 3.9, 2.55, 0.08, -0.5, 1.28, D / 2 + 0.02);
+  for (let y = 0.2; y < 2.55; y += 0.13) m.box("steel_gate", 3.88, 0.012, 0.012, -0.5, y, D / 2 + 0.07);
+  m.box("aluminium", 0.85, 2.0, 0.05, W / 2 - 0.7, 1.0, D / 2 + 0.1);
+  m.box("glass_dark", 0.5, 0.6, 0.02, W / 2 - 0.7, 1.45, D / 2 + 0.13);
+  // upper floor: mortar walls, a band of windows to the road, the brigade's board
+  m.box("concrete", W + 0.1, 0.25, D + 0.1, 0, H1 + 0.12, 0);
+  for (const sx of [-1, 1]) m.box("plaster_white", 0.16, H2, D, sx * W / 2, H1 + 0.25 + H2 / 2, 0);
+  m.box("plaster_white", W, H2, 0.16, 0, H1 + 0.25 + H2 / 2, -D / 2);
+  m.box("plaster_white", W, H2, 0.16, 0, H1 + 0.25 + H2 / 2, D / 2);
+  m.box("glass", 3.6, 1.0, 0.03, -0.4, H1 + 1.55, D / 2 + 0.09);
+  m.box("aluminium", 3.7, 0.05, 0.06, -0.4, H1 + 2.07, D / 2 + 0.1);
+  m.box("aluminium", 3.7, 0.05, 0.06, -0.4, H1 + 1.03, D / 2 + 0.1);
+  m.box("porcelain", 1.5, 0.3, 0.03, -0.4, H1 + 0.62, D / 2 + 0.1);          // board
+  m.box("lamp_red", 0.22, 0.22, 0.12, W / 2 - 0.5, H1 - 0.3, D / 2 + 0.12);   // red lamp over the door
+  gableRoof(m, "roof_tin", { W: W + 0.3, over: 0.3, eaveY: H1 + 0.25 + H2, ridgeY: H1 + 0.25 + H2 + 1.1, frontRun: D / 2 + 0.4, backRun: D / 2 + 0.4, thick: 0.06 });
+  // hose-drying tower: four steel legs with cross bracing, a platform and the alarm bell
+  const tx = -W / 2 - 1.4, tz = -D / 2 + 1.2, TH = 9.0, a = 0.55;
+  for (const [ox, oz] of [[-a, -a], [a, -a], [a, a], [-a, a]]) m.cyl("metal_grey", 0.04, 0.04, TH, tx + ox, 0.15, tz + oz, 6);
+  for (let y = 1.2; y < TH; y += 1.4)
+    for (const [w, d, ox, oz] of [[2 * a, 0.04, 0, -a], [2 * a, 0.04, 0, a], [0.04, 2 * a, -a, 0], [0.04, 2 * a, a, 0]]) m.box("metal_grey", w, 0.04, d, tx + ox, y, tz + oz);
+  m.box("metal_dark", 1.4, 0.06, 1.4, tx, TH + 0.15, tz);
+  m.cyl("bronze_dark", 0.12, 0.22, 0.4, tx, TH + 0.2, tz, 12);
+  m.cyl("metal_dark", 0.02, 0.02, 1.2, tx, TH + 0.6, tz, 6);
+  for (let k = 0; k < 4; k++) m.box("cloth_white", 0.12, 2.6, 0.02, tx - 0.3 + k * 0.2, TH - 1.6, tz + a + 0.03);   // hoses hung to dry
+  return m;
+}
+/** Branch school of the valley (bunko): a long one-storey wooden schoolhouse with tall windows to
+ *  the south-facing yard, an entrance porch, a flagpole and iron bars in the yard. Front +Z. */
+function bunko() {
+  const m = new Model("bunko");
+  const W = 26, D = 8.5, F = 0.55, H = 3.6;
+  m.box("concrete", W + 0.4, F, D + 0.4, 0, F / 2, 0);
+  m.box("wood_siding", W, H, 0.15, 0, F + H / 2, -D / 2);
+  for (const sx of [-1, 1]) m.box("wood_siding", 0.15, H, D, sx * W / 2, F + H / 2, 0);
+  // front: a wainscot below, tall sash windows between the posts (one bay per 2.6 m)
+  m.box("wood_siding", W, 0.9, 0.15, 0, F + 0.45, D / 2);
+  m.box("wood_siding", W, 0.45, 0.15, 0, F + H - 0.22, D / 2);
+  for (let x = -W / 2; x <= W / 2 + 0.01; x += 2.6) m.box("wood_frame", 0.2, H, 0.2, x, F + H / 2, D / 2 + 0.03);
+  for (let x = -W / 2 + 1.3; x < W / 2; x += 2.6) {
+    if (Math.abs(x) < 1.4) continue;                                     // the entrance bay
+    m.box("glass", 2.35, H - 1.4, 0.03, x, F + 0.9 + (H - 1.4) / 2, D / 2 + 0.02);
+    for (const yy of [F + 0.9, F + 0.9 + (H - 1.4) / 2, F + H - 0.5]) m.box("wood_frame", 2.4, 0.05, 0.06, x, yy, D / 2 + 0.05);
+    m.box("wood_frame", 0.05, H - 1.4, 0.06, x, F + 0.9 + (H - 1.4) / 2, D / 2 + 0.05);
+  }
+  for (let x = -W / 2 + 1.3; x < W / 2; x += 5.2) m.box("glass", 1.6, 1.2, 0.03, x, F + 2.0, -D / 2 - 0.02);    // back windows
+  // entrance with a gabled porch and steps
+  m.box("interior_dark", 2.0, 2.4, 0.05, 0, F + 1.2, D / 2 + 0.02);
+  m.box("glass", 1.9, 2.3, 0.02, 0, F + 1.2, D / 2 + 0.06);
+  m.box("concrete", 3.6, 0.3, 2.4, 0, 0.15, D / 2 + 1.2);
+  for (const sx of [-1, 1]) m.box("wood_frame", 0.18, 2.9, 0.18, sx * 1.5, F + 1.45, D / 2 + 2.2);
+  const porch = new Model("porch");
+  gableRoof(porch, "roof_tin_blue", { W: 3.8, over: 0.3, eaveY: F + 2.9, ridgeY: F + 3.6, frontRun: 1.35, backRun: 1.35, thick: 0.08 });
+  m.merge(porch, new THREE.Matrix4().makeRotationY(Math.PI / 2).setPosition(0, 0, D / 2 + 1.15));
+  m.box("wood_old", 0.3, 1.5, 0.06, 1.95, F + 1.2, D / 2 + 2.25);           // school name board
+  hipRoof(m, "roof_tin_blue", { W, D, over: 0.7, eaveY: F + H + 0.05, ridgeY: F + H + 0.05 + (D / 2 + 0.7) * 0.5, sori: 0.0, thick: 0.1, gable: 0.0, ridgeH: 0.15 });
+  // the yard: flagpole by the corner, three iron bars, a low concrete stand for the morning assembly
+  m.cyl("metal_grey", 0.06, 0.04, 9.0, W / 2 - 2.0, 0, D / 2 + 17, 10);
+  m.cyl("concrete", 0.35, 0.35, 0.3, W / 2 - 2.0, 0, D / 2 + 17, 12);
+  for (const [k, hh] of [[0, 0.9], [1, 1.2], [2, 1.5]]) {
+    const bx = -W / 2 + 3.0 + k * 1.6;
+    for (const sx of [-0.7, 0.7]) m.cyl("metal_grey", 0.04, 0.04, hh, bx + sx, 0, D / 2 + 16, 6);
+    m.cyl("metal_grey", 0.02, 0.02, 1.4, bx - 0.7, hh, D / 2 + 16, 6, { rz: -Math.PI / 2 });
+  }
+  m.box("concrete", 3.0, 0.5, 1.6, 0, 0.25, D / 2 + 6.0);
+  return m;
+}
+/** Water inlet (mizuguchi) through a levee from a ditch: a small concrete box with its board. Front +Z (the field). */
+function mizuguchi() {
+  const m = new Model("mizuguchi");
+  m.box("concrete_old", 0.62, 0.42, 0.7, 0, 0.0, 0);
+  m.box("interior_dark", 0.3, 0.2, 0.72, 0, -0.02, 0);
+  m.box("wood_old", 0.36, 0.3, 0.03, 0, 0.05, 0.37);
   return m;
 }
 /** Pillar post box (marugata posuto), a red cylinder with a domed cap; slot facing +Z. */
@@ -1798,7 +1866,6 @@ await save("block-wall", blockWall());
 await save("ishigaki", ishigaki());
 await save("denchu", denchu(false));
 await save("denchu-trans", denchu(true));
-await save("kei-truck", keiTruck());
 await save("bus-stop", busStop());
 for (let v = 0; v < 2; v++) await save(`jihanki_${v}`, jihanki(v));
 const bo = scene.objects.find((o) => o.asset === "bridge");
@@ -1822,6 +1889,9 @@ await save("river-works", riverWorks());
 await save("stairs", stairs());
 await save("hinomi", hinomi());
 await save("shobo-shed", shoboShed());
+await save("shobo-tsumesho", shoboTsumesho());
+await save("bunko", bunko());
+await save("mizuguchi", mizuguchi());
 await save("post", postBox());
 await save("shop-yorozuya", shopHouse("shop-yorozuya", { W: 9, D: 8.5, storeys: 2, roof: "roof_kawara", front: "glass",
   extras: (m, { F, fz }) => {
@@ -1857,9 +1927,13 @@ const { weld, quantize, dedup } = await import("@gltf-transform/functions");
 const io2 = new NodeIO().registerExtensions(ALL_EXTENSIONS);
 let total = 0;
 for (const f of fs.readdirSync(OUT).filter((f) => f.endsWith(".glb"))) {
+  if (WORLD_ONLY && !WORLD_ASSETS.has(f.slice(0, -4))) continue;
   const doc = await io2.read(path.join(OUT, f));
   await doc.transform(weld({ tolerance: 0.0005 }), dedup({ propertyTypes: [PropertyType.ACCESSOR, PropertyType.MESH] }), quantize({ pattern: /^(POSITION|NORMAL)$/, quantizePosition: 16, quantizeNormal: 10 }));
   await io2.write(path.join(OUT, f), doc);
   total += fs.statSync(path.join(OUT, f)).size;
 }
 console.log("architecture bytes", total);
+
+// Vehicles share the architecture registry; rebuild after the main index is written.
+if (!WORLD_ONLY) await import("../vehicles/build.mjs");

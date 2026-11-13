@@ -247,7 +247,9 @@ CLS = {
     "approach": dict(fill=(253, 251, 244, 255), case=(110, 95, 80, 255), w=3.6, cw=2),
     "farm": dict(fill=(253, 251, 244, 255), case=(125, 110, 92, 255), w=3.0, cw=2),
 }
-roads = scene["roads"]
+# A farm circuit may briefly share a paved road. Draw major surfaces last so
+# its gravel casing does not erase the prefectural road's yellow carriageway.
+roads = sorted(scene["roads"], key=lambda r: {"driveway": 0, "forest": 1, "farm": 2, "approach": 3, "town": 4, "prefectural": 5}.get(r["class"], 0))
 def poly(r):
     return [P(p[0], p[2]) for p in r["points"]]
 for r in roads:
@@ -316,7 +318,7 @@ dr.rectangle([P(pr["x0"], pr["z0"]), P(pr["x1"], pr["z1"])], outline=(120, 110, 
 SKIP = ("prop-", "torii", "toro", "komainu", "sekihi", "jizo", "denchu", "jihanki", "post", "phone-box", "block-wall", "ishigaki",
         "kei-truck", "fence-lookout", "saisen", "ema", "shimenawa-tree", "bench", "bridge", "hinomi", "monohoshi", "tunnel", "road-ditch", "bus-stop",
         "haka", "rokujizo", "tera-sanmon", "tera-shoro", "road-bridge")
-CONCRETE = {"post-office", "chuzaisho", "nokyo", "nokyo-soko", "shobo-shed", "shinryojo"}
+CONCRETE = {"post-office", "chuzaisho", "nokyo", "nokyo-soko", "shobo-shed", "shinryojo", "shobo-tsumesho"}
 bnum = {}
 for o in scene["objects"]:
     a = o["asset"]
@@ -393,6 +395,10 @@ for o in scene["objects"]:
         x, z = beside(o); sym_police(x, z); labels.append({"text": "駐在所", "x": x, "z": z + 9, "kind": "facility"})
     elif a == "nokyo":
         x, z = beside(o, 16); labels.append({"text": "農協", "x": x, "z": z, "kind": "facility"})
+    elif a == "bunko":
+        x, z = beside(o, 22); labels.append({"text": "分校", "x": x, "z": z, "kind": "facility"})
+    elif a == "shobo-tsumesho":
+        x, z = beside(o, 12); labels.append({"text": "消防団", "x": x, "z": z, "kind": "facility"})
     elif a == "kominkan":
         x, z = beside(o, 15); labels.append({"text": "集会所" if o.get("hall") else "公民館", "x": x, "z": z, "kind": "facility"})
     elif a == "haiden":

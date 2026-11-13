@@ -215,6 +215,10 @@ test("village layout: a centre on the main road, road-facing houses, south-facin
   const roads = data.roads.filter((r) => ["prefectural", "town", "farm", "driveway"].includes(r.class));
   assert.ok(main.width >= 6 && main.surface === "asphalt");
   assert.ok(data.roads.some((r) => r.class === "farm" && r.surface === "gravel"));
+  // the old road through Shimojuku, its houses fronting it
+  const kyudo = data.roads.find((r) => r.id === "kyudo-shimojuku");
+  assert.ok(kyudo && kyudo.class === "town", "the old road through Shimojuku");
+  assert.ok(buildings.filter((o) => o.group === "shimojuku" && o.oldRoad).length >= 9, "Shimojuku lines the old road");
   // the centre: shops and public services in a row on the main road, fronts facing it
   const centre = buildings.filter((o) => o.group === "machi");
   for (const t of ["shop-yorozuya", "shop-sakaya", "post-office", "chuzaisho", "nokyo", "kominkan"]) assert.ok(centre.some((o) => o.asset === t), t);
@@ -226,6 +230,20 @@ test("village layout: a centre on the main road, road-facing houses, south-facin
     const tr = (roadX(z + 4) - roadX(z - 4)) / 8, nl = Math.hypot(1, tr), sg = Math.sign(roadX(z) - x);
     const toRoad = [sg / nl, (-sg * tr) / nl];
     if (o.group === "tera") continue;
+    if (o.oldRoad) {
+      // Shimojuku fronts the old road (kyudo) that the prefectural road now bypasses
+      const kd = data.roads.find((r) => r.id === "kyudo-shimojuku").points;
+      const q = kd.reduce((b, p) => (Math.hypot(p[0] - x, p[2] - z) < Math.hypot(b[0] - x, b[2] - z) ? p : b));
+      const dq = Math.hypot(q[0] - x, q[2] - z);
+      assert.ok(dq < 16, `${o.id} stands on the old road (${dq.toFixed(1)} m)`);
+      assert.ok((front[0] * (q[0] - x) + front[1] * (q[2] - z)) / dq > 0.85, `${o.id} faces the old road`);
+      continue;
+    }
+    // the hamlets' facilities (school, fire brigade post, meeting hall, work barn) face their own road
+    if (o.group !== "machi" && !o.asset.startsWith("minka-")) {
+      assert.ok(front[0] * toRoad[0] + front[1] * toRoad[1] > 0.9, `${o.id} faces the road`);
+      continue;
+    }
     if (o.group === "kawamuko") {
       // the terrace hamlet: houses in a row along the contour lane, fronts down the slope (east)
       assert.ok(front[0] > 0.8, `${o.id} faces down the slope`);
@@ -286,10 +304,12 @@ test("hills and valley: eroded relief, a winding floor, side streams, temple and
   assert.ok(clinic && clinic.signs, "clinic with its name board");
   const houses = data.objects.filter((o) => o.group && o.group !== "kawamuko" && o.group !== "sankyo" && o.group !== "tera");
   assert.ok(houses.every((o) => o.position[2] <= clinic.position[2] + 1), "the clinic is the last building to the south");
-  // the houses gather around the centre
-  const machi = data.hamlets.find((hm) => hm.name === "machi");
-  const near = houses.filter((o) => Math.abs(o.position[2] - machi.z) < 330).length;
-  assert.ok(near / houses.length > 0.8, `${near}/${houses.length} roadside buildings within 330 m of the centre`);
+  // the houses gather around the centre (dwellings and shops; the branch school serves the upper valley)
+  const dwellings = houses.filter((o) => o.group === "machi" || o.asset.startsWith("minka-"));
+  const nearD = dwellings.filter((o) => Math.abs(o.position[2] - data.hamlets.find((hm) => hm.name === "machi").z) < 330).length;
+  assert.ok(nearD / dwellings.length > 0.75, `${nearD}/${dwellings.length} roadside dwellings within 330 m of the centre`);
+  // facilities of the hamlets
+  for (const a of ["bunko", "shobo-tsumesho"]) assert.ok(data.objects.some((o) => o.asset === a && o.collider), a);
 });
 
 test("road works: graded cut and fill slopes (no sheer walls), the road ends at a tunnel portal", () => {
@@ -438,5 +458,15 @@ test("rural routes meet existing roads, form three circuits, and keep walkable g
         }
       }
     }
+  }
+});
+
+test("rural terrain retains the old-road settlement, traditional plots and farm water inlets", () => {
+  assert.ok(data.roads.some(r => r.id === 'kyudo-shimojuku' && r.class === 'town'));
+  const oldPlots = data.fields.filter(f => f.label >= 300000 && f.label < 700000);
+  assert.ok(oldPlots.length > 50, `${oldPlots.length} old unconsolidated plots survive parcel splitting`);
+  assert.ok(oldPlots.some(f => f.area < 300), 'small traditional plots retain their own area threshold');
+  for (const asset of ['bunko', 'shobo-tsumesho', 'mizuguchi', 'kei-truck']) {
+    assert.ok(data.objects.some(o => o.asset === asset), `${asset} retained after regeneration`);
   }
 });

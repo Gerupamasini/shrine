@@ -16,6 +16,15 @@ class RuralTests(unittest.TestCase):
         self.assertGreaterEqual(result[5,5], 700000)
         self.assertGreaterEqual(result[20,30], 700000)
 
+    def test_old_irregular_plots_keep_their_small_field_category(self):
+        labels = np.full((30, 40), -1)
+        labels[2:12, 2:12] = 300123
+        labels[16:26, 25:35] = 300123
+        result = connected_fields(labels, 700000)
+        self.assertNotEqual(result[5,5], result[20,30])
+        self.assertTrue(300000 <= result[5,5] < 700000)
+        self.assertTrue(300000 <= result[20,30] < 700000)
+
     def test_slivers_do_not_count_as_cultivable_fields(self):
         labels = np.full((30, 40), -1)
         labels[2:4, 2:35] = 700123
