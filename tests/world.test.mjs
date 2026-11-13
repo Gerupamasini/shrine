@@ -395,3 +395,48 @@ test("audio and credits: every recording has a recorded licence", () => {
   assert.match(credits, /Σ64/);
   for (const e of manifest) assert.ok(fs.existsSync(path.join("public", e.path)), e.path);
 });
+
+test("rural routes meet existing roads, form three circuits, and keep walkable grades", () => {
+  const loops = data.ruralLoops;
+  assert.equal(loops.length, 3);
+  const road = (id) => { const r = data.roads.find(r => r.id === id); assert.ok(r, id); return r; };
+  const distance = (p, a, b) => {
+    const dx = b[0]-a[0], dz = b[2]-a[2];
+    const t = Math.max(0, Math.min(1, ((p[0]-a[0])*dx+(p[2]-a[2])*dz)/(dx*dx+dz*dz)));
+    return Math.hypot(p[0]-a[0]-t*dx, p[2]-a[2]-t*dz);
+  };
+  for (const loop of loops) {
+    const legs = loop.roads.map(road), back = road(loop.returnVia);
+    for (let i=1; i<legs.length; i++) {
+      const a = legs[i-1].points.at(-1), b = legs[i].points[0];
+      assert.ok(Math.hypot(a[0]-b[0], a[2]-b[2]) < .03, `${loop.id}: continuous junction`);
+    }
+    for (const p of [legs[0].points[0], legs.at(-1).points.at(-1)]) {
+      assert.ok(Math.min(...back.points.slice(1).map((b,i)=>distance(p,back.points[i],b))) < 1,
+        `${loop.id}: connected to return road`);
+    }
+    const outline = legs.flatMap(r => r.points);
+    const first = outline[0], last = outline.at(-1);
+    const returnPoints = back.points.filter(p => p[2] > Math.min(first[2], last[2]) && p[2] < Math.max(first[2], last[2]));
+    returnPoints.sort((a,b) => (a[2]-b[2])*Math.sign(first[2]-last[2]));
+    outline.push(...returnPoints, first);
+    const area = Math.abs(outline.slice(1).reduce((sum,p,i) => sum + outline[i][0]*p[2] - p[0]*outline[i][2], 0))/2;
+    assert.ok(area > 5000, `${loop.id}: a real circuit, not a retraced dead end (${area} m²)`);
+    for (const r of legs) {
+      assert.equal(r.surface, 'gravel');
+      assert.ok(r.width >= 3);
+      for (let i=1;i<r.points.length;i++) {
+        const a=r.points[i-1], b=r.points[i], d=Math.hypot(b[0]-a[0],b[2]-a[2]);
+        assert.ok(d > .05 && d < 20, `${r.id}: continuous sampling`);
+        // Check the actual encoded ground at one-metre intervals, not just metadata heights.
+        let y = H(a[0],a[2]);
+        const n=Math.ceil(d);
+        for(let k=1;k<=n;k++) {
+          const t=k/n, next=H(a[0]+(b[0]-a[0])*t,a[2]+(b[2]-a[2])*t);
+          assert.ok(Math.abs(next-y)/(d/n)<.35, `${r.id}: steep ground at ${i}/${k}`);
+          y=next;
+        }
+      }
+    }
+  }
+});

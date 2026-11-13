@@ -241,6 +241,7 @@ for st in scene.get("streams", []):
 
 # roads: casings first, fills second, so junctions read cleanly
 CLS = {
+    "forest": dict(fill=(232, 227, 205, 255), case=(125, 110, 92, 255), w=3.0, cw=2),
     "prefectural": dict(fill=(246, 214, 138, 255), case=(80, 62, 46, 255), w=6.0, cw=2),
     "town": dict(fill=(253, 251, 244, 255), case=(80, 62, 46, 255), w=4.0, cw=2),
     "approach": dict(fill=(253, 251, 244, 255), case=(110, 95, 80, 255), w=3.6, cw=2),
@@ -448,6 +449,11 @@ for gname, ps in groups.items():
         side = -1 if gname == "kawamuko" or cx < road_x(cz) - 10 else 1
         lx = (ps[:, 0].min() - 22) if side < 0 else (ps[:, 0].max() + 22)
         labels.append({"text": NAMES[gname], "x": float(lx), "z": cz, "kind": "hamlet"})
+for rid, name in [('east-forest', '東山林道'), ('north-forest', '奥沢林道'), ('kawamuko-contour-farm', '棚田農道')]:
+    route = next((r for r in roads if r['id'] == rid), None)
+    if route:
+        p = route['points'][len(route['points']) // 2]
+        labels.append({'text': name, 'x': p[0] + 14, 'z': p[2] - 10, 'kind': 'facility'})
 # the river (written down along it, as on a survey sheet), the road shields, the tunnel
 for zr in (-300.0, 480.0):
     xr = float(np.interp(zr, rp[:, 2], rp[:, 0]))
