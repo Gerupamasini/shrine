@@ -103,7 +103,7 @@
  },
  "assets": {
   "road-ditch": {
-   "triangles": 41544,
+   "triangles": 41592,
    "min": [
     -84.092,
     1.901,
@@ -2087,7 +2087,7 @@
    ]
   },
   "road-markings": {
-   "triangles": 15576,
+   "triangles": 15540,
    "min": [
     -85.014,
     2.391,

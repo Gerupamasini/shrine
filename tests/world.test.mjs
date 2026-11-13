@@ -281,6 +281,7 @@ test("hills and valley: eroded relief, a winding floor, side streams, temple and
   // temple: hall, gate with its plaque, bell tower, graves; clinic at the south end of the village
   for (const a of ["tera-hondo", "tera-sanmon", "tera-shoro", "rokujizo"]) assert.ok(data.objects.some((o) => o.asset === a), a);
   assert.ok(data.objects.filter((o) => o.asset === "haka").length >= 8, "a graveyard");
+  assert.ok(data.objects.filter((o) => o.asset === "haka" && o.cemetery).length >= 10, "the communal graveyard on the hill foot");
   const clinic = data.objects.find((o) => o.asset === "shinryojo");
   assert.ok(clinic && clinic.signs, "clinic with its name board");
   const houses = data.objects.filter((o) => o.group && o.group !== "kawamuko" && o.group !== "sankyo" && o.group !== "tera");

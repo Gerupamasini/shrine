@@ -295,6 +295,18 @@ if bo:
         x0, x1 = bo["position"][0] - half, bo["position"][0] + half
         dr.line([P(x0 - 1.2, zz + side * 1.2), P(x0, zz), P(x1, zz), P(x1 + 1.2, zz + side * 1.2)], fill=(40, 36, 32, 255), width=3)
 
+# graveyards: the survey-sheet symbol (an inverted T) over each group of graves
+_gr = [o for o in scene["objects"] if o["asset"] == "haka"]
+for _grp in ([o for o in _gr if o.get("cemetery")], [o for o in _gr if not o.get("cemetery")]):
+    if not _grp:
+        continue
+    gx_ = sum(o["position"][0] for o in _grp) / len(_grp)
+    gz_ = sum(o["position"][2] for o in _grp) / len(_grp)
+    cx_, cy_ = P(gx_, gz_)
+    for ox_ in (-9, 9):
+        dr.line([(cx_ + ox_, cy_ - 7), (cx_ + ox_, cy_ + 5)], fill=(60, 55, 50, 255), width=2)
+        dr.line([(cx_ + ox_ - 6, cy_ + 5), (cx_ + ox_ + 6, cy_ + 5)], fill=(60, 55, 50, 255), width=2)
+
 # precinct outline
 pr = scene["precinct"]
 dr.rectangle([P(pr["x0"], pr["z0"]), P(pr["x1"], pr["z1"])], outline=(120, 110, 95, 255), width=2)
@@ -302,7 +314,7 @@ dr.rectangle([P(pr["x0"], pr["z0"]), P(pr["x1"], pr["z1"])], outline=(120, 110, 
 # buildings
 SKIP = ("prop-", "torii", "toro", "komainu", "sekihi", "jizo", "denchu", "jihanki", "post", "phone-box", "block-wall", "ishigaki",
         "kei-truck", "fence-lookout", "saisen", "ema", "shimenawa-tree", "bench", "bridge", "hinomi", "monohoshi", "tunnel", "road-ditch", "bus-stop",
-        "haka", "rokujizo", "tera-sanmon", "tera-shoro")
+        "haka", "rokujizo", "tera-sanmon", "tera-shoro", "road-bridge")
 CONCRETE = {"post-office", "chuzaisho", "nokyo", "nokyo-soko", "shobo-shed", "shinryojo"}
 bnum = {}
 for o in scene["objects"]:

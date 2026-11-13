@@ -543,6 +543,21 @@ export class RiceCanopy implements System {
         uv.push(uu, vv);
       }
     };
+    // integral image of the rice cells: tiny islands of rice (or holes in it) along the terrace
+    // levees would stand up as lone green boxes, so the edge is only drawn where both sides are real
+    const I = new Uint32Array((W + 1) * (W + 1));
+    for (let j = 0; j < W; j++) {
+      let row = 0;
+      for (let i = 0; i < W; i++) {
+        row += f(i, j) >= 0 ? 1 : 0;
+        I[(j + 1) * (W + 1) + i + 1] = I[j * (W + 1) + i + 1] + row;
+      }
+    }
+    const R = 4;
+    const riceAround = (i: number, j: number) => {
+      const i0 = Math.max(i - R, 0), j0 = Math.max(j - R, 0), i1 = Math.min(i + R + 1, W), j1 = Math.min(j + R + 1, W);
+      return [I[j1 * (W + 1) + i1] - I[j0 * (W + 1) + i1] - I[j1 * (W + 1) + i0] + I[j0 * (W + 1) + i0], (i1 - i0) * (j1 - j0)];
+    };
     const SEGS: Record<number, [number, number][]> = {
       1: [[3, 0]], 2: [[0, 1]], 3: [[3, 1]], 4: [[1, 2]], 5: [[3, 0], [1, 2]], 6: [[0, 2]], 7: [[3, 2]],
       8: [[2, 3]], 9: [[2, 0]], 10: [[0, 1], [2, 3]], 11: [[2, 1]], 12: [[1, 3]], 13: [[1, 0]], 14: [[0, 3]],
@@ -552,6 +567,8 @@ export class RiceCanopy implements System {
         const v0 = f(i, j), v1 = f(i + 1, j), v2 = f(i + 1, j + 1), v3 = f(i, j + 1);
         const k = (v0 >= 0 ? 1 : 0) | (v1 >= 0 ? 2 : 0) | (v2 >= 0 ? 4 : 0) | (v3 >= 0 ? 8 : 0);
         if (k === 0 || k === 15) continue;
+        const [rc, all] = riceAround(i, j);
+        if (rc < 16 || all - rc < 16) continue;
         const x0 = tx(i), x1 = tx(i + 1), z0 = tx(j), z1 = tx(j + 1);
         const t = (a: number, b: number) => a / (a - b);
         // crossing points on the cell edges: 0 bottom (z0), 1 right (x1), 2 top (z1), 3 left (x0)

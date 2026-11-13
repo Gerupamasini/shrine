@@ -1093,6 +1093,38 @@ _sando = [(_gx, _gz, TEMPLE["y"]), (_ex, _gz, road_level(_gz))]
 h = grade_line(h, _sando, 3.0, lane_d)
 lanes.append(_sando)
 ditch_crossings.append(round(_gz, 2))
+# Communal graveyard (kyodo bochi) of the southern hamlets: a small bench cut into the hill foot
+# above Minamizawa, the graves in rows looking out over the valley, a path up from the road.
+# (It is handled like the temple precinct: fields, houses and trees keep clear of it.)
+GRAVES = None
+for _gz_ in (398.0, 412.0, 384.0, 426.0, 370.0, 440.0):
+    for _off in (44.0, 52.0, 38.0, 60.0):
+        _gx_ = float(road_x(_gz_)) + _off
+        if any(math.hypot(hs_["x"] - _gx_, hs_["z"] - _gz_) < 28 for hs_ in houses) or at(slope0, _gx_, _gz_) > 26:
+            continue
+        GRAVES = dict(x=_gx_, z=_gz_, hw=9.0, hd=6.5)
+        break
+    if GRAVES:
+        break
+if GRAVES:
+    GRAVES["yaw"] = facing_road_yaw(GRAVES["x"], GRAVES["z"])
+    GRAVES["y"] = round(min(max(at(h, GRAVES["x"], GRAVES["z"]), road_level(GRAVES["z"]) + 1.5), road_level(GRAVES["z"]) + 7.0), 3)
+    _gc, _gs = math.cos(GRAVES["yaw"]), math.sin(GRAVES["yaw"])
+    _glx = (X - GRAVES["x"]) * _gc - (Z - GRAVES["z"]) * _gs
+    _glz = (X - GRAVES["x"]) * _gs + (Z - GRAVES["z"]) * _gc
+    grave_d = np.maximum(np.abs(_glx) - GRAVES["hw"], np.abs(_glz) - GRAVES["hd"])
+    _w = 1 - smoothstep(0.0, 4.0, grave_d)
+    h = h * (1 - _w) + GRAVES["y"] * _w
+    GRAVES["c"], GRAVES["s"] = _gc, _gs
+    def grave_local(lx, lz):
+        c_, s_ = GRAVES["c"], GRAVES["s"]
+        return GRAVES["x"] + lx * c_ + lz * s_, GRAVES["z"] - lx * s_ + lz * c_
+    _px, _pz = grave_local(0.0, GRAVES["hd"] - 0.5)
+    _gpath = [(_px, _pz, GRAVES["y"]), (float(road_x(_pz)) + ROAD_HALF + 0.3, _pz, road_level(_pz))]
+    h = grade_line(h, _gpath, 1.8, lane_d)
+    lanes.append(_gpath)
+    ditch_crossings.append(round(_pz, 2))
+    temple_d = np.minimum(temple_d, grave_d)
 h = np.where((Z >= ROAD_Z0 - 0.6) & (Z < HALF - 32) & (road_d < W_FLAT), road_y, h)
 
 # distance to the side streams (brook and lined channel), for fields, houses and trees to keep clear
@@ -1738,7 +1770,10 @@ for idx, group in enumerate([order[:4], order[4:8], order[8:]]):
     rgba = np.stack([wgt[k] for k in group] + [np.zeros_like(h)] * (4 - len(group)), -1)
     Image.fromarray(np.uint8(np.rint(np.clip(rgba, 0, 1) * 255)), "RGBA").save(OUT / f"splat{idx}.png")
 # Vegetation/paddy auxiliary map: R=forest density, G=paddy id hash, B=paddy interior, A=grass density
-grass_density = np.clip(wgt["grass"] * (1 - 0.6 * forest_density) + wgt["forest"] * 0.25 + is_paddy * (1 - smoothstep(0.5, 1.2, d_fld)) * 0.8, 0, 1)
+# the levees of most fields are mown through the summer (short, sparse grass); a few are left to grow
+_mown = ((label * 2654435761) % 10) < 7
+grass_density = np.clip(wgt["grass"] * (1 - 0.6 * forest_density) + wgt["forest"] * 0.25
+                        + is_paddy * (1 - smoothstep(0.5, 1.2, d_fld)) * np.where(_mown, 0.36, 0.85), 0, 1)
 # nothing grows through the revetments, the canal or the wet margin; sparse tufts on the dry gravel
 grass_density = grass_density * (1 - wall_band) * (1 - riverbed) * (1 - 0.8 * wgt["bar"]) * ~(in_canal & (cdx < CANAL_W / 2 + 0.3))
 grass_density = grass_density * (stream_d > STREAM_W / 2 + 0.3) * (1 - 0.9 * (temple_d < 0))
@@ -2349,6 +2384,17 @@ for _i, _lx in enumerate((-15.0, -11.2)):
         _tobj("haka", _lx, -11.0 + 4.3 * _j + (0.6 if _i else 0.0), yaw=math.pi / 2, variant=(_i * 5 + _j) % 3,
               collider={"type": "box", "halfExtents": [0.5, 0.6, 1.5]})
 add_tree("keyaki", *temple_local(11.8, -9.5), 1.05)
+if GRAVES:
+    # three rows of family graves facing the valley, a sugi or two and a hinoki behind them
+    for _r in range(3):
+        for _k in range(6):
+            if rng.random() < 0.12:
+                continue
+            _x, _z = grave_local(-6.5 + _k * 2.6 + rng.normal(0, 0.15), -3.6 + _r * 3.1)
+            obj("haka", _x, GRAVES["y"], _z, GRAVES["yaw"] + rng.normal(0, 0.03), rng.uniform(0.9, 1.05), variant=int(rng.integers(0, 3)),
+                cemetery=True, collider={"type": "box", "halfExtents": [0.5, 0.6, 1.5]})
+    for _lx in (-7.5, -1.0, 6.0):
+        add_tree("sugi" if _lx != -1.0 else "hinoki", *grave_local(_lx + rng.uniform(-1, 1), -GRAVES["hd"] - 3.0), rng.uniform(0.85, 1.05))
 for _lx in np.arange(-17.0, 17.1, 4.8):
     add_tree("sugi", *temple_local(float(_lx) + rng.uniform(-0.8, 0.8), -TEMPLE["hd"] - 3.5 + rng.uniform(-1, 1)), rng.uniform(0.95, 1.2))
 for _lz in np.arange(-12.0, 9.0, 5.2):
@@ -2402,6 +2448,39 @@ _sb = float(bed_half(BRIDGE_Z))
 BRIDGE_SPAN = round(2 * (_sb + WALL_RUN) + 1.2, 2)
 obj("bridge", BRIDGE_X0, BRIDGE_DECK - 0.4, BRIDGE_Z, 0.0, 1.0, span=BRIDGE_SPAN, width=3.2,
     collider={"type": "box", "halfExtents": [BRIDGE_SPAN / 2, 0.2, 1.6]})
+# Road cuts: where the road is cut more than 2 m into the hill foot, a low dry-stone wall (about
+# 1.1 m) holds the toe of the cut slope at the edge of the shoulder, as road works of the time did;
+# the 1:1 slope continues above it. Gaps at driveways, streams and the shrine branch.
+_ret = 0
+for _side in (1.0, -1.0):
+    _run = []
+    def _flush():
+        global _ret
+        if len(_run) >= 4:
+            for _a in range(0, len(_run) - 1, 5):
+                _seg = _run[_a:_a + 6]
+                if len(_seg) < 2:
+                    continue
+                (_x0, _z0), (_x1, _z1) = _seg[0], _seg[-1]
+                _xm, _zm = (_x0 + _x1) / 2, (_z0 + _z1) / 2
+                _L = math.hypot(_x1 - _x0, _z1 - _z0)
+                obj("ishigaki", _xm, road_level(_zm) + 1.1, _zm, facing_road_yaw(_xm, _zm), 1.0, length=round(_L + 0.4, 2), height=1.1)
+                _ret += 1
+        _run.clear()
+    for _z in np.arange(ROAD_Z0 + 8.0, HALF - 40.0, 2.0):
+        _dxr, _dzr, _ = road_dir(_z)
+        _nx, _nz = _dzr * _side, -_dxr * _side                    # unit normal towards this side
+        _xr = float(road_x(_z))
+        _xf, _zf = _xr + _nx * (W_FLAT + 0.05), _z + _nz * (W_FLAT + 0.05)
+        _cut = sample(_xr + _nx * 8.0, _z + _nz * 8.0) - road_level(_z)
+        _clear = (at(lane_d, _xf, _zf) > 4.0 and at(stream_d, _xf, _zf) > 6.0 and at(irr_d, _xf, _zf) > 3.0 and at(bd, _xf, _zf) > 6.0
+                  and at(temple_d, _xf, _zf) > 4.0 and all(math.hypot(hs_["x"] - _xf, hs_["z"] - _zf) > max(hs_["w"], hs_["d"]) / 2 + 6 for hs_ in houses))
+        if _cut > 2.0 and _clear:
+            _run.append((_xf, _zf))
+        else:
+            _flush()
+    _flush()
+print("retaining walls", _ret)
 # Road bridge where the prefectural road crosses Miyazawa: a short concrete slab with low parapets
 for st in streams:
     if any(c_[0] == "bridge" for c_ in st["covers"]):
