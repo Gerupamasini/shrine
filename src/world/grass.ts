@@ -312,7 +312,7 @@ export class GrassField implements System {
             vec3 tipVar = mix(tipC * vec3(0.85, 0.95, 1.1), tipC * vec3(1.18, 1.1, 0.8), bh);
             vGrassCol = mix(baseC, tipVar, clamp(uv.y, 0.0, 1.0)) * (0.82 + veg.g * 0.25 + hsh * 0.12);
             #ifdef PHOTO_CLUMP
-              vGrassCol = vec3(0.52, 0.8, 0.42) * (0.86 + veg.g * 0.22 + hsh * 0.12);
+              vGrassCol = vec3(0.52, 0.8, 0.42) * (0.86 + veg.g * 0.22 + hsh * 0.12) * mix(vec3(0.88, 1.0, 1.12), vec3(1.16, 1.07, 0.8), fract(veg.g * 7.31));
             #endif
             if (uv.y > 1.2) vGrassCol = ear;
           #else
@@ -378,8 +378,10 @@ export class RiceCanopy implements System {
       g.translate((x0 + x1) / 2, 0, (z0 + z1) / 2);
       return g;
     };
-    this.uniforms = { ...wt.uniforms(), uNearFade: { value: new T.Vector2(1.5, 3.5) } };
-    const shellFade = { uNearFade: { value: new T.Vector2(4.5, 8.0) } };
+    // near the camera the 3D rice hills (photo clumps, full density within ~10 m) are the rice; the
+    // sheet, its shells and the edge curtain take over beyond them
+    this.uniforms = { ...wt.uniforms(), uNearFade: { value: new T.Vector2(6.0, 9.5) } };
+    const shellFade = { uNearFade: { value: new T.Vector2(6.5, 10.0) } };
     const make = (shell: boolean) => {
       const u = shell ? { ...this.uniforms, ...shellFade } : this.uniforms;
       const mat = new T.MeshStandardMaterial({ roughness: 0.95, color: 0xffffff, envMapIntensity: 0.9, side: shell ? T.DoubleSide : T.FrontSide });
@@ -451,6 +453,8 @@ export class RiceCanopy implements System {
             col *= mix(0.55, 1.12, vShell / 3.0);    // self-shadowed depths, lit tips
             col = mix(col, vec3(0.13, 0.17, 0.05), smoothstep(0.6, 1.0, wave) * 0.3 * uWindStrength * (vShell / 3.0));
             col *= mix(0.86, 1.0, rows) * (0.9 + veg.g * 0.2);
+            // each field its own green: planted a week apart, another variety, more or less fertiliser
+            col *= mix(vec3(0.88, 1.0, 1.12), vec3(1.16, 1.07, 0.8), fract(veg.g * 7.31));
             diffuseColor.rgb = col;`,
           )
           .replace(
@@ -481,5 +485,144 @@ export class RiceCanopy implements System {
     this.shells.receiveShadow = true;
     this.shells.frustumCulled = false;
     land.scene.add(this.shells);
+    this.curtain = this.buildCurtain(land, wt);
+    if (this.curtain) land.scene.add(this.curtain);
+  }
+  curtain: T.Mesh | null = null;
+  /**
+   * The side of the rice along every field edge. The canopy sheet and its shells stop at the edge of
+   * the rice; seen from a levee or across the fields they ended in a hovering green plate with
+   * nothing under it. A vertical band of stems and leaves now stands on the field's level along the
+   * edge (the 0.5 contour of the rice mask, by marching squares), so the canopy rises from the field.
+   */
+  private buildCurtain(land: Landscape, wt: WorldTextures) {
+    const lv = wt.paddy.image.data as Float32Array;
+    const n = land.world.height.n, sp = land.world.height.spacing, E = land.world.data.extent, half = E / 2;
+    // rice edge field: blue channel of the vegetation mask, 0.5 at the edge of the rice; the GPU samples
+    // it with texel centres at (i + 0.5) / n, so the contour is traced on those same centres
+    const img = wt.veg.image as HTMLImageElement;
+    const cv = document.createElement("canvas");
+    cv.width = img.width;
+    cv.height = img.height;
+    const ctx = cv.getContext("2d", { willReadFrequently: true })!;
+    ctx.drawImage(img, 0, 0);
+    const px = ctx.getImageData(0, 0, img.width, img.height).data;
+    const W = img.width;
+    const f = (i: number, j: number) => px[(j * W + i) * 4 + 2] / 255 - 0.5;
+    const tx = (i: number) => ((i + 0.5) / W) * E - half;
+    const level = (x: number, z: number) => {
+      const gi = Math.round((x + half) / sp), gj = Math.round((z + half) / sp);
+      let best = -100;
+      for (let dj = -2; dj <= 2; dj++)
+        for (let di = -2; di <= 2; di++) {
+          const v = lv[Math.min(Math.max(gj + dj, 0), n - 1) * n + Math.min(Math.max(gi + di, 0), n - 1)];
+          if (v > -15 && (best < -15 || Math.abs(di) + Math.abs(dj) < 2)) best = Math.max(best, v);
+        }
+      return best;
+    };
+    const pos: number[] = [], nrm: number[] = [], uv: number[] = [];
+    let along = 0;
+    const H0 = 0.02, H1 = 0.84;
+    const quad = (ax: number, az: number, bx: number, bz: number, y: number, ox: number, oz: number) => {
+      const l = Math.hypot(bx - ax, bz - az);
+      if (l < 1e-3) return;
+      // outward normal (rice -> outside); wind the quad to face it
+      let nx = (bz - az) / l, nz = -(bx - ax) / l;
+      if (nx * ox + nz * oz < 0) (nx = -nx), (nz = -nz), ([ax, az, bx, bz] = [bx, bz, ax, az]);
+      const u0 = along, u1 = along + l;
+      along = u1;
+      const v = [
+        [ax, y + H0, az, u0, 0], [bx, y + H0, bz, u1, 0], [bx, y + H1, bz, u1, 1],
+        [ax, y + H0, az, u0, 0], [bx, y + H1, bz, u1, 1], [ax, y + H1, az, u0, 1],
+      ];
+      // (a, b, b-top) winds about (-dz, 0, dx), the inward side: reverse it to face out
+      for (const k of [0, 2, 1, 3, 5, 4]) {
+        const [x, yy, z, uu, vv] = v[k];
+        pos.push(x, yy, z);
+        nrm.push(nx, 0, nz);
+        uv.push(uu, vv);
+      }
+    };
+    const SEGS: Record<number, [number, number][]> = {
+      1: [[3, 0]], 2: [[0, 1]], 3: [[3, 1]], 4: [[1, 2]], 5: [[3, 0], [1, 2]], 6: [[0, 2]], 7: [[3, 2]],
+      8: [[2, 3]], 9: [[2, 0]], 10: [[0, 1], [2, 3]], 11: [[2, 1]], 12: [[1, 3]], 13: [[1, 0]], 14: [[0, 3]],
+    };
+    for (let j = 0; j < W - 1; j++)
+      for (let i = 0; i < W - 1; i++) {
+        const v0 = f(i, j), v1 = f(i + 1, j), v2 = f(i + 1, j + 1), v3 = f(i, j + 1);
+        const k = (v0 >= 0 ? 1 : 0) | (v1 >= 0 ? 2 : 0) | (v2 >= 0 ? 4 : 0) | (v3 >= 0 ? 8 : 0);
+        if (k === 0 || k === 15) continue;
+        const x0 = tx(i), x1 = tx(i + 1), z0 = tx(j), z1 = tx(j + 1);
+        const t = (a: number, b: number) => a / (a - b);
+        // crossing points on the cell edges: 0 bottom (z0), 1 right (x1), 2 top (z1), 3 left (x0)
+        const P = [
+          [x0 + (x1 - x0) * t(v0, v1), z0], [x1, z0 + (z1 - z0) * t(v1, v2)],
+          [x0 + (x1 - x0) * t(v3, v2), z1], [x0, z0 + (z1 - z0) * t(v0, v3)],
+        ];
+        // direction out of the rice: down the gradient of the edge field
+        const gx = (v1 + v2 - v0 - v3) / 2, gz = (v3 + v2 - v0 - v1) / 2;
+        for (const [a, b] of SEGS[k]) {
+          const mx = (P[a][0] + P[b][0]) / 2, mz = (P[a][1] + P[b][1]) / 2;
+          const y = level(mx, mz);
+          if (y < -15) continue;
+          quad(P[a][0], P[a][1], P[b][0], P[b][1], y, -gx, -gz);
+        }
+      }
+    if (!pos.length) return null;
+    const g = new T.BufferGeometry();
+    g.setAttribute("position", new T.Float32BufferAttribute(pos, 3));
+    g.setAttribute("normal", new T.Float32BufferAttribute(nrm, 3));
+    g.setAttribute("uv", new T.Float32BufferAttribute(uv, 2));
+    g.computeBoundingSphere();
+    const mat = new T.MeshStandardMaterial({ roughness: 0.9, color: 0xffffff, envMapIntensity: 0.8, side: T.DoubleSide });
+    (mat as unknown as { defines: Record<string, string> }).defines = { FOLIAGE: "" };
+    land.lib.finish(mat);
+    // fades in with the base sheet (not the shells), so the sheet never shows an open edge
+    const u = { ...wt.uniforms(), uNearFade: { value: new T.Vector2(6.0, 9.5) } };
+    addHook(mat, "rice-curtain", (s) => {
+      Object.assign(s.uniforms, u, windUniforms);
+      s.vertexShader = s.vertexShader
+        .replace("#include <common>", "#include <common>\n varying vec2 vCuv; varying vec3 vCw;")
+        .replace(
+          "#include <begin_vertex>",
+          `#include <begin_vertex>
+          vCuv = uv; vCw = position;
+          // the tops sway with the canopy
+          transformed.xz += vec2(0.0) + uv.y * uv.y * 0.05 * sin(uWindTime * 1.3 + dot(position.xz, vec2(0.8, 0.6)) * 0.3);`,
+        )
+        .replace("#include <common>", "#include <common>\n uniform float uWindTime;");
+      s.fragmentShader = s.fragmentShader
+        .replace(
+          "#include <common>",
+          `#include <common>
+          uniform vec2 uNearFade; varying vec2 vCuv; varying vec3 vCw;
+          float ch(float x){ return fract(sin(x * 127.1) * 43758.5453); }
+          float cn(float x){ float i = floor(x), f = fract(x); f = f * f * (3.0 - 2.0 * f); return mix(ch(i), ch(i + 1.0), f); }`,
+        )
+        .replace(
+          "#include <map_fragment>",
+          `float camD = length(vCw.xz - cameraPosition.xz);
+          if (smoothstep(uNearFade.x, uNearFade.y, camD) < fract(sin(dot(gl_FragCoord.xy, vec2(12.9898, 78.233))) * 43758.5453)) discard;
+          // ragged top: single leaf blades of each hill reach to different heights, arching out
+          float tip = 0.5 + 0.3 * cn(vCuv.x * 3.3) + 0.25 * cn(vCuv.x * 17.0 + 2.0) + 0.15 * cn(vCuv.x * 53.0);
+          if (vCuv.y > tip) discard;
+          // a little light between the hills low down, where the stems stand apart over the water
+          float gap = cn(vCuv.x * 9.6 + 1.3);
+          if (vCuv.y < 0.35 && gap > 0.78 - vCuv.y * 0.6) discard;
+          // stems and blades: hills every 0.3 m, dark near the water, leaves lighter towards the top
+          float hill = 0.5 + 0.5 * sin(vCuv.x * 20.9 + cn(vCuv.x * 1.7) * 3.0);
+          float streak = cn(vCuv.x * 37.0 + vCuv.y * 2.0) * 0.5 + cn(vCuv.x * 91.0 - vCuv.y * 9.0) * 0.5;
+          vec3 low = vec3(0.014, 0.028, 0.011), high = vec3(0.05, 0.1, 0.02);
+          vec3 col = mix(low, high, smoothstep(0.05, 0.9, vCuv.y)) * (0.55 + 0.75 * streak) * mix(0.75, 1.05, hill);
+          col *= mix(0.45, 1.0, smoothstep(0.0, 0.3, vCuv.y));     // the shade at the foot of the plants
+          diffuseColor.rgb = col;`,
+        );
+    });
+    const mesh = new T.Mesh(g, mat);
+    mesh.receiveShadow = true;
+    mesh.castShadow = false;
+    mesh.frustumCulled = false;
+    mesh.name = "rice-curtain";
+    return mesh;
   }
 }

@@ -221,6 +221,19 @@ for a in range(0, len(levee) - 4, 8):         # dashed footpath on the levee
 canal = scene["river"]["canal"]["points"]
 dr.line([P(p[0], p[2]) for p in canal], fill=blue, width=max(3, px(1.2)))
 
+# canals fed from the side brooks (not where they run in a pipe under the road)
+for c_ in scene.get("canals", []):
+    run_ = []
+    for q_ in c_["points"]:
+        if q_[4] == 1:
+            if len(run_) > 1:
+                dr.line(run_, fill=blue, width=max(3, px(1.2)))
+            run_ = []
+        else:
+            run_.append(P(q_[0], q_[2]))
+    if len(run_) > 1:
+        dr.line(run_, fill=blue, width=max(3, px(1.2)))
+
 # side streams: the brook and the lined channel
 for st in scene.get("streams", []):
     for run in st["water"]:
@@ -368,7 +381,7 @@ for o in scene["objects"]:
     elif a == "nokyo":
         x, z = beside(o, 16); labels.append({"text": "農協", "x": x, "z": z, "kind": "facility"})
     elif a == "kominkan":
-        x, z = beside(o, 15); labels.append({"text": "公民館", "x": x, "z": z, "kind": "facility"})
+        x, z = beside(o, 15); labels.append({"text": "集会所" if o.get("hall") else "公民館", "x": x, "z": z, "kind": "facility"})
     elif a == "haiden":
         x, z = o["position"][0] + 4, o["position"][2] + 22
         sym_shrine(x, z); labels.append({"text": "熊野神社", "x": x, "z": z + 10, "kind": "facility"})

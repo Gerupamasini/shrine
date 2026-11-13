@@ -1267,12 +1267,14 @@ function riverWorks() {
     }
     // concrete cap (tenba) over the whole crest, cast in segments: the wall is a closed solid
     // over the sunken ground behind it
+    // (an old dry-stone wall has no concrete: its top is a coping of mossy stones, grassed over behind)
     const cw = CAP + 0.1, off = RUN - 0.06 + cw / 2;
     for (let i = 0; i < rows.length - 1; i++) {
       const a = rows[i], b = rows[i + 1];
       const ax = a.xc + side * (a.B + off), bx = b.xc + side * (b.B + off);
       const L = Math.hypot(bx - ax, b.z - a.z), yaw = Math.atan2(bx - ax, b.z - a.z);
-      m.box("concrete_cap", L + 0.012, 0.24, cw, (ax + bx) / 2, (a.top + b.top) / 2 - 0.05, (a.z + b.z) / 2, { ry: yaw + Math.PI / 2 });
+      const old = (side < 0 ? a.fW : a.fE) === 0;
+      m.box(old ? "stone_moss" : "concrete_cap", L + 0.012, old ? 0.3 : 0.24, cw, (ax + bx) / 2, (a.top + b.top) / 2 - (old ? 0.1 : 0.05), (a.z + b.z) / 2, { ry: yaw + Math.PI / 2 });
     }
     // end walls (wing) where the masonry stops (earth bank, washing steps)
     for (const [r, dz] of [[rows[0], -1], [rows[rows.length - 1], 1]]) {

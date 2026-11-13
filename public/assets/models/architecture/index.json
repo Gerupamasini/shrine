@@ -103,16 +103,16 @@
  },
  "assets": {
   "road-ditch": {
-   "triangles": 41460,
+   "triangles": 41544,
    "min": [
-    -85.221,
+    -84.092,
     1.901,
-    -558.847
+    -558.969
    ],
    "max": [
-    72.3,
+    76.889,
     9.942,
-    689.416
+    689.14
    ],
    "materials": [
     "concrete_old",
@@ -123,14 +123,14 @@
   "tunnel": {
    "triangles": 2736,
    "min": [
-    -72.38,
+    -77.684,
     -0.8,
-    -98.699
+    -98.831
    ],
    "max": [
     9.2,
     9.12,
-    1.035
+    1.014
    ],
    "materials": [
     "concrete",
@@ -373,15 +373,15 @@
    ]
   },
   "stream-works": {
-   "triangles": 31556,
+   "triangles": 34496,
    "min": [
     -174.21,
-    1.083,
-    -413.412
+    1.08,
+    -412.529
    ],
    "max": [
-    57.645,
-    11.351,
+    61.51,
+    11.267,
     558.05
    ],
    "materials": [
@@ -1594,6 +1594,7 @@
     "revet_kenchi",
     "revet_stone_wet",
     "revet_stone",
+    "stone_moss",
     "concrete_wet",
     "interior_dark",
     "steel_red",
@@ -1610,12 +1611,12 @@
    "min": [
     -4.82,
     0,
-    -4.26
+    -3.722
    ],
    "max": [
     4.82,
     1.52,
-    4.26
+    3.722
    ],
    "materials": [
     "concrete",
@@ -2086,16 +2087,16 @@
    ]
   },
   "road-markings": {
-   "triangles": 15708,
+   "triangles": 15576,
    "min": [
-    -85.972,
-    2.394,
-    -560.606
+    -85.014,
+    2.391,
+    -560.689
    ],
    "max": [
-    71.04,
+    75.629,
     9.902,
-    729.098
+    729.17
    ],
    "materials": [
     "road_paint"

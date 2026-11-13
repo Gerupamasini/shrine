@@ -36,6 +36,7 @@
    - A：草の密度
 6. `paddy-level.png` は稲がある区画の田面高さ（16-bit、高さマップと同じ変換式）。稲以外のセルは−20（最小値）。
 7. `far-heightmap.png`（257²、14km四方、0〜1600m）は遠景の山並み。別のTerrain、またはLODを粗くしたメッシュとして配置する。
+   - 地図の周囲1.6kmの中景は `mid-heightmap.png` と `mid-cover.png`。形式と範囲は `public/world/far-terrain.json` にある（`src/world/far.ts` の読み込み処理と同じ変換）。中景は地図の外周に接するリング状のTerrain（またはメッシュ）として置き、地図の中は描かない。
 8. 側溝の開口とトンネルの坑口は、地形を掘らずに地形シェーダーで地面を描かないことで見せている（`scene.json` の `ditch` と `tunnel`）。UnityではTerrainのHoles（`TerrainData.SetHoles`）か、地形の上に置くメッシュで同じ形を作る。地図は `map.webp` と `map.json`（地名と位置）をUIに使う。
 
 ## 配置
@@ -48,9 +49,11 @@
 | `vegetation.json` | 樹木（樹種ごと） | `[x, y, z, scale, yaw, variant, lean]` |
 | `clutter.json` | 下草・岩・畑の作物（`crop`、variantは作物の種類）など | `[x, y, z, scale, yaw, variant]` |
 | `scene.json` の `river.points` | 川の水面。河床の中心を通るX方向の断面 | `[x, waterY, z, widthX, fall, riffle]`。`fall=1` の2行は越流の頂部と下端 |
-| `scene.json` の `river.bed` | 河床と護岸 | `[xCentre, z, halfWidth, bankTopY, toeYWest, toeYEast, earthWest, earthEast, blockFacing]` |
+| `scene.json` の `river.bed` | 河床と岸 | `[xCentre, z, halfWidth, bankTopY, toeYWest, toeYEast, earthWest, earthEast, facingWest, facingEast]`。earth=1は土の岸（地形のまま）、0は護岸。facingは護岸の面：0 古い空石積み（天端は苔むした笠石）、1 コンクリートブロック、2 間知石。`walled` は直線の改修区間のz範囲、`leveePath` は東岸の管理用通路の中心線 |
 | `scene.json` の `river.drops` | 落差工と固定堰 | 位置・天端高・上下流の水位・水叩きの長さ |
-| `scene.json` の `river.canal`・`intake`・`washSteps` | 用水路・取水口・洗い場 | 用水路は `[x, waterY, z, width]`、管渠の区間 |
+| `scene.json` の `river.canal`・`intake`・`washSteps` | 堰の用水路・取水口・洗い場 | 用水路は `[x, waterY, z, width]`、管渠の区間 |
+| `scene.json` の `canals` | 沢から取水する幹線用水路（2本） | 各点 `[x, waterY, z, width, cover]`（cover：0 開水路、1 県道の下の管、2 蓋掛け）。`intake` は沢の取水堰（位置・河床高・天端高・沢の向き）。模型は `architecture/stream-works.glb` に入っている |
+| `scene.json` の `streams` | 沢と、田の中の三面張り水路・支線水路 | `kind: "ditch"` は支線水路（沢の上流部 `brook` はない）。`covers` の `kind`：`road` 暗渠、`bridge` 県道の橋の下、`farm`・`levee` 蓋掛け。`water` は水面の帯（各点 `[x, waterY, z, halfWidth]`） |
 | `scene.json` の `roads` | 道。`lane-*` は家から道路への小道（未舗装） | 各点 `[x, y, z]` |
 | `scene.json` の `hamlets` | 集落の名前と範囲 | 中心z・道沿いの半長 |
 | `scene.json` の `objects` の `smoke: true` | 煙を出す家 | 煙の出る位置は `architecture/index.json` の各モデルの `smoke`（ローカル座標） |
@@ -71,6 +74,9 @@
 - `architecture/stairs.glb`：石段・石畳・境内の石垣
 - `architecture/road-ditch.glb`：道の側溝と蓋
 - `architecture/river-works.glb`：川の護岸・天端・落差工・堰・取水口・用水路・洗い場
+- `architecture/stream-works.glb`：沢と支線水路の三面張り・暗渠・蓋、沢から取水する幹線用水路と取水堰
+
+県道が宮沢を渡る短い橋は、`objects` の `road-bridge`（`span`・`width`・`skew`）です。床版の両端は沢に平行（斜橋）で、`road-bridge.glb` は生成時にせん断変形してあります。
 
 石積みの護岸と天端の下は、高さマップでは地面を沈めてあります（1:0.4の壁を1.17m格子で表せないため）。Unityでは `river-works.glb` にMeshColliderを付けるか、`river.bed` から護岸に沿った箱コライダーを作ってください（Three.js版は後者）。
 
@@ -98,17 +104,19 @@
 - **size**：テクスチャ1枚が覆う長さ（m）。GLBのUVはメートル単位なので、tiling = 1 / size です。
 - **color**：albedoに乗算する色（sRGBの16進）。
 - **葉**：アルファカットオフ0.5、両面描画、半透過（HDRPならTranslucent / Subsurface）。
+- **saturation**：albedoテクスチャの彩度をどれだけ残すか（1＝写真のまま）。ベージュ色の `white_plaster_rough_01` を白漆喰や灰色のコンクリートとして使うため、彩度を下げてから `color`・`gain` を掛ける。地形の層にも同じ項目がある（林床の `forest_leaves_02`）。
 - **dusk**：`[開始時刻, 最大時刻, 最大の発光強度]`。窓明かり・自販機・街灯の発光を時刻で上げる（Unityでは時刻スクリプトから材質のEmissionを制御）。
 
 ## 環境（照明の再現）
 
 - **太陽**：`scene.json` の `environment` にある日付・緯度・経度・タイムゾーンで太陽位置を計算する。式は `src/engine/sun.ts`（NOAAの近似式）。
-  - 18:00は方位285.6°・高度6.7°。直射光の色は大気減衰の近似で決める（`sunlight()`）。
-- **空**：`public/assets/sky/backdrop.jpg`（上半球のLDR）と `environment_1k.hdr`。
+  - 18:00は方位285.6°・高度6.7°。直射光の色は大気減衰の近似で決める（`sunlight()`。18:00で約2900K、線形RGB (1, 0.57, 0.24)）。
+  - 直射光と空の光の比は約6:1（`lighting.ts` の `tune`：直射光の強さ15×透過率、環境光0.3、露出1.55）。HDRPではPhysically Based Skyを使わず、この比をDirectional LightのIntensityとSky ExposureでそろえるのがUnity側でも同じ見え方への近道。
+- **空**：`public/assets/sky/backdrop.jpg`（上半球のLDR）と `environment_1k.hdr`（Poly Haven `kloppenheim_06_puresky`、CC0）。
   - `sky.json` に元画像の太陽方位がある。空の回転は「太陽方位 − 元画像の太陽方位」。
   - HDRIを環境光に使う場合は、直射光と二重にならないよう太陽部分を抑える（`lighting.ts` では輝度6以上をクランプしている）。
 - **霞**：指数関数的な高さフォグ。密度0.00036/m、高さ減衰0.0042/m。太陽方向にHenyey–Greensteinのg=0.72で暖色を加える。HDRPならVolumetric Fogで再現する。
-- **トーンマッピング**：ACES。露出は18:00で約1.05。
+- **トーンマッピング**：ACES。露出は18:00で約1.55。
 
 ## 作り直す必要があるもの
 
