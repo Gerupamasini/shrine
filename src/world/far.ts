@@ -223,7 +223,7 @@ export class FarTerrain implements System {
           if (st.x < 0.5) col = sugi * (0.7 + 0.45 * crowns);                       // plantation: dark, even
           else if (st.x < 1.5) col = zoki * (0.45 + canopy * 1.05);                  // natural wood: lumpy
           else if (st.x < 2.5) col = vec3(0.08, 0.11, 0.042) * (0.85 + 0.25 * fn(vFW.xz * 0.12));   // young plantation
-          else if (st.x < 3.5) col = mix(vec3(0.1, 0.09, 0.055), vec3(0.075, 0.095, 0.045), smoothstep(0.4, 0.7, fn(vFW.xz * 0.08)));  // clear-cut
+          else if (st.x < 3.5) col = mix(vec3(0.092, 0.088, 0.055), vec3(0.08, 0.104, 0.044), smoothstep(0.25, 0.55, fn(vFW.xz * 0.08)));  // clear-cut: brush and bracken over the stumps
           else col = vec3(0.052, 0.062, 0.034) * (0.6 + 0.6 * canopy);              // red pine on the ridge
           // the edge of a plantation against the wood next to it reads as a slightly darker line
           col *= mix(0.82, 1.0, smoothstep(2.0, 9.0, st.y));
