@@ -315,7 +315,7 @@ dr.rectangle([P(pr["x0"], pr["z0"]), P(pr["x1"], pr["z1"])], outline=(120, 110, 
 SKIP = ("prop-", "torii", "toro", "komainu", "sekihi", "jizo", "denchu", "jihanki", "post", "phone-box", "block-wall", "ishigaki",
         "kei-truck", "fence-lookout", "saisen", "ema", "shimenawa-tree", "bench", "bridge", "hinomi", "monohoshi", "tunnel", "road-ditch", "bus-stop",
         "haka", "rokujizo", "tera-sanmon", "tera-shoro", "road-bridge")
-CONCRETE = {"post-office", "chuzaisho", "nokyo", "nokyo-soko", "shobo-shed", "shinryojo"}
+CONCRETE = {"post-office", "chuzaisho", "nokyo", "nokyo-soko", "shobo-shed", "shinryojo", "shobo-tsumesho"}
 bnum = {}
 for o in scene["objects"]:
     a = o["asset"]
@@ -392,6 +392,10 @@ for o in scene["objects"]:
         x, z = beside(o); sym_police(x, z); labels.append({"text": "駐在所", "x": x, "z": z + 9, "kind": "facility"})
     elif a == "nokyo":
         x, z = beside(o, 16); labels.append({"text": "農協", "x": x, "z": z, "kind": "facility"})
+    elif a == "bunko":
+        x, z = beside(o, 22); labels.append({"text": "分校", "x": x, "z": z, "kind": "facility"})
+    elif a == "shobo-tsumesho":
+        x, z = beside(o, 12); labels.append({"text": "消防団", "x": x, "z": z, "kind": "facility"})
     elif a == "kominkan":
         x, z = beside(o, 15); labels.append({"text": "集会所" if o.get("hall") else "公民館", "x": x, "z": z, "kind": "facility"})
     elif a == "haiden":

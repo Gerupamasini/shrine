@@ -103,7 +103,7 @@
  },
  "assets": {
   "road-ditch": {
-   "triangles": 41592,
+   "triangles": 41424,
    "min": [
     -84.092,
     1.901,
@@ -373,15 +373,15 @@
    ]
   },
   "stream-works": {
-   "triangles": 34496,
+   "triangles": 34448,
    "min": [
     -174.21,
-    1.08,
+    1.101,
     -412.529
    ],
    "max": [
     61.51,
-    11.267,
+    11.809,
     558.05
    ],
    "materials": [
@@ -1689,6 +1689,79 @@
     "roof_soffit"
    ]
   },
+  "shobo-tsumesho": {
+   "triangles": 1240,
+   "min": [
+    -5.1,
+    0,
+    -3.1
+   ],
+   "max": [
+    3.55,
+    10.8,
+    3.1
+   ],
+   "materials": [
+    "concrete",
+    "concrete_block",
+    "steel_red",
+    "steel_gate",
+    "aluminium",
+    "glass_dark",
+    "plaster_white",
+    "glass",
+    "porcelain",
+    "lamp_red",
+    "roof_tin",
+    "roof_soffit",
+    "metal_grey",
+    "metal_dark",
+    "bronze_dark",
+    "cloth_white"
+   ]
+  },
+  "bunko": {
+   "triangles": 2958,
+   "min": [
+    -13.9,
+    0,
+    -4.95
+   ],
+   "max": [
+    13.9,
+    9,
+    21.6
+   ],
+   "materials": [
+    "concrete",
+    "wood_siding",
+    "wood_frame",
+    "glass",
+    "interior_dark",
+    "roof_tin_blue",
+    "roof_soffit",
+    "wood_old",
+    "metal_grey"
+   ]
+  },
+  "mizuguchi": {
+   "triangles": 36,
+   "min": [
+    -0.31,
+    -0.21,
+    -0.36
+   ],
+   "max": [
+    0.31,
+    0.21,
+    0.385
+   ],
+   "materials": [
+    "concrete_old",
+    "interior_dark",
+    "wood_old"
+   ]
+  },
   "post": {
    "triangles": 560,
    "min": [
@@ -2087,7 +2160,7 @@
    ]
   },
   "road-markings": {
-   "triangles": 15540,
+   "triangles": 15708,
    "min": [
     -85.014,
     2.391,
