@@ -10,10 +10,14 @@ const ROOT = path.resolve(import.meta.dirname, "../..");
 const OUT = path.join(ROOT, "public/assets/models/architecture");
 fs.mkdirSync(OUT, { recursive: true });
 const scene = JSON.parse(fs.readFileSync(path.join(ROOT, "public/world/scene.json"), "utf8"));
-const index = {};
+// Regenerate terrain-dependent works without re-authoring the vehicle fleet.
+const WORLD_ONLY = process.argv.includes('--world-only');
+const WORLD_ASSETS = new Set(['stairs', 'river-works', 'road-ditch', 'stream-works', 'road-markings', 'road-bridge', 'tunnel']);
+const index = WORLD_ONLY ? JSON.parse(fs.readFileSync(path.join(OUT, 'index.json'), 'utf8')).assets : {};
 const M4 = (x = 0, y = 0, z = 0, ry = 0, s = 1) => new THREE.Matrix4().compose(V(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(0, ry, 0)), V(s, s, s));
 
 async function save(name, model) {
+  if (WORLD_ONLY && !WORLD_ASSETS.has(name)) return;
   await writeModel(model, path.join(OUT, `${name}.glb`));
   const box = new THREE.Box3();
   for (const gs of model.parts.values()) for (const g of gs) { g.computeBoundingBox(); box.union(g.boundingBox); }
@@ -1923,6 +1927,7 @@ const { weld, quantize, dedup } = await import("@gltf-transform/functions");
 const io2 = new NodeIO().registerExtensions(ALL_EXTENSIONS);
 let total = 0;
 for (const f of fs.readdirSync(OUT).filter((f) => f.endsWith(".glb"))) {
+  if (WORLD_ONLY && !WORLD_ASSETS.has(f.slice(0, -4))) continue;
   const doc = await io2.read(path.join(OUT, f));
   await doc.transform(weld({ tolerance: 0.0005 }), dedup({ propertyTypes: [PropertyType.ACCESSOR, PropertyType.MESH] }), quantize({ pattern: /^(POSITION|NORMAL)$/, quantizePosition: 16, quantizeNormal: 10 }));
   await io2.write(path.join(OUT, f), doc);
@@ -1931,4 +1936,4 @@ for (const f of fs.readdirSync(OUT).filter((f) => f.endsWith(".glb"))) {
 console.log("architecture bytes", total);
 
 // Vehicles share the architecture registry; rebuild after the main index is written.
-await import("../vehicles/build.mjs");
+if (!WORLD_ONLY) await import("../vehicles/build.mjs");

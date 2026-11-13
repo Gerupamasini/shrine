@@ -1325,6 +1325,109 @@ for _zc in irr_ditch_z:
                             water0=float(np.interp(_zd, _c["pts"][:, 1], _c["pts"][:, 2])) - 0.08))
     _line_dist(irr_d, _x0, _zd, _xr, _zd, reach=8.0)
 
+# Rural access is laid out BEFORE fields, so the parcels end at the shoulders.
+# Roads avoid the brook corridors; loops return to a different existing junction.
+from rural import route as rural_route, connected_fields
+_tick('Rural access roads')
+_rural_block = (stream_d < 9.0) | (irr_d < 3.0) | (temple_d < 12) | (shrine_spur(X, Z) > 2.0)
+_rural_block |= (rd < RIVER_KEEP + 3) | (np.abs(X) > HALF - 35) | (np.abs(Z) > HALF - 45)
+for _hs in houses:
+    _rural_block |= np.hypot(X - _hs['x'], Z - _hs['z']) < 23
+_rural_block &= ~(((road_d < 4.0) & (Z > ROAD_Z0)) | (town_d < 2.0))
+rural_roads = []
+def rural_leg(name, cls, a, b, avoid=None, east_of=None):
+    global h
+    blocked_route = _rural_block.copy()
+    if east_of is not None:
+        blocked_route |= X < east_of
+    if avoid:
+        corridor = np.full_like(h, 1e9)
+        for road_ in rural_roads:
+            if road_['id'] in avoid:
+                for p, q in zip(road_['pts'], road_['pts'][1:]):
+                    _line_dist(corridor, *p, *q, reach=16)
+        blocked_route |= (corridor < 13) & (np.hypot(X-a[0], Z-a[1]) > 18) & (np.hypot(X-b[0], Z-b[1]) > 18)
+    pts = rural_route(h, blocked_route, a, b, CELL, HALF)
+    # Sample tie-ins at <=2 m: a long routing edge can cross the whole road
+    # shoulder between vertices, otherwise its sloping profile gets cut off by
+    # the existing flat carriageway and leaves a step at the edge.
+    dense = []
+    for p, q in zip(pts, pts[1:]):
+        n = max(1, math.ceil(math.dist(p, q)/2.0))
+        dense.extend(tuple(v) for v in np.linspace(p, q, n, endpoint=False))
+    pts = dense + [pts[-1]]
+    from scipy.ndimage import gaussian_filter1d
+    lengths = np.hypot(*np.diff(np.array(pts), axis=0).T)
+    chainage = np.r_[0., np.cumsum(lengths)]
+    ground = np.array([at(h, x, z) for x, z in pts])
+    uniform = np.arange(0., chainage[-1]+2., 2.)
+    ys = np.interp(chainage, uniform, gaussian_filter1d(np.interp(uniform, chainage, ground), 3., mode='nearest'))
+    on_main = np.array([at(road_d, x, z) < W_FLAT+2.0 for x, z in pts])
+    ground[on_main] = np.array([road_level(z) for x, z in pts])[on_main]
+    fixed = on_main | np.array([at(town_d, x, z) < 3.0 for x, z in pts])
+    # Shared rural junctions get a short level turnout. Separate vertical
+    # alignments must agree where their shoulders overlap at the fork.
+    for end, distances in [(0, chainage), (-1, chainage[-1]-chainage)]:
+        px, pz = pts[end]
+        if at(road_d, px, pz) > W_FLAT+4 and at(town_d, px, pz) > 4:
+            level = ground[end]
+            for prior in rural_roads:
+                for qx, qz, qy in [prior['profile'][0], prior['profile'][-1]]:
+                    if math.hypot(px-qx, pz-qz) < .01:
+                        level = qy
+            turnout = distances <= 20
+            fixed |= turnout
+            ground[turnout] = level
+    fixed[0] = fixed[-1] = True
+    ys[fixed] = ground[fixed]
+    # Existing paved roads are fixed tie-ins too: smoothing must not lift a new
+    # lane where it briefly shares the main road or crosses Shimojuku's old road.
+    # A short vertex spacing at a rounded hairpin must not concentrate the climb.
+    # Project the vertical alignment onto a 16% grade envelope with fixed tie-ins.
+    for _ in range(30):
+        ys[fixed] = ground[fixed]
+        for k in range(1, len(ys)):
+            if not fixed[k]:
+                ys[k] = np.clip(ys[k], ys[k-1]-.16*lengths[k-1], ys[k-1]+.16*lengths[k-1])
+        ys[fixed] = ground[fixed]
+        for k in range(len(ys)-2, -1, -1):
+            if not fixed[k]:
+                ys[k] = np.clip(ys[k], ys[k+1]-.16*lengths[k], ys[k+1]+.16*lengths[k])
+    profile = [(x, z, float(y)) for (x, z), y in zip(pts, ys)]
+    rural_roads.append(dict(id=name, kind=cls, pts=pts, profile=profile))
+    # A terrain-aware route can share the main road briefly before branching.
+    # Cover the gutter where it actually crosses, not just at the nominal start.
+    for (ax, az), (bx, bz) in zip(pts, pts[1:]):
+        for side in (-1, 1):
+            da = ax-float(road_x(az))-side*DITCH_OFF
+            db = bx-float(road_x(bz))-side*DITCH_OFF
+            if da*db <= 0 and abs(da-db) > 1e-6:
+                ditch_crossings.append(round(az+(bz-az)*da/(da-db), 2))
+    h = grade_line(h, profile, 3.6, farm_d)
+    return pts
+# East: farm tracks climb beside the cultivated valley floors, joined by one forest road.
+_e0 = (float(road_x(310)), 310.)
+_e1, _e2 = (410., 250.), (300., 560.)
+_e3 = (float(road_x(550)), 550.)
+rural_leg('miyazawa-farm', 'farm', _e0, _e1)
+rural_leg('east-forest', 'forest', _e1, _e2, avoid=['miyazawa-farm'], east_of=220)
+rural_leg('minamizawa-farm', 'farm', _e2, _e3)
+# North: a smaller forest circuit above the Okusawa fields, on the same bank of the brook.
+_n0, _n1 = (float(road_x(-350)), -350.), (320., -400.)
+_n2 = (float(road_x(-270)), -270.)
+rural_leg('okusawa-farm', 'farm', _n0, _n1)
+rural_leg('north-forest', 'forest', _n1, _n2, avoid=['okusawa-farm'])
+# Kawamuko: the lower field edge connects both ends of the hamlet lane.
+_w0, _w3 = tuple(branch_k[-1][:2]), tuple(branch_k[0][:2])
+_w1, _w2 = (-275., 100.), (-260., 300.)
+rural_leg('kawamuko-north-farm', 'farm', _w0, _w1)
+rural_leg('kawamuko-contour-farm', 'farm', _w1, _w2)
+rural_leg('kawamuko-south-farm', 'farm', _w2, _w3)
+# Keep the prefectural road and its gutters level at the new junctions.
+for _p in (_e0, _e3, _n0, _n2):
+    ditch_crossings.append(round(_p[1], 2))
+h = np.where((Z >= ROAD_Z0 - .6) & (Z < HALF - 32) & (road_d < W_FLAT), road_y, h)
+
 # ---- Paddies ------------------------------------------------------------------
 _tick('Paddies')
 mountain_factor = _M
@@ -1405,11 +1508,17 @@ gentle = ((_aw > 0.5) & (slope0 < 16)) | ((_yatsu(X, Z) > 0.5) & (slope0 < 11)) 
 TER = (gentle & (rise > 0.3) & (rise < 34 + 5 * ter_edge) & house_clear & (label < 0) & (rd > RIVER_KEEP + 2) & (road_d > 9.5)
        & (np.abs(X) < HALF - 25) & (np.abs(Z) < HALF - 25) & (shrine_spur(X, Z) < 3)
        & ~((X > road_at_stair - 6) & (X < STAIR_X0 + 4) & (np.abs(Z - STAIR_Z) < 13)))
-rise_n = rise + 0.5 * fbm(P3, X, Z, 28, 2)
+# Absolute elevations make horizontal water surfaces; smooth only sub-field relief.
+# Relative height above a falling valley made benches wander across true contours.
+rise_n = ndimage.gaussian_filter(h, 2.0)
+# Keep cultivated land near access, rather than clearing every gentle pocket in the woods.
+_access = ndimage.distance_transform_edt((farm_d > 3.5) & (town_d > 3.6) & (road_d > 6)) * CELL
+TER &= (_access < 85) & (irr_d > 2.5)
+TER = ndimage.binary_opening(TER, iterations=2)
 _gr = np.hypot(*np.gradient(rise_n, CELL))
 # bench heights vary (0.9-1.8 m), as terraces cut by hand to the lie of the ground do
 _te = [-2.0]
-while _te[-1] < 60:
+while _te[-1] < 100:
     _te.append(_te[-1] + rng.uniform(0.9, 1.8))
 _te = np.array(_te)
 tband = np.clip(np.searchsorted(_te, rise_n), 1, len(_te) - 1)
@@ -1426,14 +1535,16 @@ _stag = rng.uniform(0, 60, 128)[tband % 128]
 _zc, _xc = Z + 5 * fbm(P4, X, Z, 30, 2) + _stag, X + 5 * fbm(P2, X, Z, 30, 2) + _stag
 _kz = np.clip(np.searchsorted(_cz, _zc), 1, len(_cz) - 1)
 _kx = np.clip(np.searchsorted(_cx, _xc), 1, len(_cx) - 1)
-_ew = np.abs(ndimage.gaussian_filter(_gxr, 6)) >= np.abs(ndimage.gaussian_filter(_gyr, 6))
-tcut = np.where(_ew, _kz, 500 + _kx)
-d_cut = np.where(_ew, np.minimum(_zc - _cz[_kz - 1], _cz[_kz] - _zc), np.minimum(_xc - _cx[_kx - 1], _cx[_kx] - _xc))
-# where the two cut families meet (the slope turns), the change of family is a boundary too
-_fam = ndimage.distance_transform_edt(_ew) + ndimage.distance_transform_edt(~_ew)
-d_cut = np.minimum(d_cut, (_fam - 0.5) * CELL)
+# Use one transverse family per hillside instead of switching at every local
+# slope-direction change (which created artificial seams and triangular shards).
+# The main valley and Kawamuko face east/west; subsidiary valleys follow the same
+# broadly east/west fall, so staggered cross-bunds run across z along each bench.
+tcut = _kz
+d_cut = np.minimum(_zc - _cz[_kz - 1], _cz[_kz] - _zc)
 label = np.where(TER, TERRACE0 + tband * 1000 + tcut, label)
 d_fld = np.where(TER, np.minimum(d_ter, d_cut), d_fld)
+
+label = connected_fields(label, TERRACE0)
 
 def _compact(lab):
     """Field labels -> 1..K (0 = none) and the list of original labels."""
@@ -1455,6 +1566,7 @@ for _pass in range(2):
     area_ = np.bincount(comp.ravel(), minlength=len(ids_) + 1)[1:] * CELL * CELL
     small = area_ < np.where(ids_ >= 300000, 150, 300)          # terraces and the old irregular plots may be small
     label = _drop(label, np.concatenate([[False], small])[comp])
+label = connected_fields(label, TERRACE0)
 comp, ids_ = _compact(label)
 K = len(ids_)
 lvl = ndimage.median(h, comp, np.arange(1, K + 1)) - 0.22
@@ -1527,7 +1639,7 @@ aze = is_paddy & (d_fld < 0.75)
 dist_px, (iy, ix) = ndimage.distance_transform_edt(~is_paddy, return_indices=True)
 dist_m = dist_px * CELL
 near_lvl = paddy_level[iy, ix] + 0.26
-bank_zone = (~is_paddy) & (dist_m < 14) & ~np.isnan(near_lvl)
+bank_zone = (~is_paddy) & (dist_m < 14) & ~np.isnan(near_lvl) & (farm_d > 3.0) & (town_d > 3.6) & (lane_d > 3.0)
 tan35 = 0.7
 h = np.where(bank_zone, np.clip(h, near_lvl - 0.05 - dist_m * tan35, near_lvl + dist_m * tan35), h)
 
@@ -1724,6 +1836,21 @@ for _dt in irr_ditches:
     _xs = np.arange(_dt["x1"], _dt["x0"] + 0.01, 2.0)
     _dt["tops"] = [[round(float(x_), 2), round(max(at(_ground_i, x_, _zd) + 0.06, float(_dt["bed0"] + (_dt["bed1"] - _dt["bed0"]) * min(max((_dt["x0"] - x_) / (_dt["x0"] - _dt["xr"]), 0), 1)) + 0.3), 3)] for x_ in _xs]
 
+# Restore rural road benches after field banks and water works. Nearest-segment
+# grading avoids ridges at bends where sequential overlapping blends disagreed.
+_rdist = np.full_like(h, 1e9)
+_rlevel = h.copy()
+for _r in rural_roads:
+    for (ax, az, ay), (bx, bz, by) in zip(_r['profile'], _r['profile'][1:]):
+        (i0, i1, j0, j1), dd, tt = _line_dist(farm_d, ax, az, bx, bz, reach=8.)
+        sl = np.s_[i0:i1, j0:j1]
+        closer = dd < _rdist[sl]
+        _rlevel[sl] = np.where(closer, ay+(by-ay)*tt, _rlevel[sl])
+        _rdist[sl] = np.minimum(_rdist[sl], dd)
+_rw = 1-smoothstep(2.0, 4.5, _rdist)
+h = h*(1-_rw)+_rlevel*_rw
+h = np.where((Z >= ROAD_Z0-.6) & (Z < HALF-32) & (road_d < W_FLAT), road_y, h)
+
 # ---- Encode height -------------------------------------------------------------
 _tick('Encode height')
 h = np.clip(h, H_MIN, H_MIN + H_RANGE)
@@ -1739,6 +1866,18 @@ def sample(x, z):
     a, b = fx - ix, fz - iz
     return float((hq[iz, ix] * (1 - a) + hq[iz, ix + 1] * a) * (1 - b) + (hq[iz + 1, ix] * (1 - a) + hq[iz + 1, ix + 1] * a) * b)
 
+# Fail before expensive vegetation generation if encoded road benches have a step.
+for _r in rural_roads:
+    _max_grade = 0.
+    for (ax, az), (bx, bz) in zip(_r['pts'], _r['pts'][1:]):
+        length = math.hypot(bx-ax, bz-az)
+        samples = max(1, math.ceil(length))
+        heights = [sample(ax+(bx-ax)*t, az+(bz-az)*t) for t in np.linspace(0, 1, samples+1)]
+        _max_grade = max(_max_grade, max(abs(b-a) for a,b in zip(heights, heights[1:]))/(length/samples))
+    _tick(f"Rural grade {_r['id']}: {_max_grade:.3f}")
+    if _max_grade >= .35:
+        raise ValueError(f"Unwalkable rural road {_r['id']}: grade {_max_grade:.3f}")
+
 # ---- Surface masks ---------------------------------------------------------------
 _tick('Surface masks')
 gy, gx = np.gradient(hq, CELL)
@@ -1748,8 +1887,8 @@ forest_density = np.clip(smoothstep(0.35, 3.5, mountain_factor) + smoothstep(2, 
 forest_density = np.clip(forest_density * (0.75 + 0.5 * (fbm(P1, X, Z, 140, 3) * 0.5 + 0.5)), 0, 1)
 pre = (X > px0 - 1) & (X < px1) & (Z > pz0) & (Z < pz1)
 forest_density = np.where(pre, 0, forest_density)
-forest_density = np.where(is_paddy | TER | ((road_d < 6) & (Z > ROAD_Z0 - 1.0)) | (rd < RB + _sec['run'] + _sec['cap'] + 1.0), 0, forest_density)
-forest_density = forest_density * smoothstep(1.6, 4.0, stream_d) * smoothstep(-1.0, 5.0, temple_d)
+forest_density = np.where(is_paddy | ((road_d < 6) & (Z > ROAD_Z0 - 1.0)) | (rd < RB + _sec['run'] + _sec['cap'] + 1.0), 0, forest_density)
+forest_density = forest_density * smoothstep(2.5, 5.0, farm_d) * smoothstep(1.6, 4.0, stream_d) * smoothstep(-1.0, 5.0, temple_d)
 # below the lookout the trees are kept low for the view: that slope is a mown meadow (kusachi),
 # not bare forest floor
 _ldx, _ldz = X - LOOKOUT[0], Z - LOOKOUT[2]
@@ -1938,7 +2077,7 @@ def blocked(x, z, top=None):
     return bool(cell(built_block, x, z))
 
 # cells no tree may stand on: around every building, in the temple precinct, along the streams
-built_block = (temple_d < 2.0) | (stream_d < 2.4) | (irr_d < 2.2)
+built_block = (farm_d < 3.8) | (temple_d < 2.0) | (stream_d < 2.4) | (irr_d < 2.2)
 for hs in houses:
     reach = max(hs["w"], hs["d"]) / 2 + 5 + (5 if hs.get("wing") else 0)
     j0 = max(int((hs["x"] - reach) / CELL + (N - 1) / 2), 0); j1 = min(int((hs["x"] + reach) / CELL + (N - 1) / 2) + 2, N)
@@ -2605,7 +2744,7 @@ for _side in (1.0, -1.0):
         _xr = float(road_x(_z))
         _xf, _zf = _xr + _nx * (W_FLAT + 0.05), _z + _nz * (W_FLAT + 0.05)
         _cut = sample(_xr + _nx * 8.0, _z + _nz * 8.0) - road_level(_z)
-        _clear = (at(lane_d, _xf, _zf) > 4.0 and at(stream_d, _xf, _zf) > 6.0 and at(irr_d, _xf, _zf) > 3.0 and at(bd, _xf, _zf) > 6.0
+        _clear = (at(farm_d, _xf, _zf) > 4.0 and at(lane_d, _xf, _zf) > 4.0 and at(stream_d, _xf, _zf) > 6.0 and at(irr_d, _xf, _zf) > 3.0 and at(bd, _xf, _zf) > 6.0
                   and at(temple_d, _xf, _zf) > 4.0 and all(math.hypot(hs_["x"] - _xf, hs_["z"] - _zf) > max(hs_["w"], hs_["d"]) / 2 + 6 for hs_ in houses))
         if _cut > 2.0 and _clear:
             _run.append((_xf, _zf))
@@ -2861,7 +3000,13 @@ meta = {
              + [{"id": f"farm-{i:02}", "class": "farm", "width": 3.0, "surface": "gravel",
                  "points": [[round(x_, 2), round(sample(x_, z_), 3), round(z_, 2)] for x_, z_ in fr]} for i, fr in enumerate(farm_roads)]
              + [{"id": f"lane-{i:02}", "class": "driveway", "width": 2.6, "surface": "gravel", "points": [[round(x_, 2), round(sample(x_, z_), 3), round(z_, 2)] for x_, z_, _ in ln]}
-                for i, ln in enumerate(lanes)],
+                for i, ln in enumerate(lanes)]
+             + [{"id": r["id"], "class": r["kind"], "width": 3.0, "surface": "gravel",
+                 "points": [[round(x, 2), round(sample(x, z), 3), round(z, 2)] for x, z in r["pts"]]} for r in rural_roads],
+    "ruralLoops": [
+        {"id": "east", "roads": ["miyazawa-farm", "east-forest", "minamizawa-farm"], "returnVia": "village-road"},
+        {"id": "north", "roads": ["okusawa-farm", "north-forest"], "returnVia": "village-road"},
+        {"id": "kawamuko", "roads": ["kawamuko-north-farm", "kawamuko-contour-farm", "kawamuko-south-farm"], "returnVia": "town-kawamuko-north"}],
     "hamlets": [{"name": n, "z": cz, "halfLength": hl} for n, cz, hl, *_ in HAMLETS] + [{"name": "kawamuko", "z": 243.0, "halfLength": 98.0},
                                                                                       {"name": "machi", "z": sum(MACHI_Z) / 2, "halfLength": (MACHI_Z[1] - MACHI_Z[0]) / 2}],
     "powerLine": {"poles": poles, "wires": 3, "sag": 0.6},

@@ -12,7 +12,8 @@ test("driving: all parked trucks, enter, steer, brake, views, pause, exit and re
     g.scene.traverse((o: any) => { if (o.isInstancedMesh && o.name === "architecture/kei-truck") staticTrucks++; });
     return { fleet: g.state.vehicle.cars, placed: g.world.objects.filter((o: any) => o.asset === "kei-truck"), staticTrucks };
   });
-  expect(initial.fleet).toHaveLength(8);
+  expect(initial.placed.length).toBeGreaterThan(0);
+  expect(initial.fleet).toHaveLength(initial.placed.length);
   expect(initial.staticTrucks).toBe(0);
   for (const car of initial.fleet) {
     expect(car.wheels).toBe(4);

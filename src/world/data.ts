@@ -36,6 +36,8 @@ export type WorldData = {
     bridgeDeckY: number;
   };
   roads: { id: string; class?: string; width: number; surface: string; points: [number, number, number][] }[];
+  /** Ordered rural legs plus the existing road connecting their endpoints. */
+  ruralLoops?: { id: string; roads: string[]; returnVia: string }[];
   hamlets?: { name: string; z: number; halfLength: number }[];
   /** roadside ditches: centre offset from the road axis, inner width, z range, farm-road crossings */
   ditch?: { offset: number; width: number; depth: number; zRange: [number, number]; crossings: number[] };
