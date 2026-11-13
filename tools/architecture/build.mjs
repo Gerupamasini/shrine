@@ -739,6 +739,29 @@ function bridge(span, width, skew) {
   return m;
 }
 
+/** Short road bridge over a brook (local: +Z along the road, X across it; origin under the deck,
+ *  deck top at y = 0.5, level with the road): slab, low concrete parapets, end posts with plates. */
+function roadBridge(span, width) {
+  const m = new Model("road-bridge");
+  const L = span + 0.6, top = 0.5;
+  m.box("concrete", width, top, L, 0, top / 2, 0);
+  m.box("concrete_dark", 6.0, 0.02, L, 0, top + 0.005, 0);                       // carriageway (asphalt over the slab)
+  for (const zz of [-1, 1]) m.box("road_paint", 0.15, 0.022, L, zz * 2.85, top + 0.006, 0);   // edge lines
+  for (const s of [-1, 1]) {
+    const x = s * (width / 2 - 0.12);
+    m.box("concrete", 0.24, 0.62, L - 0.5, x, top + 0.31, 0);                     // parapet
+    m.box("concrete_cap", 0.3, 0.06, L - 0.5, x, top + 0.65, 0);
+    for (const zz of [-1, 1]) {
+      m.box("concrete", 0.42, 0.95, 0.42, x, top + 0.475, zz * (L / 2 - 0.21));   // end post (oyabashira)
+      m.box("concrete_cap", 0.48, 0.07, 0.48, x, top + 0.985, zz * (L / 2 - 0.21));
+      m.box("metal_dark", 0.02, 0.24, 0.3, x - s * 0.22, top + 0.62, zz * (L / 2 - 0.21));   // name plate
+    }
+  }
+  // fascia under the deck edges
+  for (const s of [-1, 1]) m.box("concrete_old", 0.12, 0.35, L, s * (width / 2 + 0.04), top - 0.3, 0);
+  return m;
+}
+
 // ---------------------------------------------------------------- stairs and precinct stonework (world coordinates)
 function stairs() {
   const st = scene.stair, r = rng(200);
@@ -1186,7 +1209,9 @@ function riverWorks() {
     const a = pts[lo], b = pts[hi], t = THREE.MathUtils.clamp((z - a[zi]) / (b[zi] - a[zi] || 1), 0, 1);
     return a.map((v, k) => v + (b[k] - v) * t);
   };
-  const bedAt = (z) => { const [xc, , B, top, toeW, toeE, eW, eE, blk] = lerpRow(bedPts, 1, z); return { xc, z, B, top, toeW, toeE, eW, eE, blk }; };
+  // facing codes per bank side (nearest row, not interpolated): 0 old dry stone, 1 concrete kenchi blocks, 2 cut granite
+  const facingAt = (z, side) => { let best = bedPts[0], d = 1e9; for (const p of bedPts) { const e = Math.abs(p[1] - z); if (e < d) { d = e; best = p; } else if (p[1] > z) break; } return side < 0 ? best[8] : best[9]; };
+  const bedAt = (z) => { const [xc, , B, top, toeW, toeE, eW, eE] = lerpRow(bedPts, 1, z); return { xc, z, B, top, toeW, toeE, eW, eE, fW: facingAt(z, -1), fE: facingAt(z, 1) }; };
   const waterAt = (z) => lerpRow(wpts, 2, z)[1];
   const dirAt = (z) => { const a = bedAt(z - 1), b = bedAt(z + 1); const l = Math.hypot(b.xc - a.xc, 2); return [(b.xc - a.xc) / l, 2 / l]; };
   const gaps = R.washSteps.map((s) => [s.z - 0.85, s.z + 0.85]);
@@ -1194,7 +1219,7 @@ function riverWorks() {
 
   // --- revetments: one face per contiguous masonry run and bank side
   const zs = [...new Set([...bedPts.map((p) => p[1]), ...gaps.flat()])].sort((a, b) => a - b);
-  const faceMat = (z, blk, wet) => (blk > 0.5 ? (wet ? "revet_block_wet" : "revet_block") : z > 212 ? (wet ? "revet_kenchi_wet" : "revet_kenchi") : wet ? "revet_stone_wet" : "revet_stone");
+  const faceMat = (f, wet) => (f === 1 ? (wet ? "revet_block_wet" : "revet_block") : f === 2 ? (wet ? "revet_kenchi_wet" : "revet_kenchi") : wet ? "revet_stone_wet" : "revet_stone");
   for (const side of [-1, 1]) {
     let run = [];
     const flush = () => {
@@ -1225,7 +1250,8 @@ function riverWorks() {
     // split into pieces of one facing material so a reach changes texture cleanly
     let i0 = 0;
     for (let i = 1; i <= rows.length; i++) {
-      const key = (r) => faceMat(r.z, r.blk, false);
+      const fOf = (r) => (side < 0 ? r.fW : r.fE);
+      const key = (r) => faceMat(fOf(r), false);
       if (i < rows.length && key(rows[i]) === key(rows[i0])) continue;
       const piece = rows.slice(Math.max(i0 - (i0 > 0 ? 1 : 0), 0), i);
       if (piece.length >= 2) {
@@ -1233,21 +1259,22 @@ function riverWorks() {
         const towardRiver = (c) => { const b = bedAt(c.z); return V(Math.sign(b.xc - c.x) || -side, 0.35, 0); };
         for (const [part, wet] of [["wet", true], ["dry", false]]) {
           const g = orientTo(gridSurface(secs.map((s) => s[part]), 1, 1).toNonIndexed(), towardRiver);
-          const blk = piece[0].blk > 0.5;
-          if (blk) diagonalUV(g);
-          m.add(faceMat(piece[0].z, piece[0].blk, wet), g, { uv: "keep" });
+          if (fOf(piece[0]) === 1) diagonalUV(g);
+          m.add(faceMat(fOf(piece[0]), wet), g, { uv: "keep" });
         }
       }
       i0 = i;
     }
     // concrete cap (tenba) over the whole crest, cast in segments: the wall is a closed solid
     // over the sunken ground behind it
+    // (an old dry-stone wall has no concrete: its top is a coping of mossy stones, grassed over behind)
     const cw = CAP + 0.1, off = RUN - 0.06 + cw / 2;
     for (let i = 0; i < rows.length - 1; i++) {
       const a = rows[i], b = rows[i + 1];
       const ax = a.xc + side * (a.B + off), bx = b.xc + side * (b.B + off);
       const L = Math.hypot(bx - ax, b.z - a.z), yaw = Math.atan2(bx - ax, b.z - a.z);
-      m.box("concrete_cap", L + 0.012, 0.24, cw, (ax + bx) / 2, (a.top + b.top) / 2 - 0.05, (a.z + b.z) / 2, { ry: yaw + Math.PI / 2 });
+      const old = (side < 0 ? a.fW : a.fE) === 0;
+      m.box(old ? "stone_moss" : "concrete_cap", L + 0.012, old ? 0.3 : 0.24, cw, (ax + bx) / 2, (a.top + b.top) / 2 - (old ? 0.1 : 0.05), (a.z + b.z) / 2, { ry: yaw + Math.PI / 2 });
     }
     // end walls (wing) where the masonry stops (earth bank, washing steps)
     for (const [r, dz] of [[rows[0], -1], [rows[rows.length - 1], 1]]) {
@@ -1255,7 +1282,7 @@ function riverWorks() {
       const face = [...s.wet, s.dry[1], s.cap];
       const back = face.map((p) => s.back(p.y));
       const g = orientTo(gridSurface([face, back], 1, 1).toNonIndexed(), () => V(0, 0, dz));
-      m.add(faceMat(r.z, r.blk, false), g, { uv: "box" });
+      m.add(faceMat(side < 0 ? r.fW : r.fE, false), g, { uv: "box" });
     }
   }
 
@@ -1633,14 +1660,63 @@ function rokujizo() {
   return m;
 }
 
+/** Irrigation canals fed from the side brooks (scene.json "canals"): the intake weir across the
+ *  brook with its sluice gate, the precast U-channel, the headwalls where it dives under the
+ *  prefectural road, and the slabs where lanes and farm roads cross it. */
+function canalWorks(m) {
+  for (const c of scene.canals ?? []) {
+    const cp = c.points, D = c.depth, Tp = c.wallTop;
+    for (let i = 0; i < cp.length - 1; i++) {
+      const [ax, ay, az, w, ca] = cp[i], [bx, by, bz, , cb] = cp[i + 1];
+      const L = Math.hypot(bx - ax, bz - az);
+      if (L < 0.01) continue;
+      const dirx = (bx - ax) / L, dirz = (bz - az) / L, yaw = Math.atan2(dirx, dirz);
+      const nx = -dirz, nz = dirx, cx = (ax + bx) / 2, cz = (az + bz) / 2, wy = (ay + by) / 2;
+      const o = { ry: yaw + Math.PI / 2 };
+      if (ca === 1 && cb === 1) continue;                                  // in the pipe under the road
+      m.box("concrete_dark", L + 0.01, 0.1, w + 0.28, cx, wy - D - 0.05, cz, o);
+      for (const s of [-1, 1]) m.box("concrete_cap", L + 0.01, D + Tp + 0.1, 0.14, cx + nx * s * (w / 2 + 0.07), wy + (Tp - D - 0.1) / 2, cz + nz * s * (w / 2 + 0.07), o);
+      // slab cover where a lane or a farm road crosses
+      if (ca === 2 || cb === 2) m.box("concrete_old", L + 0.02, 0.14, w + 0.5, cx, wy + Tp + 0.05, cz, o);
+    }
+    // headwalls (with the dark mouth of the pipe) where the canal goes under the road and comes out
+    for (let i = 1; i < cp.length; i++) {
+      if ((cp[i][4] === 1) === (cp[i - 1][4] === 1)) continue;
+      const open = cp[i][4] === 1 ? cp[i - 1] : cp[i], piped = cp[i][4] === 1 ? cp[i] : cp[i - 1];
+      const dx = piped[0] - open[0], dz = piped[2] - open[2], l = Math.hypot(dx, dz) || 1, yaw = Math.atan2(dx / l, dz / l);
+      const hx = (open[0] + piped[0]) / 2, hz = (open[2] + piped[2]) / 2, top = open[1] + 0.75, bot = open[1] - D - 0.25;
+      m.box("concrete", open[3] + 1.6, top - bot, 0.3, hx, (top + bot) / 2, hz, { ry: yaw });
+      const pipe = new THREE.CylinderGeometry(0.4, 0.4, 0.32, 18);
+      pipe.rotateX(Math.PI / 2);
+      m.add("interior_dark", pipe, { uv: "box", matrix: new THREE.Matrix4().makeRotationY(yaw).setPosition(hx, open[1] - 0.12, hz) });
+    }
+    // the far end opens into the branch ditch: an end wall
+    const e = cp[cp.length - 1], e0 = cp[cp.length - 2], ey = Math.atan2(e[0] - e0[0], e[2] - e0[2]);
+    m.box("concrete_cap", e[3] + 0.3, D + Tp + 0.1, 0.14, e[0], e[1] + (Tp - D - 0.1) / 2, e[2], { ry: ey });
+    // intake: a low concrete weir across the brook, the canal mouth with a steel sluice gate
+    const it = c.intake, dl = Math.hypot(it.dir[0], it.dir[1]) || 1, bdx = it.dir[0] / dl, bdz = it.dir[1] / dl;
+    const by = Math.atan2(bdx, bdz);
+    m.box("concrete_wet", 0.6, it.crestY - it.bedY + 0.35, 4.2, it.x, (it.crestY + it.bedY - 0.35) / 2, it.z, { ry: by + Math.PI / 2 });
+    m.box("concrete_cap", 0.62, 0.05, 4.2, it.x, it.crestY + 0.02, it.z, { ry: by + Math.PI / 2 });
+    m.box("concrete_wet", 1.6, 0.12, 4.2, it.x + bdx * 1.0, it.bedY - 0.02, it.z + bdz * 1.0, { ry: by + Math.PI / 2 });     // apron
+    const p0 = cp[0], p1 = cp[1], gl = Math.hypot(p1[0] - p0[0], p1[2] - p0[2]) || 1, gx = (p1[0] - p0[0]) / gl, gz = (p1[2] - p0[2]) / gl, gy = Math.atan2(gx, gz);
+    const gpx = p0[0] + gx * 0.4, gpz = p0[2] + gz * 0.4;
+    m.box("concrete_cap", 0.3, D + Tp + 1.0, p0[3] + 0.9, gpx, p0[1] + (Tp + 1.0 - D) / 2, gpz, { ry: gy });         // gate pier
+    m.box("steel_gate", 0.06, D + 0.5, p0[3] + 0.06, gpx + gx * 0.18, p0[1] - D / 2 + 0.25 + 0.15, gpz + gz * 0.18, { ry: gy });
+    m.cyl("metal_dark", 0.03, 0.03, 0.55, gpx + gx * 0.18, p0[1] + Tp + 0.95, gpz + gz * 0.18, 8);
+    m.cyl("steel_red", 0.16, 0.16, 0.04, gpx + gx * 0.18, p0[1] + Tp + 1.42, gpz + gz * 0.18, 12);
+  }
+}
+
 /** Works of the side streams in world coordinates (scene.json "streams"): the concrete-lined
  *  channel across the paddies (two walls and a bed), the box culvert under the prefectural road
  *  with its headwalls and guard pipes, slab covers where the farm road and the levee path cross,
  *  and the outfall in the river wall. */
 function streamWorks() {
   const m = new Model("stream-works");
+  canalWorks(m);
   for (const st of scene.streams ?? []) {
-    const ch = st.channel, z = st.z, w = st.width, wall = 0.16;
+    const ch = st.channel, z = st.z, w = st.width, wall = st.kind === "ditch" ? 0.12 : 0.16;
     const topAt = (x) => {
       const t = ch.tops;
       for (let i = 0; i < t.length - 1; i++) if (x <= t[i + 1][0]) { const f = (x - t[i][0]) / (t[i + 1][0] - t[i][0]); return t[i][1] + (t[i + 1][1] - t[i][1]) * Math.max(0, Math.min(1, f)); }
@@ -1657,7 +1733,12 @@ function streamWorks() {
     }
     for (const c of st.covers) {
       const cx = (c.x0 + c.x1) / 2, L = c.x1 - c.x0;
-      if (c.kind === "road") {
+      if (c.kind === "bridge") {
+        // the lined channel runs on under the road bridge: walls up to the deck, a cobbled floor
+        const deck = st.roadY - 0.5, bed = ch.bed0 - 0.12;
+        for (const s of [-1, 1]) m.box("concrete_old", L, deck - bed, 0.3, cx, (deck + bed) / 2, z + s * (w / 2 + 0.15));
+        m.box("concrete_dark", L, 0.12, w, cx, bed + 0.06, z);
+      } else if (c.kind === "road") {
         // box culvert: headwalls flush with the edge of the verge, wing walls, white guard pipes
         for (const [hx, dir] of [[c.x1, 1], [c.x0, -1]]) {
           const top = st.roadY + 0.12, bed = (dir > 0 ? st.brook[st.brook.length - 1][1] : ch.bed0) - 0.15;
@@ -1728,6 +1809,16 @@ const bo = scene.objects.find((o) => o.asset === "bridge");
   await save("bridge", bridge(bo?.span ?? 11, bo?.width ?? 3.2, skew));
 }
 await save("river-works", riverWorks());
+{
+  const rb = scene.objects.find((o) => o.asset === "road-bridge");
+  if (rb) {
+    const m = roadBridge(rb.span ?? 3.5, rb.width ?? 9.4);
+    // skew: shear the deck so its ends run along the brook (world X) while the parapets follow the road
+    const t = Math.tan(rb.skew ?? 0), shear = new THREE.Matrix4().set(1, 0, 0, 0, 0, 1, 0, 0, t, 0, 1, 0, 0, 0, 0, 1);
+    for (const gs of m.parts.values()) for (const g of gs) g.applyMatrix4(shear);
+    await save("road-bridge", m);
+  }
+}
 await save("stairs", stairs());
 await save("hinomi", hinomi());
 await save("shobo-shed", shoboShed());

@@ -68,8 +68,11 @@ order_ = np.argsort(rp[:, 2])
 rp = rp[order_]
 rxc = np.interp(Z, rp[:, 2], rp[:, 0])
 rw = np.interp(Z, rp[:, 2], rp[:, 3])
-water_d = (rw[:, None] / 2) - np.abs(XX - rxc[:, None])      # >0 inside the water, metres
-water = water_d > 0
+ry = np.interp(Z, rp[:, 2], rp[:, 1])
+water_d = (rw[:, None] / 2) - np.abs(XX - rxc[:, None])      # >0 inside the bed, metres
+# only the wetted channel is water: the gravel bars beside it are land, as on a survey sheet
+water = (water_d > 0) & (h < ry[:, None] - 0.01)
+water = ndimage.binary_opening(water, iterations=1) | ((water_d > 0) & (h < ry[:, None] - 0.3))
 
 # ---- colours (linear blend in sRGB is fine for flat tints)
 def rgb(hexs):
@@ -193,20 +196,43 @@ for (x, y) in grid_points(32):
 
 # river edges, revetments, levee path, canal
 blue = (70, 125, 175, 255)
-left = [P(r_[0] - r_[3] / 2, r_[2]) for r_ in rp]
-right = [P(r_[0] + r_[3] / 2, r_[2]) for r_ in rp]
-dr.line(left, fill=blue, width=2)
-dr.line(right, fill=blue, width=2)
+# the water's edge
+edge_px = water & ~ndimage.binary_erosion(water)
+eyy, exx = np.nonzero(edge_px)
+for yy_, xx_ in zip(eyy, exx):
+    dr.point((int(xx_), int(yy_)), fill=blue)
 bed = scene["river"]["bed"]
 bp = np.array(bed["points"])
-for side in (-1, 1):
-    edge = [P(p[0] + side * (p[2] + bed["wallRun"]), p[1]) for p in bp]
-    dr.line(edge, fill=(120, 118, 110, 255), width=2)
-levee = [P(p[0] + p[2] + bed["wallRun"] + bed["capWidth"] + bed["pathWidth"] / 2, p[1]) for p in bp]
+# revetments (walls) only where the bank is built up; natural earth banks are left to the hillshade
+for side, ei in ((-1, 6), (1, 7)):
+    run = []
+    for p in bp:
+        if p[ei] < 0.5:
+            run.append(P(p[0] + side * (p[2] + bed["wallRun"]), p[1]))
+        elif run:
+            if len(run) > 1:
+                dr.line(run, fill=(110, 108, 100, 255), width=3)
+            run = []
+    if len(run) > 1:
+        dr.line(run, fill=(110, 108, 100, 255), width=3)
+levee = [P(x_, z_) for x_, z_ in bed.get("leveePath", [])]
 for a in range(0, len(levee) - 4, 8):         # dashed footpath on the levee
     dr.line(levee[a:a + 5], fill=(90, 80, 70, 255), width=2)
 canal = scene["river"]["canal"]["points"]
 dr.line([P(p[0], p[2]) for p in canal], fill=blue, width=max(3, px(1.2)))
+
+# canals fed from the side brooks (not where they run in a pipe under the road)
+for c_ in scene.get("canals", []):
+    run_ = []
+    for q_ in c_["points"]:
+        if q_[4] == 1:
+            if len(run_) > 1:
+                dr.line(run_, fill=blue, width=max(3, px(1.2)))
+            run_ = []
+        else:
+            run_.append(P(q_[0], q_[2]))
+    if len(run_) > 1:
+        dr.line(run_, fill=blue, width=max(3, px(1.2)))
 
 # side streams: the brook and the lined channel
 for st in scene.get("streams", []):
@@ -269,6 +295,18 @@ if bo:
         x0, x1 = bo["position"][0] - half, bo["position"][0] + half
         dr.line([P(x0 - 1.2, zz + side * 1.2), P(x0, zz), P(x1, zz), P(x1 + 1.2, zz + side * 1.2)], fill=(40, 36, 32, 255), width=3)
 
+# graveyards: the survey-sheet symbol (an inverted T) over each group of graves
+_gr = [o for o in scene["objects"] if o["asset"] == "haka"]
+for _grp in ([o for o in _gr if o.get("cemetery")], [o for o in _gr if not o.get("cemetery")]):
+    if not _grp:
+        continue
+    gx_ = sum(o["position"][0] for o in _grp) / len(_grp)
+    gz_ = sum(o["position"][2] for o in _grp) / len(_grp)
+    cx_, cy_ = P(gx_, gz_)
+    for ox_ in (-9, 9):
+        dr.line([(cx_ + ox_, cy_ - 7), (cx_ + ox_, cy_ + 5)], fill=(60, 55, 50, 255), width=2)
+        dr.line([(cx_ + ox_ - 6, cy_ + 5), (cx_ + ox_ + 6, cy_ + 5)], fill=(60, 55, 50, 255), width=2)
+
 # precinct outline
 pr = scene["precinct"]
 dr.rectangle([P(pr["x0"], pr["z0"]), P(pr["x1"], pr["z1"])], outline=(120, 110, 95, 255), width=2)
@@ -276,7 +314,7 @@ dr.rectangle([P(pr["x0"], pr["z0"]), P(pr["x1"], pr["z1"])], outline=(120, 110, 
 # buildings
 SKIP = ("prop-", "torii", "toro", "komainu", "sekihi", "jizo", "denchu", "jihanki", "post", "phone-box", "block-wall", "ishigaki",
         "kei-truck", "fence-lookout", "saisen", "ema", "shimenawa-tree", "bench", "bridge", "hinomi", "monohoshi", "tunnel", "road-ditch", "bus-stop",
-        "haka", "rokujizo", "tera-sanmon", "tera-shoro")
+        "haka", "rokujizo", "tera-sanmon", "tera-shoro", "road-bridge")
 CONCRETE = {"post-office", "chuzaisho", "nokyo", "nokyo-soko", "shobo-shed", "shinryojo"}
 bnum = {}
 for o in scene["objects"]:
@@ -355,7 +393,7 @@ for o in scene["objects"]:
     elif a == "nokyo":
         x, z = beside(o, 16); labels.append({"text": "農協", "x": x, "z": z, "kind": "facility"})
     elif a == "kominkan":
-        x, z = beside(o, 15); labels.append({"text": "公民館", "x": x, "z": z, "kind": "facility"})
+        x, z = beside(o, 15); labels.append({"text": "集会所" if o.get("hall") else "公民館", "x": x, "z": z, "kind": "facility"})
     elif a == "haiden":
         x, z = o["position"][0] + 4, o["position"][2] + 22
         sym_shrine(x, z); labels.append({"text": "熊野神社", "x": x, "z": z + 10, "kind": "facility"})

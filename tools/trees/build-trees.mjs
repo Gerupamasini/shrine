@@ -57,10 +57,13 @@ class Builder {
         part.vert(add(p, mul(n, pts[i].r)), n, [(k / sides) * uRep, lenAcc / uvScale[1]], pts[i].w);
       }
     }
+    // counter-clockwise seen from outside, so the front face (and its lighting) is the bark
+    // surface: the reverse order made every trunk an inside-out tube, lit on the side away from
+    // the sun, which read as see-through against the evening sky (and vanishes under back-face culling)
     for (let i = 0; i < pts.length - 1; i++)
       for (let k = 0; k < sides; k++) {
         const a = base + i * (sides + 1) + k, b = a + sides + 1;
-        part.idx.push(a, b, a + 1, a + 1, b, b + 1);
+        part.idx.push(a, a + 1, b, a + 1, b + 1, b);
       }
   }
   // A foliage card: centre c, plane axes u (length dir) and v, size w x h, atlas cell.

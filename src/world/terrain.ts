@@ -3,21 +3,12 @@ import { publicUrl } from "../urls";
 import type { Library } from "../engine/library";
 import { addHook } from "../engine/hooks";
 import type { Heightfield, WorldData } from "./data";
+import table from "../../public/world/materials.json";
 
-/** Terrain layers in splat order (splat0..2 RGBA) and their tile size in metres. `fixed` = sample without the anti-tiling rotation (directional textures). */
-export const TERRAIN_LAYERS = [
-  { id: "leafy_grass", size: 3.2, tint: [0.54, 0.74, 0.45] },
-  { id: "forest_leaves_02", size: 3.0, tint: [0.52, 0.56, 0.42] },
-  { id: "stony_dirt_path", size: 2.6, tint: [0.95, 0.92, 0.88] },
-  { id: "mossy_rock", size: 4.5, tint: [0.9, 0.92, 0.86] },
-  { id: "brown_mud_leaves_01", size: 2.4, tint: [0.8, 0.78, 0.72] },
-  { id: "river_small_rocks", size: 2.2, tint: [0.9, 0.9, 0.88] },
-  { id: "gravel_floor_02", size: 1.6, tint: [0.56, 0.54, 0.5] },
-  { id: "asphalt_01", size: 4.0, tint: [1.0, 1.06, 1.14] },
-  { id: "farm_furrows", size: 4.2, tint: [0.78, 0.72, 0.66], fixed: true },
-  { id: "ganges_river_pebbles", size: 3.0, tint: [0.88, 0.88, 0.86] },
-  { id: "asphalt_06", size: 3.0, tint: [0.92, 0.93, 0.94] },
-];
+/** Terrain layers in splat order (splat0..2 RGBA): tile size in metres, albedo tint, the share of
+ *  the photo's own colour kept (saturation) and `fixed` = sample without the anti-tiling rotation
+ *  (directional textures). Source of truth: public/world/materials.json (shared with Unity). */
+export const TERRAIN_LAYERS = table.terrainLayers as { id: string; size: number; tint: number[]; saturation?: number; fixed?: boolean }[];
 const NL = 12; // shader capacity (3 splat textures)
 
 async function loadImage(url: string) {
@@ -126,13 +117,14 @@ export class Terrain {
       uExtent: { value: this.data.extent },
       uLayerScale: { value: [...TERRAIN_LAYERS.map((l) => 1 / l.size), ...Array(NL - TERRAIN_LAYERS.length).fill(1)] },
       uLayerTint: { value: [...TERRAIN_LAYERS.map((l) => new T.Color(...(l.tint as [number, number, number]))), ...Array(NL - TERRAIN_LAYERS.length).fill(new T.Color(1, 1, 1))] },
-      uLayerFixed: { value: [...TERRAIN_LAYERS.map((l) => ("fixed" in l && l.fixed ? 1 : 0)), ...Array(NL - TERRAIN_LAYERS.length).fill(0)] },
+      uLayerFixed: { value: [...TERRAIN_LAYERS.map((l) => (l.fixed ? 1 : 0)), ...Array(NL - TERRAIN_LAYERS.length).fill(0)] },
+      uLayerSat: { value: [...TERRAIN_LAYERS.map((l) => l.saturation ?? 1), ...Array(NL - TERRAIN_LAYERS.length).fill(1)] },
       uWet: { value: 0.0 },
       ...this.holeUniforms(),
     });
     const m = (this.material = new T.MeshStandardMaterial({ roughness: 1, metalness: 0 }));
     this.lib.finish(m);
-    addHook(m, "terrain-v3", (s) => {
+    addHook(m, "terrain-v4", (s) => {
       Object.assign(s.uniforms, u);
       s.vertexShader = s.vertexShader
         .replace("#include <common>", "#include <common>\nvarying vec3 vTW;")
@@ -149,6 +141,7 @@ export class Terrain {
           uniform float uExtent, uWet;
           uniform float uLayerScale[12];
           uniform float uLayerFixed[12];
+          uniform float uLayerSat[12];
           uniform vec3 uLayerTint[12];
           // openings in the ground: the roadside ditch channels and the tunnel mouth
           uniform sampler2D tRoadX; uniform vec3 uRoadZ; uniform vec4 uDitch; uniform vec4 uTunnel; uniform vec2 uTunnelSize;
@@ -182,7 +175,9 @@ export class Terrain {
             vec3 n1 = texture(tNormal, vec3(uv1, float(i))).xyz * 2. - 1., n2 = texture(tNormal, vec3(uv2, float(i))).xyz * 2. - 1.;
             if (uLayerFixed[i] < 0.5) n2.xy = mat2(0.8, 0.6, -0.6, 0.8) * n2.xy;
             vec3 r1 = texture(tArm, vec3(uv1, float(i))).xyz, r2 = texture(tArm, vec3(uv2, float(i))).xyz;
-            alb += mix(a1.rgb, a2.rgb, b) * uLayerTint[i] * w;
+            vec3 c = mix(a1.rgb, a2.rgb, b);
+            c = mix(vec3(dot(c, vec3(0.2126, 0.7152, 0.0722))), c, uLayerSat[i]);
+            alb += c * uLayerTint[i] * w;
             nrm += mix(n1, n2, b) * w;
             armv += mix(r1, r2, b) * w;
             hsum += w;
@@ -202,7 +197,7 @@ export class Terrain {
             vec4 veg = texture2D(tVeg, tuv);
             float macro = vnoise(vTW.xz * 0.012) * 0.6 + vnoise(vTW.xz * 0.05) * 0.4;
             alb *= mix(0.82, 1.12, macro);
-            alb = mix(alb, alb * vec3(0.78, 0.82, 0.72), veg.r * 0.6);
+            alb = mix(alb, alb * vec3(0.8, 0.82, 0.84), veg.r * 0.6);
             tAlb = alb; tNrm = normalize(nrm); tArmV = armv;
             tArmV.r *= mix(1.0, 0.55, veg.r);
             tWorldN = normalize(texture2D(tTerrainNormal, tuv).xyz * 2. - 1.);

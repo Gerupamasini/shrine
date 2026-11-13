@@ -114,11 +114,12 @@ export class Vegetation implements System {
       if (mm.map) mm.map.flipY = false;
       if (mm.normalMap) mm.normalMap.flipY = false;
       mm.normalScale.set(0.6, 0.6);
-      (mm as unknown as { defines: Record<string, string> }).defines = { FOLIAGE: "" };
+      (mm as unknown as { defines: Record<string, string> }).defines = { FOLIAGE: "", CROWN_NORMALS: "" };
       m = lib.finish(mm);
       darkenFringe(m);
       windHook(m, name === "bamboo_leaf" ? 1.6 : 1.0);
     }
+    m.name = name;   // the impostor bake tells bark from foliage by name
     this.materials.set(name, m);
     return m;
   }
@@ -197,14 +198,16 @@ export class Vegetation implements System {
     const prevClear = r.getClearColor(new T.Color()), prevAlpha = r.getClearAlpha();
     const prevTone = r.toneMapping;
     r.toneMapping = T.NoToneMapping;
+    // foliage cards keep their crown normals on both faces (see CROWN_NORMALS); bark flips on the
+    // inside of open branch ends only
     const normalMat = (src: T.MeshStandardMaterial) =>
       new T.ShaderMaterial({
-        uniforms: { map: { value: src.map }, alphaTest: { value: 0.5 } },
+        uniforms: { map: { value: src.map }, alphaTest: { value: 0.5 }, uFlip: { value: src.name?.startsWith("bark") ? 1 : 0 } },
         side: T.DoubleSide,
         vertexShader: `varying vec3 vN; varying vec2 vUv; void main(){ vUv=uv; vN = normalize(mat3(modelMatrix)*normal); gl_Position = projectionMatrix*modelViewMatrix*vec4(position,1.); }`,
-        fragmentShader: `uniform sampler2D map; uniform float alphaTest; varying vec3 vN; varying vec2 vUv;
+        fragmentShader: `uniform sampler2D map; uniform float alphaTest, uFlip; varying vec3 vN; varying vec2 vUv;
           void main(){ float a = texture2D(map, vUv).a; if (a < alphaTest) discard;
-            vec3 n = normalize(vN); if (!gl_FrontFacing) n = -n; if (n.z < 0.0) n.z = -n.z * 0.3;
+            vec3 n = normalize(vN); if (!gl_FrontFacing && uFlip > 0.5) n = -n; if (n.z < 0.0) n.z = -n.z * 0.3;
             gl_FragColor = vec4(normalize(n) * 0.5 + 0.5, 1.0); }`,
       });
     const albedoMat = (src: T.MeshStandardMaterial) =>

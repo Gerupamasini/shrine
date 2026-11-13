@@ -20,6 +20,9 @@ export type PbrDef = {
   gain?: number;
   /** < 1: see-through (window glass), sorted as transparent and not written to depth */
   opacity?: number;
+  /** saturation kept from the albedo texture (1 = as photographed). Lets one photographed set
+   *  (a beige plaster) serve as white lime plaster or grey concrete without its colour cast. */
+  saturation?: number;
 };
 
 /**
@@ -89,6 +92,16 @@ export class Library {
       m.metalnessMap = def.metalness ? arm : null;
     }
     if (def.gain) m.color.multiplyScalar(def.gain);
+    if (def.saturation !== undefined && def.saturation !== 1) {
+      const sat = def.saturation.toFixed(3);
+      addHook(m, "sat" + sat, (s) => {
+        s.fragmentShader = s.fragmentShader.replace(
+          "diffuseColor *= sampledDiffuseColor;",
+          `sampledDiffuseColor.rgb = mix(vec3(dot(sampledDiffuseColor.rgb, vec3(0.2126, 0.7152, 0.0722))), sampledDiffuseColor.rgb, ${sat});
+          diffuseColor *= sampledDiffuseColor;`,
+        );
+      });
+    }
     if (def.alphaTest) m.alphaTest = def.alphaTest;
     if (def.envIntensity !== undefined) m.envMapIntensity = def.envIntensity;
     if (def.opacity !== undefined && def.opacity < 1) {

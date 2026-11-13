@@ -103,16 +103,16 @@
  },
  "assets": {
   "road-ditch": {
-   "triangles": 41460,
+   "triangles": 41592,
    "min": [
-    -85.221,
+    -84.092,
     1.901,
-    -558.847
+    -558.969
    ],
    "max": [
-    72.3,
+    76.889,
     9.942,
-    689.416
+    689.14
    ],
    "materials": [
     "concrete_old",
@@ -123,14 +123,14 @@
   "tunnel": {
    "triangles": 2736,
    "min": [
-    -72.38,
+    -77.684,
     -0.8,
-    -98.699
+    -98.831
    ],
    "max": [
     9.2,
     9.12,
-    1.035
+    1.014
    ],
    "materials": [
     "concrete",
@@ -373,22 +373,27 @@
    ]
   },
   "stream-works": {
-   "triangles": 6464,
+   "triangles": 34496,
    "min": [
     -174.21,
-    3.055,
-    -402.48
+    1.08,
+    -412.529
    ],
    "max": [
-    27.315,
-    9.89,
-    221.23
+    61.51,
+    11.267,
+    558.05
    ],
    "materials": [
-    "concrete_old",
     "concrete_dark",
+    "concrete_cap",
+    "concrete_old",
     "concrete",
     "interior_dark",
+    "concrete_wet",
+    "steel_gate",
+    "metal_dark",
+    "steel_red",
     "porcelain"
    ]
   },
@@ -1571,25 +1576,25 @@
    ]
   },
   "river-works": {
-   "triangles": 24772,
+   "triangles": 16590,
    "min": [
-    -195.95,
-    -0.595,
-    -612.6
+    -189.279,
+    0.405,
+    -289.616
    ],
    "max": [
     -103.064,
-    9.366,
-    665.6
+    8.271,
+    595.516
    ],
    "materials": [
-    "revet_stone_wet",
-    "revet_stone",
-    "concrete_cap",
     "revet_block_wet",
     "revet_block",
+    "concrete_cap",
     "revet_kenchi",
-    "revet_kenchi_wet",
+    "revet_stone_wet",
+    "revet_stone",
+    "stone_moss",
     "concrete_wet",
     "interior_dark",
     "steel_red",
@@ -1599,6 +1604,27 @@
     "stone_paving_moss",
     "stone_step_b",
     "stone_old"
+   ]
+  },
+  "road-bridge": {
+   "triangles": 264,
+   "min": [
+    -4.82,
+    0,
+    -3.722
+   ],
+   "max": [
+    4.82,
+    1.52,
+    3.722
+   ],
+   "materials": [
+    "concrete",
+    "concrete_dark",
+    "road_paint",
+    "concrete_cap",
+    "metal_dark",
+    "concrete_old"
    ]
   },
   "stairs": {
@@ -2061,16 +2087,16 @@
    ]
   },
   "road-markings": {
-   "triangles": 15708,
+   "triangles": 15540,
    "min": [
-    -85.972,
-    2.394,
-    -560.606
+    -85.014,
+    2.391,
+    -560.689
    ],
    "max": [
-    71.04,
+    75.629,
     9.902,
-    729.098
+    729.17
    ],
    "materials": [
     "road_paint"

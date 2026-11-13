@@ -3,6 +3,7 @@ import { addHook } from "../engine/hooks";
 import type { Landscape, System } from "./landscape";
 import type { WorldTextures } from "./grass";
 
+type CanalData = { points: number[][]; depth: number; wallTop: number };
 type RiverData = {
   points: number[][];
   bed: { points: number[][] };
@@ -40,17 +41,30 @@ export class River implements System {
     this.add(land, this.canal(R), mat);
     const streams = land.world.data.streams ?? [];
     if (streams.length) this.add(land, this.streams(streams), mat);
+    for (const c of (land.world.data as unknown as { canals?: CanalData[] }).canals ?? []) this.add(land, this.feeder(c), mat);
+  }
+  /** Canals fed from the side brooks: open stretches only (not in the pipe under the road). */
+  private feeder(c: CanalData) {
+    const cp = c.points;
+    const rows = cp.map((p, i) => {
+      const a = cp[Math.min(i + 1, cp.length - 1)], b = cp[Math.max(i - 1, 0)];
+      const dx = a[0] - b[0], dz = a[2] - b[2], l = Math.hypot(dx, dz) || 1;
+      const next = cp[Math.min(i + 1, cp.length - 1)];
+      const skip = (p[4] === 1 && next[4] === 1) || i === cp.length - 1;
+      return { cx: p[0], y: p[1], z: p[2], ax: -dz / l, az: dx / l, half: p[3] / 2, dir: [dx / l, dz / l] as [number, number], fall: 0, foam: 0, riffle: 0.15, bank: c.wallTop, fixed: c.depth - 0.04, across: 3, skip };
+    });
+    return this.build(rows);
   }
   /** Side streams: the brook down its valley (shallow, broken water over cobbles) and the lined
    *  channel across the paddies; each run of [x, waterY, z, halfWidth] is a ribbon along its path. */
-  private streams(list: { water: number[][][] }[]) {
+  private streams(list: { water: number[][][]; kind?: string }[]) {
     const rows: Parameters<River["build"]>[0] = [];
     for (const st of list)
       st.water.forEach((run, ri) => {
         run.forEach((p, i) => {
           const a = run[Math.min(i + 1, run.length - 1)], b = run[Math.max(i - 1, 0)];
           const dx = a[0] - b[0], dz = a[2] - b[2], l = Math.hypot(dx, dz) || 1;
-          const brook = ri === 0;
+          const brook = ri === 0 && st.kind !== "ditch";
           rows.push({ cx: p[0], y: p[1], z: p[2], ax: -dz / l, az: dx / l, half: p[3], dir: [dx / l, dz / l], fall: 0, foam: 0, riffle: brook ? 0.55 : 0.1,
             bank: 0.6, fixed: brook ? 0 : 0.2, across: 3, skip: i === run.length - 1 });
         });

@@ -438,6 +438,13 @@ async function boot() {
     get scene() {
       return land.scene;
     },
+    /** lighting/post objects, for tuning from the console */
+    get land() {
+      return land;
+    },
+    get post() {
+      return post;
+    },
     get camera() {
       return camera;
     },

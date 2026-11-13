@@ -35,8 +35,10 @@ export function sunDirection(azimuthDeg: number, elevationDeg: number, out = new
 export function sunlight(elevationDeg: number) {
   const el = Math.max(elevationDeg, -2);
   const airmass = 1 / (Math.sin(T.MathUtils.degToRad(Math.max(el, 0.0) + 0.0001)) + 0.50572 * Math.pow(Math.max(el, 0) + 6.07995, -1.6364));
-  // Optical depths for a humid summer valley (Rayleigh + aerosol), per RGB.
-  const tau = [0.1, 0.143, 0.208];
+  // Optical depths for a humid summer valley (Rayleigh + aerosol), per RGB (linear sRGB
+  // primaries). At 18:00 (6.7°, air mass ~8) the beam comes out near 2900 K, linear
+  // (1, 0.57, 0.24); the earlier values gave a pale 4000 K that never read as evening sun.
+  const tau = [0.11, 0.18, 0.29];
   const c = tau.map((t) => Math.exp(-t * airmass));
   const horizonFade = T.MathUtils.smoothstep(el, -1.5, 2.5);
   const max = Math.max(...c);

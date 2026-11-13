@@ -96,14 +96,46 @@ def _valley_table():
     # the prefectural road follows the eastern foot
     rv = ax - hf + 24 + 16 * (0.5 + 0.5 * np.sin(zt * 0.0105 + 1.0)) * np.clip((hf - 60) / 60, 0, 1)
     rd = ax + hf - 34 - 8 * (0.5 + 0.5 * np.sin(zt * 0.0088 + 2.2)) * np.clip((hf - 60) / 60, 0, 1)
-    return zt, ax, hf, gaussian_filter1d(rv, 14.0, mode="nearest"), gaussian_filter1d(rd, 14.0, mode="nearest")
+    # the old road keeps close to the hill foot and bends with it, round the spurs and into the
+    # mouths of the side valleys, rather than cutting across the floor in one sweep
+    rd = rd + 5.0 * np.sin(zt * 0.023 + 0.8) * np.clip((hf - 60) / 50, 0, 1)
+    return zt, ax, hf, gaussian_filter1d(rv, 14.0, mode="nearest"), gaussian_filter1d(rd, 9.0, mode="nearest")
 
 _VZ, _VAX, _VHF, _VRIVER, _VROAD = _valley_table()
 
 
-def river_x(z):
-    """Centre line of the river bed: it follows the western edge of the floor in long bends."""
+def river_base_x(z):
+    """The river's line down the valley: along the western edge of the floor in long bends. The
+    hamlet of Kawamuko, its apron and the side valleys are laid out from this line."""
     return np.interp(np.asarray(z, dtype=np.float64), _VZ, _VRIVER)
+
+
+# Through the village centre (the weir, the bridge) the river was straightened and walled in a
+# river improvement; above and below it keeps its own course: it meanders across the floor, with
+# point bars inside the bends and cut banks outside them.
+CHAN_Z0, CHAN_Z1 = -50.0, 226.0
+MEANDER_L = 280.0
+
+
+def natural_w(z):
+    """1 in the natural reaches, 0 in the straightened reach through the village centre."""
+    z = np.asarray(z, dtype=np.float64)
+    return 1 - smoothstep(CHAN_Z0 - 34.0, CHAN_Z0, z) * (1 - smoothstep(CHAN_Z1, CHAN_Z1 + 34.0, z))
+
+
+def meander_s(z):
+    """Phase along the meanders (irregular wavelength, ~280 m). The outer bends on the east fall at the
+    hamlets' washing places (z = -250 and 300)."""
+    z = np.asarray(z, dtype=np.float64)
+    return z * (2 * np.pi / MEANDER_L) + 0.55 * np.sin(z * 0.0105 + 0.4) + 1.34
+
+
+def river_x(z):
+    """Centre line of the river bed: the valley line plus the meanders of the natural reaches
+    (none in the gorge north of the village, where the hills hold the river)."""
+    z = np.asarray(z, dtype=np.float64)
+    amp = 10.5 * natural_w(z) * smoothstep(-640.0, -560.0, z) * (1 - smoothstep(HALF - 70.0, HALF + 30.0, z))
+    return river_base_x(z) + amp * np.sin(meander_s(z))
 
 
 def valley_axis(z):
@@ -122,30 +154,44 @@ def valley_half_width(z):
 
 
 def river_width(z):
-    """Width of the low-flow water channel inside the bed (3.6-5.6 m)."""
-    return 4.6 + 1.0 * np.sin(np.asarray(z) * 0.013 + 0.3)
+    """Width of the low-flow water channel inside the bed (4.3-6.9 m; pools spread wider)."""
+    z = np.asarray(z, dtype=np.float64)
+    return 5.6 + 0.85 * np.sin(z * 0.013 + 0.3) + 0.45 * np.sin(z * 0.041 + 1.0)
 
 
 # ---- River design ----------------------------------------------------------------
 _tick('River design')
 # A small valley river of the kind that runs along the foot of the hills in Tohoku farm
-# valleys (see docs/TERRAIN_DESIGN.md, "川"): a 7-15 m stony bed between 1.5-2 m stone or
-# concrete-block revetments with a concrete cap and a levee path; inside the bed a 3-6 m
-# low-flow channel wanders between alternate gravel bars (pool at the outer bend, riffle
-# where it crosses over); drop structures every ~100 m; a fixed weir whose pool feeds an
-# irrigation intake and a concrete canal along the paddies. Upstream and at the ends the
-# banks are plain earth slopes.
+# valleys (see docs/TERRAIN_DESIGN.md, "川"). Through the village centre it runs straight between
+# concrete-block revetments with a concrete cap and a levee path, held by drop structures and a
+# fixed weir whose pool feeds an irrigation intake. Above and below, the river keeps a natural
+# course: a 12-18 m stony bed winding across the floor between earth banks, the low-flow
+# channel against the outer bank of every bend (a pool, up to 0.8 m deep) and crossing over
+# between them in shallow riffles (0.1-0.25 m) past point bars of gravel, grass and willow
+# scrub. Old dry-stone revetments, broken in places, protect the outer bends that press on the
+# fields and the hamlets' washing places.
 WALL_RUN = 0.75          # horizontal run of a 1:0.4 masonry revetment
 CAP_W = 1.2              # concrete cap + gravel verge on top of a masonry revetment
 PATH_W = 3.0             # levee path beyond the cap
 REACH_SLOPE = 0.0015     # water surface slope between drop structures
 WEIR_Z, BRIDGE_Z = 92.0, 140.0
-POOL_Z0 = WEIR_Z - 135.0  # the weir backs the water up to the previous drop
+POOL_Z0 = WEIR_Z - 135.0  # the weir backs the water up to the head of the walled reach
+WL_NAT = 1.45             # natural reaches: water this far below the valley floor
+WL_CHAN = 1.25            # walled reach: held higher by the drop structures
+
+
+def _band(z, a, b, ramp=8.0):
+    return smoothstep(a - ramp, a, z) * (1 - smoothstep(b, b + ramp, z))
 
 
 def bed_half(z):
+    """Half width of the bed between the banks: 10-14.6 m walled, 11-20 m in the natural reaches
+    (widest at the apex of a bend, where the point bar is)."""
     z = np.asarray(z, dtype=np.float64)
-    b = 6.0 + 0.9 * np.sin(z * 0.0093 + 1.3) + 0.4 * np.sin(z * 0.031)
+    nat = natural_w(z)
+    b_chan = 6.0 + 0.9 * np.sin(z * 0.0093 + 1.3) + 0.4 * np.sin(z * 0.031)
+    b_nat = 6.0 + 3.0 * np.abs(np.sin(meander_s(z) - 0.15)) + 0.7 * np.sin(z * 0.027 + 2.1)
+    b = b_chan * (1 - nat) + b_nat * nat
     return b * (0.62 + 0.38 * smoothstep(-640.0, -540.0, z))
 
 
@@ -153,51 +199,107 @@ def bank_top(z):
     return floor_base(z) + 0.42
 
 
-def _band(z, a, b, ramp=8.0):
-    return smoothstep(a - ramp, a, z) * (1 - smoothstep(b, b + ramp, z))
+# Bank protection, per side: (z0, z1, facing) - "block" concrete kenchi blocks laid diagonally
+# (the river improvement through the centre), "kenchi" cut granite, "stone" old mossy dry stone.
+# Old walls stand at the outer bends that bear on the fields; some have fallen in, leaving gaps.
+_rw = np.random.default_rng(SEED + 32)
+REVET = {True: [(CHAN_Z0 - 4.0, CHAN_Z1 + 4.0, "block")], False: [(CHAN_Z0 - 4.0, CHAN_Z1 + 4.0, "block")]}
+_zq = np.arange(-HALF, HALF, 0.5)
+_ms = meander_s(_zq)
+_apex = []                                   # (z, east?) at the apex of every natural bend
+for _k in range(1, len(_zq) - 1):
+    for _east, _tgt in ((True, np.pi / 2), (False, -np.pi / 2)):
+        _a0 = (_ms[_k - 1] - _tgt) % (2 * np.pi)
+        _a1 = (_ms[_k] - _tgt) % (2 * np.pi)
+        if _a1 < _a0 and natural_w(_zq[_k]) > 0.99 and -540.0 < _zq[_k] < HALF - 60:
+            _apex.append((float(_zq[_k]), _east))
+WASH_STEPS = []                              # stone steps down the east wall (kawato / araiba) by the hamlets
+for _z0, _east in _apex:
+    if not _east:
+        continue                             # western outer bends cut into the wooded hill foot: left alone
+    near_hamlet = min(abs(_z0 - (-250.0)), abs(_z0 - 300.0)) < 40
+    if True:
+        a_, b_ = _z0 - _rw.uniform(30, 45), _z0 + _rw.uniform(18, 32)
+        if near_hamlet and not WASH_STEPS or (near_hamlet and min(abs(w_ - _z0) for w_ in WASH_STEPS) > 200):
+            WASH_STEPS.append(round(_z0 - 6.0, 1))
+        if not near_hamlet:
+            g_ = _rw.uniform(a_ + 12, b_ - 12)   # a collapsed stretch
+            REVET[True] += [(a_, g_ - 3.0, "stone"), (g_ + 3.0 + _rw.uniform(0, 4), b_, "stone")]
+        else:
+            REVET[True].append((a_, b_, "stone"))
+# below the centre the old road to Kawamuko ran along the west bank: a short kenchi wall there
+REVET[False].append((CHAN_Z1 + 4.0, CHAN_Z1 + 46.0, "kenchi"))
+# where a western bend cuts towards the foot of the Kawamuko terraces, an old wall, partly fallen
+for _z0, _east in _apex:
+    if not _east and 340.0 < _z0 < 470.0:
+        REVET[False] += [(_z0 - 34.0, _z0 - 6.0, "stone"), (_z0 + 2.0, _z0 + 26.0, "stone")]
+assert len(WASH_STEPS) == 2, WASH_STEPS
+assert all(any(a_ + 2 < w_ < b_ - 2 for a_, b_, _ in REVET[True]) for w_ in WASH_STEPS), "washing steps need a wall"
+_FACING = {"stone": 0, "block": 1, "kenchi": 2}
+_bank_tab = {}
+for _side in (False, True):
+    e_ = np.ones_like(_zq)
+    f_ = np.zeros_like(_zq)
+    for a_, b_, k_ in REVET[_side]:
+        m_ = (_zq >= a_) & (_zq <= b_)
+        e_[m_] = 0.0
+        f_[m_] = _FACING[k_]
+    _bank_tab[_side] = (e_, f_)
 
 
 def earth_bank(z, east):
-    """1 = plain earth slope (dote), 0 = masonry revetment; per bank side."""
-    z = np.asarray(z, dtype=np.float64)
-    if east:
-        return 1 - _band(z, -560.0, 610.0, 14.0)
-    return 1 - np.clip(_band(z, -165.0, -48.0) + _band(z, 28.0, 218.0), 0, 1)
+    """1 = plain earth bank (natural slope), 0 = masonry revetment; per bank side."""
+    e_, _ = _bank_tab[bool(east)]
+    return np.interp(np.asarray(z, dtype=np.float64), _zq, e_)
+
+
+def wall_facing(z, east):
+    """Revetment facing code at z: 0 old dry stone, 1 concrete kenchi blocks, 2 cut granite."""
+    _, f_ = _bank_tab[bool(east)]
+    i_ = np.clip(np.rint((np.asarray(z, dtype=np.float64) + HALF) / 0.5).astype(int), 0, len(_zq) - 1)
+    return f_[i_]
 
 
 def wall_kind(z, east):
-    """Revetment facing: 'block' (concrete kenchi blocks, rebuilt with the weir) or 'stone' (mossy dry masonry)."""
-    return "block" if 30.0 <= z <= 212.0 else "stone"
+    return {0: "stone", 1: "block", 2: "kenchi"}[int(wall_facing(z, east))]
 
 
-_rr = np.random.default_rng(SEED + 31)
-DROPS = []
-_zz = -(HALF - 138.0)
-while _zz < HALF - 25.0:
-    if not (POOL_Z0 - 55.0 < _zz < WEIR_Z + 42.0) and abs(_zz - BRIDGE_Z) > 16.0:
-        DROPS.append(round(float(_zz), 1))
-    _zz += float(_rr.uniform(82.0, 118.0))
+DROPS = [178.0, 222.0]                        # drop structures in the walled reach below the weir
 MARKS = sorted(DROPS + [POOL_Z0, WEIR_Z])
-_bounds = [-(HALF + 100.0)] + MARKS + [HALF + 100.0]
 _reach_a, _reach_pool = [], []
-for _r in range(len(_bounds) - 1):
-    _a, _b = _bounds[_r], _bounds[_r + 1]
+
+
+def _z_eff(z):
+    """Riffle-pool profile of the natural reaches: the surface falls steeply over the riffles where the
+    channel crosses between bends and lies nearly level along the pools (two of each per meander)."""
+    z = np.asarray(z, dtype=np.float64)
+    return z + (MEANDER_L / (4 * np.pi)) * 0.6 * np.sin(2 * (meander_s(z) - 0.25))
+
+
+def _wl_nat(z):
+    return floor_base(_z_eff(z)) - WL_NAT
+
+
+for _r in range(len(MARKS) - 1):
+    _a, _b = MARKS[_r], MARKS[_r + 1]
     if _b == WEIR_Z:
-        # weir pool: level, 0.22 m below the water above the upstream drop
-        _reach_a.append(_reach_a[-1] - REACH_SLOPE * (_a - _bounds[_r - 1]) - 0.22)
+        # weir pool: level, 0.22 m below the natural water just above its head
+        _reach_a.append(float(_wl_nat(_a - 1e-3)) - 0.22)
         _reach_pool.append(True)
     else:
         _m = 0.5 * (_a + _b)
-        _reach_a.append(float(floor_base(_m)) - 1.45 + REACH_SLOPE * (_m - _a))
+        _reach_a.append(float(floor_base(_m)) - WL_CHAN + REACH_SLOPE * (_m - _a))
         _reach_pool.append(False)
-_bounds_np, _reach_a_np, _reach_pool_np = np.array(_bounds), np.array(_reach_a), np.array(_reach_pool)
+_bounds_np, _reach_a_np, _reach_pool_np = np.array(MARKS), np.array(_reach_a), np.array(_reach_pool)
 
 
 def water_level(z):
-    """Water surface height: gently sloping reaches separated by drops (non-increasing downstream)."""
+    """Water surface height: riffle-pool profile in the natural reaches, gently sloping reaches
+    separated by drops in the walled one (non-increasing downstream everywhere)."""
     z = np.asarray(z, dtype=np.float64)
     r = np.clip(np.searchsorted(_bounds_np, z, side="right") - 1, 0, len(_reach_a_np) - 1)
-    return _reach_a_np[r] - np.where(_reach_pool_np[r], 0.0, REACH_SLOPE) * (z - _bounds_np[r])
+    chan = _reach_a_np[r] - np.where(_reach_pool_np[r], 0.0, REACH_SLOPE) * (z - _bounds_np[r])
+    return np.where((z < MARKS[0]) | (z >= MARKS[-1]), _wl_nat(z), chan)
 
 
 DROP_INFO = []
@@ -206,6 +308,8 @@ for _i, _d in enumerate(MARKS):
     dn = float(water_level(_d + 1e-3))
     assert up - dn > 0.18, (_d, up, dn)
     DROP_INFO.append(dict(z=_d, kind="weir" if _d == WEIR_Z else "drop", up=round(up, 3), down=round(dn, 3)))
+_zt_ = np.arange(-HALF - 50, HALF + 50, 0.25)
+assert np.all(np.diff(water_level(_zt_)) <= 1e-9), "water level must not rise downstream"
 
 
 def full_width(z):
@@ -223,32 +327,76 @@ def weir_pool(z):
 
 
 def _phase(z):
-    return np.asarray(z, dtype=np.float64) * 0.047 + 0.6
+    """Bar phase: alternate bars (~134 m) in the walled reach; in the natural reaches the meander
+    itself, lagging a little so each pool lies just past the apex of its bend."""
+    z = np.asarray(z, dtype=np.float64)
+    nat = natural_w(z)
+    return (z * 0.047 + 0.6) * (1 - nat) + (meander_s(z) - 0.25) * nat
 
 
 def low_off(z):
-    """Lateral offset of the low-flow channel from the bed centre (alternate bars, ~134 m wavelength)."""
+    """Lateral offset of the low-flow channel from the bed centre: towards the outer bank of each
+    bend (natural reaches), between alternate bars (walled reach)."""
     amp = np.clip(bed_half(z) - river_width(z) / 2 - 0.9, 0, None)
-    return amp * 0.85 * np.sin(_phase(z)) * (1 - full_width(z))
+    return amp * 0.88 * np.sin(_phase(z)) * (1 - full_width(z))
 
 
 def chan_half(z):
     """Half-width of the wetted channel; crossings (riffles) are wider and shallower."""
-    hw = (river_width(z) / 2 - 0.35) * (1 + 0.22 * (1 - np.abs(np.sin(_phase(z)))))
+    hw = (river_width(z) / 2 - 0.35) * (1 + 0.24 * (1 - np.abs(np.sin(_phase(z)))))
     fw = full_width(z)
     return hw * (1 - fw) + bed_half(z) * fw
+
+
+def earth_slope(z, east):
+    """Run per unit height of an earth bank: 1:1.6; steeper (1:0.9) where the channel cuts into the
+    outer bank of a natural bend, gentler (1:2.3) on the inside of the bend."""
+    sgn = 1.0 if east else -1.0
+    k = sgn * np.sin(_phase(z)) * natural_w(z) * (1 - full_width(z))
+    return 1.6 - 0.7 * np.clip(k, 0, 1) + 0.7 * np.clip(-k, 0, 1)
+
+
+def bank_ext(z, east):
+    """Horizontal reach of the bank from the edge of the bed to the bank top (with the cap of a wall)."""
+    e = earth_bank(z, east)
+    return (WALL_RUN + CAP_W) * (1 - e) + earth_slope(z, east) * 2.2 * e
+
+
+def levee_path_x(z):
+    """Centre of the path along the top of the east bank."""
+    return river_x(z) + bed_half(z) + bank_ext(z, True) + PATH_W / 2
+
+
+# The irrigation canal from the weir runs straight along the field edges, not round every bend of
+# the river: a smooth line just outside the furthest reach of the east bank and its path.
+from scipy.ndimage import maximum_filter1d as _maxf1, gaussian_filter1d as _gf1
+_ctab_z = np.arange(-HALF - 60.0, HALF + 60.0, 1.0)
+_ctab_x = _gf1(_maxf1(river_x(_ctab_z) + bed_half(_ctab_z) + bank_ext(_ctab_z, True) + PATH_W, size=91), 14.0) + 1.6
+
+
+def canal_x(z):
+    return np.interp(np.asarray(z, dtype=np.float64), _ctab_z, _ctab_x)
 
 
 def bed_surface(u, z, x):
     """Bed height at lateral offset u (= x - river_x) for row z."""
     B, WL, fw, pool = bed_half(z), water_level(z), full_width(z), weir_pool(z)
     hw, c = chan_half(z), low_off(z)
+    nat = natural_w(z)
+    ph = np.abs(np.sin(_phase(z)))
     dc = np.abs(u - c)
-    dmax = 0.16 + 0.5 * np.abs(np.sin(_phase(z))) ** 1.5
+    # riffles 0.1-0.25 m, pools to 0.8 m (natural) / 0.7 m (walled); the deepest line of a pool
+    # hugs the outer bank of its bend
+    dmax = (0.2 + 0.5 * ph ** 1.5) * (1 - nat) + (0.1 + 0.7 * ph ** 1.4) * nat
     dmax = dmax * (1 - pool) + (0.45 + 0.6 * smoothstep(POOL_Z0, WEIR_Z, z)) * pool
-    chan = WL - 0.04 - dmax * np.clip(1 - (dc / np.maximum(hw, 0.5)) ** 2, 0, 1) + 0.07 * fbm(P3, x, z, 1.3, 2)
-    bar = WL - 0.04 + 0.62 * smoothstep(0.0, 4.2, dc - hw) ** 0.85
-    bump = 0.13 * fbm(P1, x, z, 3.2, 2) + 0.05 * fbm(P3, x, z, 1.1, 1)
+    cd = c + np.sign(c) * 0.3 * hw * ph * nat * (1 - fw)
+    span = np.where(u - cd > 0, np.maximum(c + hw - cd, 0.5), np.maximum(cd - (c - hw), 0.5))
+    chan = WL - 0.04 - dmax * np.clip(1 - ((u - cd) / span) ** 2, 0, 1) + 0.07 * fbm(P3, x, z, 1.3, 2)
+    # bars: gravel rising from the water's edge; inside a natural bend a broad point bar that
+    # climbs to a grassy bench (the ground the river takes back in a flood)
+    rise = (0.62 + 0.33 * nat) * smoothstep(0.0, 4.2 + 3.0 * nat, dc - hw) ** 0.85
+    bar = WL - 0.04 + rise
+    bump = 0.13 * fbm(P1, x, z, 3.2, 2) + 0.05 * fbm(P3, x, z, 1.1, 1) + 0.12 * nat * fbm(P4, x, z, 9.0, 2)
     y = np.where(dc < hw, chan, bar + bump * smoothstep(0.0, 1.2, dc - hw))
     # sills, aprons and scour pools at every drop structure
     for info in DROP_INFO:
@@ -323,15 +471,27 @@ def head_closure(x, z):
     along = smoothstep(TUNNEL_Z + 22, TUNNEL_Z - 70, zz) * (1 - smoothstep(TUNNEL_Z - 210, TUNNEL_Z - 300, zz))
     return along * smoothstep(-52, 26, x - road_x(z) + 18 * fbm(P2, x, z, 90, 2))
 
+KAWA_DW_ = 150.0                 # (KAWA_DW below: the lane of Kawamuko this far from the river line)
 def kawamuko_apron(x, z):
     """Kawamuko: an old fan surface west of the river, a long even footslope (about 1 in 8.5)
     terraced for rice. Returns (height above the floor, 0..1 weight of the designed surface)."""
-    dw = river_x(z) - x - 14
-    d_ = np.maximum(dw, 0)
-    a = 0.082 * d_ + 0.00017 * d_ ** 2                       # gentle by the river, steeper under the hills
-    a = a + (2.4 * fbm(P3, x, z, 150, 2) + 1.5 * np.sin(z * 0.033 + 0.7 + 0.004 * d_)) * smoothstep(15, 110, dw)
+    dw = river_base_x(z) - x - 14
+    def prof(d_):
+        d_ = np.maximum(d_, 0)
+        a_ = 0.082 * d_ + 0.00017 * d_ ** 2                  # gentle by the river, steeper under the hills
+        return a_ + (2.4 * fbm(P3, x, z, 150, 2) + 1.5 * np.sin(z * 0.033 + 0.7 + 0.004 * d_)) * smoothstep(15, 110, d_)
+    # the hamlet's lane runs along a level bench (an old river terrace, widened where the houses
+    # stand): ~42 m wide, then a short steep scarp back up to the slope
+    db = KAWA_DW_ + 9.0 * np.sin((z - 150.0) * 0.021)
+    d0, d1 = db - 20.0, db + 22.0
+    a0, a1 = prof(d0), prof(d1)
+    a = prof(dw)
+    bench = smoothstep(d0 - 6.0, d0, dw) * (1 - smoothstep(d1, d1 + 14.0, dw))
+    flat = a0 + (a1 - a0) * smoothstep(d1, d1 + 14.0, dw)
+    zone = smoothstep(95.0, 135.0, z) * (1 - smoothstep(330.0, 370.0, z))
+    a = a + (np.minimum(flat, a) - a) * bench * zone
     edge = 28 * fbm(P1, x, z, 110, 2)
-    w = smoothstep(-5 + edge, 45 + edge, z) * (1 - smoothstep(405 + edge, 455 + edge, z)) * (x < river_x(z)) * (1 - smoothstep(235 + edge, 275 + edge, dw))
+    w = smoothstep(-5 + edge, 45 + edge, z) * (1 - smoothstep(405 + edge, 455 + edge, z)) * (x < river_base_x(z)) * (1 - smoothstep(235 + edge, 275 + edge, dw))
     return np.maximum(a, 0), w
 
 def _seg_dist(px, pz, a, b):
@@ -343,7 +503,7 @@ def _seg_dist(px, pz, a, b):
 SAWA_SEEDS = [((float(road_x(-380.0)) + 40, -380.0), (780.0, -500.0), 0.8, 60.0),      # Okusawa, east
               ((float(road_x(232.0)) + 40, 232.0), (700.0, 120.0), 0.8, 60.0),         # behind the shrine hill, east
               ((float(road_x(500.0)) + 40, 500.0), (790.0, 640.0), 0.75, 55.0),        # Minamizawa, east
-              ((float(river_x(478.0)) - 40, 478.0), (-790.0, 380.0), 0.75, 55.0)]      # south of Kawamuko, west
+              ((float(river_base_x(478.0)) - 40, 478.0), (-790.0, 380.0), 0.75, 55.0)]      # south of Kawamuko, west
 
 def mountains0(x, z):
     ax = valley_axis(z)
@@ -483,7 +643,7 @@ h = h * (1 - fore) + FOOT_Y * fore
 rx = river_x(Z)
 rd = np.abs(X - rx)
 RB = bed_half(Z)
-RIVER_KEEP = RB + WALL_RUN + CAP_W + PATH_W + 3.2     # bed + revetment + levee path + canal
+RIVER_KEEP = RB + np.maximum(bank_ext(Z, True), bank_ext(Z, False)) + PATH_W + 3.2     # bed + bank + levee path + canal
 
 # Main road (prefectural road, kendo): 6 m of asphalt, two lanes with a dashed centre line and
 # edge lines, gravel shoulders and concrete side ditches; graded slightly above the floor.
@@ -549,11 +709,17 @@ KIND_ASSET = {"kawara": "minka-kawara", "thatch": "minka-kayabuki", "tin": "mink
 HAMLETS = [  # name, centre z, half length along the road, houses, valley-side share, kinds in turn
     # the houses gather around the centre; only a small cluster stands apart at the mouth of Okusawa
     ("kaminosawa", -428.0, 22.0, 5, 0.3, ["thatch", "tin", "thatch", "kawara", "tin"]),
-    ("nakazato", -255.0, 40.0, 8, 0.35, ["kawara", "tin", "thatch", "kawara"]),
+    # Nakazato: the oldest farm hamlet - big thatched farmhouses and a storehouse, set back facing south
+    ("nakazato", -255.0, 40.0, 8, 0.35, ["thatch", "thatch", "kura-house", "thatch", "kawara"]),
+    # Miyashita: below the shrine, round its meeting hall
     ("miyashita", -108.0, 46.0, 13, 0.35, ["kawara", "thatch", "kura-house", "kawara", "tin"]),
-    ("shimojuku", 268.0, 40.0, 14, 0.4, ["tin", "kawara", "thatch", "kawara"]),
-    ("minamizawa", 365.0, 40.0, 9, 0.35, ["thatch", "tin", "kawara", "thatch"]),
+    # Shimojuku: the old post road - tiled houses in a close row fronting the road
+    ("shimojuku", 268.0, 40.0, 14, 0.4, ["kawara", "kawara", "tin", "kawara"]),
+    # Minamizawa: newer houses (tin roofs, block walls) among older farms
+    ("minamizawa", 365.0, 40.0, 9, 0.35, ["tin", "kawara", "tin", "thatch"]),
 ]
+# share of a hamlet's houses in the row fronting the road (the rest stand back as farmsteads)
+ROADSIDE_SHARE = {"kaminosawa": 0.45, "nakazato": 0.2, "miyashita": 0.45, "shimojuku": 0.85, "minamizawa": 0.5}
 MACHI_Z = (50.0, 204.0)                            # the village centre along the main road
 FIRE_TOWER = (float(road_x(70.0)) + 7.5, 70.0)    # hinomi-yagura at the north end of the centre
 # the temple stands on a bench at the foot of the eastern hills between Nakazato and Miyashita
@@ -625,20 +791,20 @@ def add_house(x, z, kind, yaw, group, side, asset=None, w=None, d=None, storeys=
 
 # Farm roads (gravel, 3 m): one along the middle of the valley floor, and cross roads from the
 # main road down to the river levee (or to the canal, where it runs along the levee).
-def levee_path_x(z):
-    return float(river_x(z) + bed_half(z)) + WALL_RUN + CAP_W + PATH_W / 2
 def canal_x_(z):
-    return float(river_x(z) + bed_half(z)) + WALL_RUN + CAP_W + PATH_W + 1.6
-FARM_CROSS = [-368.0, -200.0, 5.0, 220.0, 316.0, 428.0, 560.0, 676.0]   # in the gaps between hamlets
+    return float(canal_x(z))
+# in the gaps between hamlets, and between the fields of the long reaches (every 90-130 m: each
+# field must be reached by a farm road for the tiller, the transplanter and the harvest)
+FARM_CROSS = [-368.0, -300.0, -200.0, -130.0, 5.0, 220.0, 316.0, 428.0, 496.0, 560.0, 620.0, 676.0]
 farm_roads = []
 mid_pts = []
 for z in np.arange(-470.0, 690.1, 6.0):
-    xm = 0.5 * (levee_path_x(z) + float(road_x(z))) + 8.0 * math.sin(z * 0.006 + 1.1)
+    xm = 0.5 * (float(levee_path_x(z)) + float(road_x(z))) + 8.0 * math.sin(z * 0.006 + 1.1)
     mid_pts.append((xm, float(z)))
 farm_roads.append(mid_pts)
 for zc in FARM_CROSS:
     x1 = float(road_x(zc)) - ROAD_HALF - 0.4
-    x0 = (canal_x_(zc) + 1.2) if (WEIR_Z - 8 < zc < 375) else levee_path_x(zc)
+    x0 = (canal_x_(zc) + 1.2) if (WEIR_Z - 8 < zc < 375) else float(levee_path_x(zc))
     pts = [(x0 + (x1 - x0) * t, zc + 2.0 * math.sin(t * math.pi) * (1 if zc > 0 else -1)) for t in np.linspace(0, 1, 24)]
     farm_roads.append(pts)
     ditch_crossings.append(zc)
@@ -674,11 +840,12 @@ for _name, _zm in (("okusawa", -394.0), ("miyazawa", 212.0)):
     _xr = float(road_x(_zc))
     _x_in, _x_out = _xr + W_FLAT + 1.2, _xr - W_FLAT - 1.2            # culvert under the road
     _hp = np.vstack([_hp[_hp[:, 0] > _x_in + 3.0], [[_x_in, _zc]]])
-    _x_levee = (canal_x_(_zc) + 1.5) if (WEIR_Z - 8 < _zc < 375) else (levee_path_x(_zc) + PATH_W / 2 + 0.9)
+    _x_levee = (canal_x_(_zc) + 1.5) if (WEIR_Z - 8 < _zc < 375) else (float(levee_path_x(_zc)) + PATH_W / 2 + 0.9)
     _x_riv = float(river_x(_zc) + bed_half(_zc)) + 0.15                # the outfall in the river wall
     _xm = float(np.interp(_zc, [p_[1] for p_ in mid_pts], [p_[0] for p_ in mid_pts]))
     streams.append(dict(name=_name, z=_zc, hill=_hp, x_in=_x_in, x_out=_x_out, x_levee=_x_levee, x_riv=_x_riv,
-                        covers=[("road", _x_out, _x_in), ("farm", _xm - 2.5, _xm + 2.5), ("levee", _x_riv, _x_levee)]))
+                        # the larger brook (Miyazawa) passes under the road on a short bridge, the smaller in a box culvert
+                        covers=[("bridge" if _name == "miyazawa" else "road", _x_out, _x_in), ("farm", _xm - 2.5, _xm + 2.5), ("levee", _x_riv, _x_levee)]))
     ditch_crossings.append(_zc)
 
 def stream_dist(x, z):
@@ -725,6 +892,11 @@ for kind, z, side, W, D, storeys in MACHI:
         hs = add_house(x, zz, "shop", yaw, "machi", side, asset=kind, w=W, d=D, storeys=storeys, front=setback - DITCH_OFF - 0.3, back=4.0, variant=0)
     machi_buildings.append(hs)
 
+# Miyashita's meeting hall (shukaijo), where the road to the shrine leaves the village road
+_mz = -70.0
+_mx = float(road_x(_mz)) + 17.0
+if house_ok(_mx, _mz):
+    add_house(_mx, _mz, "shop", facing_road_yaw(_mx, _mz), "miyashita", 1, asset="kominkan", w=12.0, d=9.0, storeys=1, front=6.0, back=4.0, variant=0)
 for name, cz, half, count, down, kinds in HAMLETS:
     placed, tries = 0, 0
     while placed < count and tries < 2500:
@@ -732,7 +904,7 @@ for name, cz, half, count, down, kinds in HAMLETS:
         z = cz + rng.uniform(-half, half)
         side = -1 if rng.random() < down else 1
         # a first row fronting the road, the rest set back on the slope facing south
-        roadside = rng.random() < 0.45
+        roadside = rng.random() < ROADSIDE_SHARE.get(name, 0.45)
         off = rng.uniform(12.5, 15.5) if roadside else (rng.uniform(26, 50) if side > 0 else rng.uniform(26, 32))
         x = float(road_x(z)) + side * off
         if not house_ok(x, z):
@@ -753,7 +925,7 @@ for name, cz, half, count, down, kinds in HAMLETS:
 # front. The town road climbs to the lane on a slant from the bridge.
 KAWA_DW = 150.0
 def kawa_lane_x(z):
-    return float(river_x(z)) - 14.0 - KAWA_DW - 9.0 * math.sin((z - 150.0) * 0.021)
+    return float(river_base_x(z)) - 14.0 - KAWA_DW - 9.0 * math.sin((z - 150.0) * 0.021)
 _bx0 = float(river_x(BRIDGE_Z)) - float(bed_half(BRIDGE_Z)) - WALL_RUN - CAP_W - 0.4
 _jz = 224.0                                                   # where the road from the bridge meets the lane
 _acc = [(_bx0, BRIDGE_Z), (_bx0 - 14.0, BRIDGE_Z + 3.0)]
@@ -921,6 +1093,38 @@ _sando = [(_gx, _gz, TEMPLE["y"]), (_ex, _gz, road_level(_gz))]
 h = grade_line(h, _sando, 3.0, lane_d)
 lanes.append(_sando)
 ditch_crossings.append(round(_gz, 2))
+# Communal graveyard (kyodo bochi) of the southern hamlets: a small bench cut into the hill foot
+# above Minamizawa, the graves in rows looking out over the valley, a path up from the road.
+# (It is handled like the temple precinct: fields, houses and trees keep clear of it.)
+GRAVES = None
+for _gz_ in (398.0, 412.0, 384.0, 426.0, 370.0, 440.0):
+    for _off in (44.0, 52.0, 38.0, 60.0):
+        _gx_ = float(road_x(_gz_)) + _off
+        if any(math.hypot(hs_["x"] - _gx_, hs_["z"] - _gz_) < 28 for hs_ in houses) or at(slope0, _gx_, _gz_) > 26:
+            continue
+        GRAVES = dict(x=_gx_, z=_gz_, hw=9.0, hd=6.5)
+        break
+    if GRAVES:
+        break
+if GRAVES:
+    GRAVES["yaw"] = facing_road_yaw(GRAVES["x"], GRAVES["z"])
+    GRAVES["y"] = round(min(max(at(h, GRAVES["x"], GRAVES["z"]), road_level(GRAVES["z"]) + 1.5), road_level(GRAVES["z"]) + 7.0), 3)
+    _gc, _gs = math.cos(GRAVES["yaw"]), math.sin(GRAVES["yaw"])
+    _glx = (X - GRAVES["x"]) * _gc - (Z - GRAVES["z"]) * _gs
+    _glz = (X - GRAVES["x"]) * _gs + (Z - GRAVES["z"]) * _gc
+    grave_d = np.maximum(np.abs(_glx) - GRAVES["hw"], np.abs(_glz) - GRAVES["hd"])
+    _w = 1 - smoothstep(0.0, 4.0, grave_d)
+    h = h * (1 - _w) + GRAVES["y"] * _w
+    GRAVES["c"], GRAVES["s"] = _gc, _gs
+    def grave_local(lx, lz):
+        c_, s_ = GRAVES["c"], GRAVES["s"]
+        return GRAVES["x"] + lx * c_ + lz * s_, GRAVES["z"] - lx * s_ + lz * c_
+    _px, _pz = grave_local(0.0, GRAVES["hd"] - 0.5)
+    _gpath = [(_px, _pz, GRAVES["y"]), (float(road_x(_pz)) + ROAD_HALF + 0.3, _pz, road_level(_pz))]
+    h = grade_line(h, _gpath, 1.8, lane_d)
+    lanes.append(_gpath)
+    ditch_crossings.append(round(_pz, 2))
+    temple_d = np.minimum(temple_d, grave_d)
 h = np.where((Z >= ROAD_Z0 - 0.6) & (Z < HALF - 32) & (road_d < W_FLAT), road_y, h)
 
 # distance to the side streams (brook and lined channel), for fields, houses and trees to keep clear
@@ -939,6 +1143,100 @@ for st in streams:
     _line_dist(stream_d, st["x_riv"], st["z"], st["x_in"], st["z"])
 stream_d = np.minimum(stream_d, brook_d)
 
+# ---- Irrigation: canals along the high side of the floor, ditches across the paddies ------------
+_tick('Irrigation network')
+# The floor rises from the river towards the road, and the river runs 1.5 m below it: water taken
+# from the river reaches only the low fields beside it (the weir canal below the centre). The
+# fields on the high side are fed from the side valleys, as in many hill villages: a small intake
+# weir on each brook a little way up its valley lifts water into a concrete canal that comes down
+# to the road, passes under it and runs on along the foot of the road embankment, the high edge of
+# the paddies. From it the water goes into the fields and down branch ditches beside the farm
+# roads, which cross the floor to the river and carry the drainage back to it.
+from scipy.ndimage import gaussian_filter1d as _g1d
+CANAL2_W, CANAL2_D, CANAL2_TOP = 0.9, 0.5, 0.2
+IRR_DITCH_W = 0.6
+def _xw(z):                                   # canal line along the west foot of the road embankment
+    return float(road_x(z)) - (W_FLAT + 1.8)
+canals = []
+irr_ditch_z = []
+for _name, _dz in (("okusawa", [-368.0, -300.0, -200.0, -130.0, 5.0]), ("miyazawa", [316.0, 428.0, 496.0, 560.0])):
+    _zend = max(_dz) - 2.7 + 1.5                                 # the canal ends in its last branch ditch
+    _st = next((s_ for s_ in streams if s_["name"] == _name), None)
+    if _st is None:
+        continue
+    _hp = _st["hill"]
+    _gy = _g1d(np.array([at(h, x_, z_) for x_, z_ in _hp]), 2.0, mode="nearest")
+    _bed = np.minimum.accumulate(_gy - 0.55)
+    _zx = _st["z"] + 7.0                                         # just downstream of the brook's culvert
+    _xe = float(road_x(_zx)) + W_FLAT + 1.8
+    _wx = float(floor_base(_zx)) + 0.8 + 0.06
+    _k = None
+    for _i in range(len(_hp) - 1, -1, -1):
+        _L = math.hypot(_hp[_i, 0] - _xe, _hp[_i, 1] - _zx)
+        if _L > 28.0 and _bed[_i] + 0.3 >= _wx + _L / 300.0:
+            _k = _i
+            break
+    if _k is None:
+        continue
+    _xi, _zi = float(_hp[_k, 0]), float(_hp[_k, 1])
+    _pts = []
+    _n = max(2, int(math.hypot(_xe - _xi, _zx - _zi) / 2.0))
+    for _t in np.linspace(0, 1, _n + 1):
+        _pts.append([_xi + (_xe - _xi) * _t, _zi + (_zx - _zi) * _t, float(_bed[_k] + 0.3) + (_wx - float(_bed[_k] + 0.3)) * _t, 0])
+    _xw0 = _xw(_zx)
+    for _t in np.linspace(0, 1, 7)[1:]:
+        _pts.append([_xe + (_xw0 - _xe) * _t, _zx, _wx - 0.02 * _t, 1])            # piped under the road
+    for _z in np.arange(_zx + 2.0, _zend + 0.01, 2.0):
+        _x = _xw(_z)
+        # covered by a slab where a driveway, a farm road, the shrine branch or a town road crosses
+        _slab = at(lane_d, _x, _z) < 2.4 or at(farm_d, _x, _z) < 2.6 or at(town_d, _x, _z) < 2.6 or at(bd, _x, _z) < 3.2
+        _pts.append([_x, float(_z), float(floor_base(_z)) + 0.8, 2 if _slab else 0])
+    _pts = np.array(_pts)
+    # along the road the water must stand above the fields it serves: the ground 6-16 m west of the
+    # canal (house yards left out), +0.15 m. Every point also carries the needs of those below it, so
+    # where the ground rises downstream the canal is raised on a low bank upstream of it.
+    _road0 = int(np.argmax(_pts[:, 3] == 1))
+    for _i in range(_road0, len(_pts)):
+        _x, _z = _pts[_i, 0], _pts[_i, 1]
+        if any(math.hypot(hs_["x"] - _x, hs_["z"] - _z) < 30 for hs_ in houses) or at(temple_d, _x - 8, _z) < 14:
+            continue
+        _g = max(at(h, _x - d_, _z) for d_ in (6.0, 8.0, 10.0, 12.0))
+        _pts[_i, 2] = max(_pts[_i, 2], _g + 0.15)
+    _pts[:, 2] = np.maximum.accumulate(_pts[::-1, 2])[::-1]
+    if _pts[0, 2] > _bed[_k] + 0.3:
+        # the intake must lift the brook that high: move it up the valley to where the bed is high enough
+        for _i in range(_k, -1, -1):
+            if _bed[_i] + 0.3 >= _pts[0, 2] + math.hypot(_hp[_i, 0] - _xi, _hp[_i, 1] - _zi) / 300.0:
+                _xi2, _zi2 = float(_hp[_i, 0]), float(_hp[_i, 1])
+                _k = _i
+                break
+        _head = []
+        _n2 = max(2, int(math.hypot(_xi - _xi2, _zi - _zi2) / 2.0))
+        for _t in np.linspace(0, 1, _n2 + 1)[:-1]:
+            _head.append([_xi2 + (_xi - _xi2) * _t, _zi2 + (_zi - _zi2) * _t, float(_bed[_k] + 0.3), 0])
+        _xi, _zi = _xi2, _zi2
+        _pts = np.vstack([np.array(_head), _pts])
+        _pts[:, 2] = np.minimum.accumulate(np.maximum.accumulate(_pts[::-1, 2])[::-1])
+    canals.append(dict(name=_name + "-yosui", pts=_pts, intake=(_xi, _zi, float(_bed[_k])), stream=_name))
+    irr_ditch_z += _dz
+# distance to the canal lines (for the fields to keep clear) and the branch ditches beside the farm roads
+irr_d = np.full_like(h, 1e9)
+for _c in canals:
+    _p = _c["pts"]
+    for _i in range(len(_p) - 1):
+        _line_dist(irr_d, _p[_i, 0], _p[_i, 1], _p[_i + 1, 0], _p[_i + 1, 1], reach=8.0)
+irr_ditches = []
+for _zc in irr_ditch_z:
+    _zd = _zc - 2.7                                               # on the north side of the farm road
+    _c = next(c_ for c_ in canals if c_["pts"][0, 1] - 40 < _zd < c_["pts"][-1, 1] + 5)
+    _x0 = _xw(_zd) - CANAL2_W / 2 - 0.16                         # leaves the canal's west wall
+    _into_canal = WEIR_Z - 8 < _zc < 375
+    _x1 = (canal_x_(_zd) + 0.9) if _into_canal else float(levee_path_x(_zd)) + PATH_W / 2 + 0.6
+    _xr = (_x1 - 0.2) if _into_canal else float(river_x(_zd) + bed_half(_zd)) + 0.15
+    irr_ditches.append(dict(z=round(_zd, 2), x0=_x0, x1=_x1, xr=_xr, into_canal=_into_canal,
+                            water0=float(np.interp(_zd, _c["pts"][:, 1], _c["pts"][:, 2])) - 0.08))
+    _line_dist(irr_d, _x0, _zd, _xr, _zd, reach=8.0)
+
 # ---- Paddies ------------------------------------------------------------------
 _tick('Paddies')
 mountain_factor = _M
@@ -951,6 +1249,7 @@ house_clear &= (stream_d > 3.6) & (temple_d > 6.0)
 paddy_region = (
     slope_ok & house_clear
     & (rd > RIVER_KEEP)
+    & (irr_d > 1.9)
     & ~((np.abs(Z - BRIDGE_Z) < 3.4) & (X > rx) & (X < road + 3))   # farm road to the bridge
     & (road_d > 7.5)
     & (np.abs(X) < HALF - 25) & (Z > -(HALF - 60)) & (Z < HALF - 25)
@@ -1064,6 +1363,16 @@ _area_f = np.bincount(comp.ravel(), minlength=K + 1)[1:] * CELL * CELL
 _hx, _hz = np.array([o["x"] for o in houses]), np.array([o["z"] for o in houses])
 fields, idx_fields = [], {}
 type_of = np.zeros(K + 1, np.int8)
+# What each field is used for follows the lie of the land: rice wherever water can be led in (the
+# floor, the terraces below a brook or canal); dry fields (hatake) on ground a little higher than the
+# fields around it, which drains well and is hard to flood; at the foot of the hills, above the reach
+# of the canals, dry fields and small orchards of persimmon and chestnut near the houses, and the
+# remote upper benches given up first (fallow, back to susuki).
+from scipy.spatial import cKDTree as _KDf
+_fkd = _KDf(np.stack([_cx_f, _cz_f], -1))
+_rise_f = lvl - floor_base(_cz_f)
+_rel_f = np.array([lvl[i_] - float(np.median(lvl[_fkd.query_ball_point((_cx_f[i_], _cz_f[i_]), 70.0)])) for i_ in range(K)])
+_forest_edge_f = ndimage.maximum(ndimage.uniform_filter(mountain_factor, 9) > 2.0, comp, np.arange(1, K + 1))
 for k_ in range(K):
     fid = int(ids_[k_])
     sy, sx = _slc[k_]
@@ -1071,10 +1380,20 @@ for k_ in range(K):
     r_ = rng.random()
     ftype = "rice"
     if fid >= TERRACE0:
-        ftype = "fallow" if r_ < 0.1 else ("hatake" if near_house < 40 and r_ < 0.3 else "rice")   # a few benches gone back to susuki
-    elif near_house < 45 and r_ < 0.12:
+        top = _rise_f[k_] > 22.0                                          # the uppermost benches
+        if top and r_ < 0.22 or near_house > 120 and r_ < 0.1:
+            ftype = "fallow"                                              # given up first: far up, far from home
+        elif near_house < 60 and _rise_f[k_] > 6.0 and r_ < 0.3:
+            ftype = "orchard" if r_ < 0.12 else "hatake"                  # above the water, by the houses
+        elif r_ < 0.04:
+            ftype = "fallow"
+    elif _rel_f[k_] > 0.28 and r_ < 0.75:
+        ftype = "hatake"                                                  # a low rise among the paddies
+    elif near_house < 45 and r_ < 0.14:
         ftype = "hatake"
-    elif r_ < 0.06:
+    elif bool(_forest_edge_f[k_]) and r_ < 0.2:
+        ftype = "orchard" if near_house < 80 else "hatake"                # the foot of the hills
+    elif r_ < 0.05:
         ftype = "fallow"
     idx_fields[fid] = len(fields)
     fields.append(dict(
@@ -1082,7 +1401,7 @@ for k_ in range(K):
         bounds=[round(float(axis[sx.start]), 2), round(float(axis[sy.start]), 2), round(float(axis[sx.stop - 1]), 2), round(float(axis[sy.stop - 1]), 2)],
         area=round(float(_area_f[k_]), 1), tint=round(float(rng.uniform(-1, 1)), 3), growth=round(float(rng.uniform(0.85, 1.12)), 3),
         type=ftype, **({"terrace": True} if fid >= TERRACE0 else {})))
-    type_of[k_ + 1] = {"rice": 1, "hatake": 2, "fallow": 3}[ftype]
+    type_of[k_ + 1] = {"rice": 1, "hatake": 2, "fallow": 3, "orchard": 4}[ftype]
 field_type = type_of[comp]
 # Surface: flat inside; at a boundary the levee stands 0.26 m above the higher of the two fields
 # (it holds that field's water) and the bank runs down to the lower one at about 40 degrees.
@@ -1120,7 +1439,7 @@ def river_channel(h):
     toe = bed_surface(sgn * B, Z, rx + sgn * B)
     # walls end in a wing against the earth bank: a hard switch, matching the river-works mesh
     earth = (np.where(east, earth_bank(Z, True), earth_bank(Z, False)) >= 0.5).astype(np.float64)
-    run = WALL_RUN * (1 - earth) + 1.6 * np.maximum(top - toe, 0.3) * earth
+    run = WALL_RUN * (1 - earth) + np.where(east, earth_slope(Z, True), earth_slope(Z, False)) * np.maximum(top - toe, 0.3) * earth
     cap = CAP_W * (1 - earth)
     path = np.where(east, PATH_W, 1.2)
     wall_line = toe + np.clip((a - B) / run, 0, 1) * (top - toe)
@@ -1156,8 +1475,6 @@ h = np.where(in_track & (track_zd < 2.2), track_y, h)
 # land side of the east levee, gently graded (1/1000) so it ends up level with the fields.
 CANAL_Z0, CANAL_Z1, CANAL_W, CANAL_D = WEIR_Z - 6.0, 372.0, 1.2, 0.42
 CULVERT = (BRIDGE_Z - 1.9, BRIDGE_Z + 1.9)   # the farm road crosses on a pipe culvert
-def canal_x(z):
-    return river_x(z) + bed_half(z) + WALL_RUN + CAP_W + PATH_W + 1.6
 canal_pts = []
 _s, _prev = 0.0, None
 _wy0 = float(water_level(WEIR_Z - 7.0)) - 0.12
@@ -1201,10 +1518,12 @@ for st in streams:
     bed0 = inv_in - 0.12
     bed1 = float(water_level(zc_)) + 0.28
     st["bed0"], st["bed1"] = round(bed0, 3), round(min(bed1, bed0 - 0.3), 3)
-    in_x = (X > st["x_levee"]) & (X < st["x_out"])
+    _brg = any(k_ == "bridge" for k_, _a, _b in st["covers"])
+    in_x = (X > st["x_levee"]) & (X < (st["x_in"] if _brg else st["x_out"]))
     covered = np.zeros_like(in_x)
     for kind_, cx0, cx1 in st["covers"]:
-        covered |= (X > cx0 - 0.3) & (X < cx1 + 0.3)
+        if kind_ != "bridge":
+            covered |= (X > cx0 - 0.3) & (X < cx1 + 0.3)
     dz_ = np.abs(Z - zc_)
     tx_ = np.clip((st["x_out"] - X) / (st["x_out"] - st["x_riv"]), 0, 1)
     fb = st["bed0"] + (st["bed1"] - st["bed0"]) * tx_
@@ -1216,6 +1535,85 @@ for st in streams:
     # wall tops along the channel (sampled every 2 m for the mesh)
     xs_ = np.arange(st["x_levee"], st["x_out"] + 0.01, 2.0)
     st["tops"] = [[round(float(x_), 2), round(at(ground, x_, zc_) + 0.06, 3)] for x_ in xs_]
+
+# ---- Irrigation canals and branch ditches: channels ------------------------------
+_tick('Irrigation canals and ditches')
+# Now that the fields are levelled, set each canal's water against the ground it serves (6-12 m west
+# of it, house yards and the temple bench left out) + 0.12 m; every point carries the needs of those
+# below it, so the canal stands on a low bank where the ground rises downstream. The intake weir is
+# built as high as that requires.
+for _c in canals:
+    _p = _c["pts"]
+    for _i in range(len(_p)):
+        _x, _z = _p[_i, 0], _p[_i, 1]
+        if _p[_i, 3] != 0 or abs(_x - float(road_x(_z))) > 9.5:
+            continue
+        if any(math.hypot(hs_["x"] - _x, hs_["z"] - _z) < 30 for hs_ in houses) or at(temple_d, _x - 8, _z) < 14:
+            continue
+        _p[_i, 2] = max(_p[_i, 2], max(at(h, _x - d_, _z) for d_ in (6.0, 8.0, 10.0, 12.0)) + 0.12)
+    _p[:, 2] = np.maximum.accumulate(_p[::-1, 2])[::-1]
+    _xi, _zi, _by = _c["intake"]
+    _c["intake"] = (_xi, _zi, _by, max(_by + 0.32, float(_p[0, 2]) + 0.02))
+for _dt in irr_ditches:
+    _c = next(c_ for c_ in canals if c_["pts"][0, 1] - 40 < _dt["z"] < c_["pts"][-1, 1] + 5)
+    _dt["water0"] = float(np.interp(_dt["z"], _c["pts"][:, 1], _c["pts"][:, 2])) - 0.08
+# Canals: precast concrete U-channel; the ground meets the wall tops on short 1:1.5 fill or 1:1
+# cut slopes. Each cell takes the nearest stretch of canal (so overlapping stretches agree).
+_cd = np.full_like(h, 1e9)
+_cw = np.zeros_like(h)
+_scr = np.full_like(h, 1e9)
+for _c in canals:
+    _p = _c["pts"]
+    for _i in range(len(_p) - 1):
+        if _p[_i, 3] > 0.5 or _p[_i + 1, 3] > 0.5:
+            continue                                      # piped under the road, or under a slab
+        (i0, i1, j0, j1), d_, t_ = _line_dist(_scr, _p[_i, 0], _p[_i, 1], _p[_i + 1, 0], _p[_i + 1, 1], reach=7.0)
+        closer = d_ < _cd[i0:i1, j0:j1]
+        _cd[i0:i1, j0:j1] = np.where(closer, d_, _cd[i0:i1, j0:j1])
+        _cw[i0:i1, j0:j1] = np.where(closer, _p[_i, 2] + (_p[_i + 1, 2] - _p[_i, 2]) * t_, _cw[i0:i1, j0:j1])
+_ctop = _cw + CANAL2_TOP
+_dl = np.maximum(_cd - (CANAL2_W / 2 + 0.2), 0)
+_graded = np.clip(h, _ctop - 0.04 - _dl / 1.5, _ctop - 0.04 + _dl * 1.0)
+_keep_road = road_d < W_FLAT + 0.3
+h = np.where(_keep_road, h, np.where(_cd < CANAL2_W / 2, _cw - CANAL2_D - 0.1,
+             np.where(_cd < CANAL2_W / 2 + 0.2, _ctop - 0.04, np.where(_dl < 5.0, _graded, h))))
+# Branch ditches: concrete-lined, 0.6 m wide, beside the farm roads; the bed falls from the canal to
+# the river (or into the weir canal); slab covers where a road or the levee path crosses.
+_ground_i = ndimage.uniform_filter(h, 5)
+for _dt in irr_ditches:
+    _zd = _dt["z"]
+    _rw = float(water_level(_zd)) if not _dt["into_canal"] else float(np.interp(_zd, _cz, _cy))
+    _dt["bed0"] = round(_dt["water0"] - 0.3, 3)
+    _dt["bed1"] = round(min(_rw + (0.05 if _dt["into_canal"] else 0.25), _dt["bed0"] - 0.25), 3)
+    covers_ = []
+    if not _dt["into_canal"]:
+        covers_.append(("levee", _dt["xr"], _dt["x1"]))
+    # the mid-valley farm road and any driveway across the ditch
+    _xs = np.arange(_dt["x1"], _dt["x0"], 0.5)
+    _cov = np.array([at(farm_d, x_, _zd) < 2.0 or at(lane_d, x_, _zd) < 1.9 for x_ in _xs])
+    _k = 0
+    while _k < len(_xs):
+        if _cov[_k]:
+            _k2 = _k
+            while _k2 + 1 < len(_xs) and _cov[_k2 + 1]:
+                _k2 += 1
+            covers_.append(("farm", float(_xs[_k]) - 0.6, float(_xs[_k2]) + 0.6))
+            _k = _k2 + 1
+        else:
+            _k += 1
+    _dt["covers"] = covers_
+    in_x = (X > _dt["x1"]) & (X < _dt["x0"])
+    covered = np.zeros_like(in_x)
+    for _kind, cx0, cx1 in covers_:
+        covered |= (X > cx0 - 0.3) & (X < cx1 + 0.3)
+    dz_ = np.abs(Z - _zd)
+    tx_ = np.clip((_dt["x0"] - X) / (_dt["x0"] - _dt["xr"]), 0, 1)
+    fb_ = _dt["bed0"] + (_dt["bed1"] - _dt["bed0"]) * tx_
+    open_ = in_x & ~covered
+    h = np.where(open_ & (dz_ < IRR_DITCH_W / 2), fb_ - 0.1, h)
+    h = np.where(open_ & (dz_ >= IRR_DITCH_W / 2) & (dz_ < IRR_DITCH_W / 2 + 0.14), np.maximum(h, _ground_i + 0.02), h)
+    _xs = np.arange(_dt["x1"], _dt["x0"] + 0.01, 2.0)
+    _dt["tops"] = [[round(float(x_), 2), round(max(at(_ground_i, x_, _zd) + 0.06, float(_dt["bed0"] + (_dt["bed1"] - _dt["bed0"]) * min(max((_dt["x0"] - x_) / (_dt["x0"] - _dt["xr"]), 0), 1)) + 0.3), 3)] for x_ in _xs]
 
 # ---- Encode height -------------------------------------------------------------
 _tick('Encode height')
@@ -1251,6 +1649,37 @@ _laz = np.arctan2(_ldx, -_ldz)
 _adiff = lambda a_, b_: np.abs((a_ - b_ + np.pi) % (2 * np.pi) - np.pi)
 _cone = ((_ld < 195) & (_adiff(_laz, LOOK_DIR) < math.radians(40))) | ((_ld < 235) & (_adiff(_laz, SUN_AZ) < math.radians(18)))
 forest_density = np.where(_cone & (_ld > 12), forest_density * 0.15, forest_density)
+# Forest stands. The hills are not one even wood: the lower slopes near the village are mostly sugi
+# and hinoki plantations (planted in rows, one age to a stand), with here and there a stand replanted
+# a few years ago and a recent clear-cut; the upper slopes and ridges keep natural broadleaf wood
+# (konara, oak, cherry, with red pine on the ridges). Stands are cells of jittered seeds ~120 m apart.
+from scipy.spatial import cKDTree as _KDs
+_srng = np.random.default_rng(SEED + 41)
+_seeds = []
+for _sz in np.arange(-HALF - 60, HALF + 60, 120.0):
+    for _sx in np.arange(-HALF - 60, HALF + 60, 120.0):
+        _seeds.append((_sx + _srng.uniform(-45, 45), _sz + _srng.uniform(-45, 45)))
+_seeds = np.array(_seeds)
+_stand_kd = _KDs(_seeds)
+STAND = []
+for _k, (_sx, _sz) in enumerate(_seeds):
+    _up = at(mountain_factor, _sx, _sz)
+    _near = min(abs(_sx - float(road_x(_sz))), abs(_sx - float(river_x(_sz)))) < 320
+    _r = _srng.random()
+    if _up > 95 or (not _near and _r < 0.45):
+        kind_ = "natural"
+    elif _r < 0.07 and 8 < _up < 70:
+        kind_ = "clearcut"
+    elif _r < 0.17 and 6 < _up < 80:
+        kind_ = "young"
+    else:
+        kind_ = "plantation" if _r < 0.8 else "natural"
+    STAND.append(dict(kind=kind_, angle=_srng.uniform(0, math.pi), age=_srng.uniform(0.82, 1.18)))
+_, _stand_id = _stand_kd.query(np.stack([X.ravel(), Z.ravel()], -1))
+_stand_id = _stand_id.reshape(X.shape)
+_stand_kind = np.array([{"plantation": 0, "natural": 1, "young": 2, "clearcut": 3}[st_["kind"]] for st_ in STAND])[_stand_id]
+# a clear-cut is open ground (grass, brush, stumps) until it is replanted
+forest_density = np.where(_stand_kind == 3, forest_density * 0.12, forest_density)
 rock = smoothstep(50, 62, slope) * (1 - is_paddy)
 # River bed: wet cobbles at and under the water, dry grey gravel on the bars, grass over the high bars.
 WLg = water_level(Z)
@@ -1341,7 +1770,10 @@ for idx, group in enumerate([order[:4], order[4:8], order[8:]]):
     rgba = np.stack([wgt[k] for k in group] + [np.zeros_like(h)] * (4 - len(group)), -1)
     Image.fromarray(np.uint8(np.rint(np.clip(rgba, 0, 1) * 255)), "RGBA").save(OUT / f"splat{idx}.png")
 # Vegetation/paddy auxiliary map: R=forest density, G=paddy id hash, B=paddy interior, A=grass density
-grass_density = np.clip(wgt["grass"] * (1 - 0.6 * forest_density) + wgt["forest"] * 0.25 + is_paddy * (1 - smoothstep(0.5, 1.2, d_fld)) * 0.8, 0, 1)
+# the levees of most fields are mown through the summer (short, sparse grass); a few are left to grow
+_mown = ((label * 2654435761) % 10) < 7
+grass_density = np.clip(wgt["grass"] * (1 - 0.6 * forest_density) + wgt["forest"] * 0.25
+                        + is_paddy * (1 - smoothstep(0.5, 1.2, d_fld)) * np.where(_mown, 0.36, 0.85), 0, 1)
 # nothing grows through the revetments, the canal or the wet margin; sparse tufts on the dry gravel
 grass_density = grass_density * (1 - wall_band) * (1 - riverbed) * (1 - 0.8 * wgt["bar"]) * ~(in_canal & (cdx < CANAL_W / 2 + 0.3))
 grass_density = grass_density * (stream_d > STREAM_W / 2 + 0.3) * (1 - 0.9 * (temple_d < 0))
@@ -1370,8 +1802,7 @@ def river_corridor(x, z, extra=0.0):
     """Bed, revetment, cap and levee path of the river, the canal and the farm road to the bridge."""
     u = x - float(river_x(z))
     B = float(bed_half(z))
-    e = float(earth_bank(z, u >= 0))
-    reach = B + WALL_RUN * (1 - e) + 3.0 * e + CAP_W * (1 - e) + (PATH_W + 0.8 if u >= 0 else 0.6)
+    reach = B + float(bank_ext(z, u >= 0)) + (PATH_W + 0.8 if u >= 0 else 0.6)
     if abs(u) < reach + extra:
         return True
     if CANAL_Z0 - 2 < z < CANAL_Z1 + 2 and abs(x - float(canal_x(z))) < 1.7 + extra:
@@ -1394,7 +1825,7 @@ def blocked(x, z, top=None):
     return bool(cell(built_block, x, z))
 
 # cells no tree may stand on: around every building, in the temple precinct, along the streams
-built_block = (temple_d < 2.0) | (stream_d < 2.4)
+built_block = (temple_d < 2.0) | (stream_d < 2.4) | (irr_d < 2.2)
 for hs in houses:
     reach = max(hs["w"], hs["d"]) / 2 + 5 + (5 if hs.get("wing") else 0)
     j0 = max(int((hs["x"] - reach) / CELL + (N - 1) / 2), 0); j1 = min(int((hs["x"] + reach) / CELL + (N - 1) / 2) + 2, N)
@@ -1451,8 +1882,9 @@ for i in range(260):
 # Precinct sacred tree (shinboku) near the haiden.
 trees["sugi"].append([248.0, round(sample(248, -70), 3), -70.0, 1.75, 0.6, 0, 0.0])
 
-# General forest via jittered grid + density.
+# General forest via jittered grid + density, stand by stand.
 spacing = 5.3
+_planted, _cut_stumps, _edge_shrubs = set(), [], []
 gridx = np.arange(-(HALF - 4), HALF - 4, spacing)
 for gz in np.arange(-(HALF - 4), HALF - 4, spacing):
     for gxv in gridx:
@@ -1467,16 +1899,41 @@ for gz in np.arange(-(HALF - 4), HALF - 4, spacing):
         sl = cell(slope, x, z)
         if sl > 62:
             continue
-        plantation = fbm(P2, np.array(x), np.array(z), 160, 3) > -0.05
+        sid = int(_stand_kd.query((x, z))[1])
+        stand = STAND[sid]
         ridge = cell(mountain_factor, x, z) > 150 or sl < 12 and y > 120
         r = rv.random()
-        if ridge and r < 0.45:
-            kind = "akamatsu"
-        elif plantation and y < 260:
-            kind = "sugi" if r < 0.82 else "hinoki"
+        edge_ = fd < 0.45                                   # the margin of the wood
+        if stand["kind"] in ("plantation", "young"):
+            # planted rows: the tree stands on the stand's own lattice (one age, little jitter)
+            ca_, sa_ = math.cos(stand["angle"]), math.sin(stand["angle"])
+            u_, v_ = gxv * ca_ + gz * sa_, -gxv * sa_ + gz * ca_
+            u_, v_ = round(u_ / spacing) * spacing, round(v_ / spacing) * spacing
+            x, z = u_ * ca_ - v_ * sa_ + rv.normal(0, 0.25), u_ * sa_ + v_ * ca_ + rv.normal(0, 0.25)
+            if int(_stand_kd.query((x, z))[1]) != sid or (sid, round(u_), round(v_)) in _planted:
+                continue
+            _planted.add((sid, round(u_), round(v_)))
+            if blocked(x, z, top=sample(x, z) + 13.0) or cell(forest_density, x, z) <= 0.05:
+                continue
+            kind = "sugi" if (r < 0.8 or y > 200) else "hinoki"
+            scale = stand["age"] * rv.uniform(0.94, 1.06) * (0.36 if stand["kind"] == "young" else 1.0)
+        elif stand["kind"] == "clearcut":
+            if r < 0.85:
+                _cut_stumps.append((x, z))
+                continue
+            kind, scale = "broadleaf", rv.uniform(0.3, 0.5)    # a few young trees coming up in the cut
         else:
-            kind = "broadleaf" if r < 0.8 else ("akamatsu" if r < 0.9 else "hinoki")
-        scale = rv.uniform(0.75, 1.15) * (1.0 if kind != "broadleaf" else rv.uniform(0.8, 1.15))
+            # natural wood: clumps and gaps, mixed sizes
+            if fbm(P4, np.array(x), np.array(z), 26, 2) + 0.35 * rv.normal() < -0.45:
+                continue
+            if ridge and r < 0.45:
+                kind = "akamatsu"
+            else:
+                kind = "broadleaf" if r < 0.82 else ("keyaki" if r < 0.86 else ("akamatsu" if r < 0.93 else "hinoki"))
+            scale = rv.uniform(0.62, 1.2) * (1.0 if kind != "keyaki" else 0.75)
+        if edge_ and stand["kind"] != "plantation":
+            scale *= rv.uniform(0.55, 0.8)                     # lower trees and scrub along the edge
+            _edge_shrubs.append((x + rv.normal(0, 2.0), z + rv.normal(0, 2.0)))
         if blocked(x, z):
             # inside the lookout's view cone: only low broadleaf scrub whose crowns stay below the sight line
             kind = "broadleaf"
@@ -1561,8 +2018,7 @@ for hs in houses:
 # willow scrub on the high gravel bars and bamboo flood-defence groves (suigai-bobirin).
 def bank_reach(z, east):
     B = float(bed_half(z))
-    e = float(earth_bank(z, east))
-    return B + WALL_RUN * (1 - e) + 3.0 * e + CAP_W * (1 - e) + (PATH_W + 0.8 if east else 0.6)
+    return B + float(bank_ext(z, east)) + (PATH_W + 0.8 if east else 0.6)
 riparian_shrubs = []
 for z in np.arange(-(HALF - 60), HALF - 10, 3.0):
     # clumps and open stretches, not an avenue: density follows a slow noise along the bank
@@ -1692,9 +2148,26 @@ for hs in houses:
             x += [0.55, 0.4, 0.7, 0.3][crop] * rv.uniform(0.85, 1.15)
         zr += FURROW_PITCH
         k_ += 1
-# Fallow terraces going back to susuki and weeds.
+# Orchards (persimmon, chestnut): small trees in rows across the field, grass beneath.
 for f in fields:
-    if not (f.get("terrace") and f["type"] == "fallow"):
+    if f["type"] != "orchard":
+        continue
+    x0b, z0b, x1b, z1b = f["bounds"]
+    fid_cells = (label == int(f["label"]))
+    ang = rv.uniform(0, math.pi)
+    ca, sa = math.cos(ang), math.sin(ang)
+    sp_ = rv.uniform(4.5, 6.0)
+    cx_, cz_ = (x0b + x1b) / 2, (z0b + z1b) / 2
+    R_ = math.hypot(x1b - x0b, z1b - z0b) / 2 + sp_
+    for a_ in np.arange(-R_, R_, sp_):
+        for b_ in np.arange(-R_, R_, sp_):
+            x = cx_ + a_ * ca - b_ * sa + rv.normal(0, 0.3)
+            z = cz_ + a_ * sa + b_ * ca + rv.normal(0, 0.3)
+            if at(fid_cells, x, z) > 0.5 and at(d_fld, x, z) > 1.6:
+                add_tree("broadleaf", x, z, rv.uniform(0.32, 0.45))
+# Fallow fields (terraces and floor) going back to susuki and weeds.
+for f in fields:
+    if f["type"] != "fallow":
         continue
     x0b, z0b, x1b, z1b = f["bounds"]
     fid_cells = (label == int(f["label"]))
@@ -1731,6 +2204,17 @@ for z in np.arange(-(HALF - 60), HALF - 15, 0.8):
                 u = u0 + rv.normal(0, 0.75)
                 if abs(u) < B - 0.4:
                     add_clutter("reed", rxz + u, z + rv.normal(0, 1.3), rv.uniform(0.75, 1.3), int(rv.integers(0, 3)))
+# Clear-cuts: stumps and brush; the margins of the woods: shrubs
+for (x, z) in _cut_stumps:
+    if rv.random() < 0.55 and not blocked(x, z):
+        add_clutter("stump", x, z, rv.uniform(0.8, 1.2), sink=0.05)
+    if rv.random() < 0.6:
+        add_clutter("shrub", x + rv.normal(0, 1.5), z + rv.normal(0, 1.5), rv.uniform(0.6, 1.2), int(rv.integers(0, 3)))
+    if rv.random() < 0.15:
+        add_clutter("log", x + rv.normal(0, 1.0), z + rv.normal(0, 1.0), rv.uniform(0.6, 1.0), int(rv.integers(0, 2)), sink=0.05)
+for (x, z) in _edge_shrubs:
+    if not blocked(x, z) and cell(is_paddy_f, x, z) < 0.5:
+        add_clutter("shrub", x, z, rv.uniform(0.7, 1.3), int(rv.integers(0, 3)))
 for (x, z) in riparian_shrubs:
     if not river_corridor(x, z) and cell(is_paddy_f, x, z) < 0.5:
         add_clutter("shrub", x, z, rv.uniform(0.7, 1.3), int(rv.integers(0, 3)))
@@ -1740,6 +2224,21 @@ for info in DROP_INFO:
     for i in range(int(float(bed_half(d)) * 2.4)):
         zz = d + apron + rv.uniform(0.3, 5.5)
         add_clutter("boulder", float(river_x(zz)) + rv.uniform(-1, 1) * (float(bed_half(zz)) - 0.6), zz, rv.uniform(0.4, 0.8), int(rv.integers(0, 2)), sink=0.35)
+# Natural reaches: boulders at the foot of the cut banks and across the riffles, driftwood left
+# stranded on the point bars by the last flood.
+for z in np.arange(-(HALF - 60), HALF - 15, 2.0):
+    if float(natural_w(z)) < 0.5:
+        continue
+    B, c, hw = float(bed_half(z)), float(low_off(z)), float(chan_half(z))
+    rxz, ph = float(river_x(z)), math.sin(float(_phase(z)))
+    if abs(ph) > 0.45 and rv.random() < 0.55:
+        add_clutter("boulder", rxz + math.copysign(B - rv.uniform(0.2, 1.3), c), z + rv.uniform(-1, 1), rv.uniform(0.55, 1.15), int(rv.integers(0, 2)), sink=0.35)
+    if abs(ph) < 0.4 and rv.random() < 0.45:
+        add_clutter("boulder", rxz + c + rv.uniform(-hw, hw), z + rv.uniform(-1, 1), rv.uniform(0.35, 0.75), int(rv.integers(0, 2)), sink=0.3)
+    if abs(ph) > 0.55 and rv.random() < 0.1:
+        u = c - math.copysign(hw + rv.uniform(1.2, 5.0), c)
+        if abs(u) < B - 1.2:
+            add_clutter("log", rxz + u, z + rv.uniform(-1, 1), rv.uniform(0.55, 1.0), int(rv.integers(0, 2)), sink=0.05)
 for z in np.arange(-(HALF - 60), HALF - 15, 1.2):
     for east in (False, True):
         e = float(earth_bank(z, east))
@@ -1827,8 +2326,10 @@ for i, hs in enumerate(houses):
         extra["smoke"] = True
     if hs["roadside"]:
         extra["roadside"] = True
-    if shop and asset in SIGNS:
+    if shop and asset in SIGNS and machi:
         extra["signs"] = [{"text": t, "style": st} for t, st in SIGNS[asset]]
+    if shop and not machi:
+        extra["hall"] = "shukaijo"              # a hamlet's meeting hall (the community-hall model, no sign)
     obj(asset, hs["x"], hs["y"], hs["z"], hs["yaw"], 1.0, variant=hs["variant"], size=[round(hs["w"], 2), round(hs["d"], 2)],
         group=hs["group"], **extra,
         collider={"type": "box", "halfExtents": [W2 + 0.3, 3.0 * hs["storeys"], D2 + 0.3]},
@@ -1839,17 +2340,22 @@ for i, hs in enumerate(houses):
     for k in range(2 if not shop else 1):
         px_, pz_ = local(rng.uniform(-W2, W2), -D2 - 1.6)
         obj(str(rng.choice(["prop-bucket", "prop-barrels", "prop-crate", "prop-basket", "prop-ladder"])), px_, hs["y"], pz_, float(rng.random() * math.tau), 1.0)
-    if machi:
+    if machi or shop:
         continue
     # barn at the side of the yard away from the road, its open bay facing the yard
     bs = hs["barn"]
     bx, bz = local(bs * (W2 + 5.0), D2 + min(3.2, hs["front"] - 2.5))
     obj("naya", bx, hs["y"], bz, hs["yaw"] - bs * math.pi / 2, rng.uniform(0.85, 1.1), collider={"type": "box", "halfExtents": [2.6, 1.8, 2.1]})
+    # farmsteads: a work shed (sagyo-goya) for the tools and the tiller at the back corner on the barn
+    # side, so the yard is framed by the house, the barn and the shed
+    if hs["group"] in ("kaminosawa", "nakazato", "miyashita", "shimojuku", "minamizawa", "sankyo", "kawamuko") and rng.random() < 0.75:
+        sx_, sz_ = local(bs * (W2 + 3.4), -D2 + 1.6)
+        obj("naya", sx_, hs["y"], sz_, hs["yaw"] + bs * math.pi / 2, rng.uniform(0.62, 0.72), collider={"type": "box", "halfExtents": [1.8, 1.3, 1.5]})
     # laundry poles (monohoshi) in the sunny front yard, on the side away from the barn
     if hs["front"] > 5.0 and rng.random() < 0.65:
         lx_, lz_ = local(-bs * (W2 - 3.0), D2 + 2.6)
         obj("monohoshi", lx_, hs["y"], lz_, hs["yaw"] + rng.normal(0, 0.05), 1.0, collider={"type": "box", "halfExtents": [1.6, 0.95, 0.12]})
-    if i % 3 == 0 and hs["group"] != "sankyo":
+    if (i % 3 == 0 or (hs["group"] == "minamizawa" and i % 3 == 1)) and hs["group"] != "sankyo":
         wx, wz = local(-2.0, D2 + hs["front"] + 0.3)
         obj("block-wall", wx, hs["y"], wz, hs["yaw"], 1.0, length=round(hs["w"] + 8, 2))
     if i % 4 == 1 and hs["front"] > 6:
@@ -1878,6 +2384,17 @@ for _i, _lx in enumerate((-15.0, -11.2)):
         _tobj("haka", _lx, -11.0 + 4.3 * _j + (0.6 if _i else 0.0), yaw=math.pi / 2, variant=(_i * 5 + _j) % 3,
               collider={"type": "box", "halfExtents": [0.5, 0.6, 1.5]})
 add_tree("keyaki", *temple_local(11.8, -9.5), 1.05)
+if GRAVES:
+    # three rows of family graves facing the valley, a sugi or two and a hinoki behind them
+    for _r in range(3):
+        for _k in range(6):
+            if rng.random() < 0.12:
+                continue
+            _x, _z = grave_local(-6.5 + _k * 2.6 + rng.normal(0, 0.15), -3.6 + _r * 3.1)
+            obj("haka", _x, GRAVES["y"], _z, GRAVES["yaw"] + rng.normal(0, 0.03), rng.uniform(0.9, 1.05), variant=int(rng.integers(0, 3)),
+                cemetery=True, collider={"type": "box", "halfExtents": [0.5, 0.6, 1.5]})
+    for _lx in (-7.5, -1.0, 6.0):
+        add_tree("sugi" if _lx != -1.0 else "hinoki", *grave_local(_lx + rng.uniform(-1, 1), -GRAVES["hd"] - 3.0), rng.uniform(0.85, 1.05))
 for _lx in np.arange(-17.0, 17.1, 4.8):
     add_tree("sugi", *temple_local(float(_lx) + rng.uniform(-0.8, 0.8), -TEMPLE["hd"] - 3.5 + rng.uniform(-1, 1)), rng.uniform(0.95, 1.2))
 for _lz in np.arange(-12.0, 9.0, 5.2):
@@ -1931,6 +2448,50 @@ _sb = float(bed_half(BRIDGE_Z))
 BRIDGE_SPAN = round(2 * (_sb + WALL_RUN) + 1.2, 2)
 obj("bridge", BRIDGE_X0, BRIDGE_DECK - 0.4, BRIDGE_Z, 0.0, 1.0, span=BRIDGE_SPAN, width=3.2,
     collider={"type": "box", "halfExtents": [BRIDGE_SPAN / 2, 0.2, 1.6]})
+# Road cuts: where the road is cut more than 2 m into the hill foot, a low dry-stone wall (about
+# 1.1 m) holds the toe of the cut slope at the edge of the shoulder, as road works of the time did;
+# the 1:1 slope continues above it. Gaps at driveways, streams and the shrine branch.
+_ret = 0
+for _side in (1.0, -1.0):
+    _run = []
+    def _flush():
+        global _ret
+        if len(_run) >= 4:
+            for _a in range(0, len(_run) - 1, 5):
+                _seg = _run[_a:_a + 6]
+                if len(_seg) < 2:
+                    continue
+                (_x0, _z0), (_x1, _z1) = _seg[0], _seg[-1]
+                _xm, _zm = (_x0 + _x1) / 2, (_z0 + _z1) / 2
+                _L = math.hypot(_x1 - _x0, _z1 - _z0)
+                obj("ishigaki", _xm, road_level(_zm) + 1.1, _zm, facing_road_yaw(_xm, _zm), 1.0, length=round(_L + 0.4, 2), height=1.1)
+                _ret += 1
+        _run.clear()
+    for _z in np.arange(ROAD_Z0 + 8.0, HALF - 40.0, 2.0):
+        _dxr, _dzr, _ = road_dir(_z)
+        _nx, _nz = _dzr * _side, -_dxr * _side                    # unit normal towards this side
+        _xr = float(road_x(_z))
+        _xf, _zf = _xr + _nx * (W_FLAT + 0.05), _z + _nz * (W_FLAT + 0.05)
+        _cut = sample(_xr + _nx * 8.0, _z + _nz * 8.0) - road_level(_z)
+        _clear = (at(lane_d, _xf, _zf) > 4.0 and at(stream_d, _xf, _zf) > 6.0 and at(irr_d, _xf, _zf) > 3.0 and at(bd, _xf, _zf) > 6.0
+                  and at(temple_d, _xf, _zf) > 4.0 and all(math.hypot(hs_["x"] - _xf, hs_["z"] - _zf) > max(hs_["w"], hs_["d"]) / 2 + 6 for hs_ in houses))
+        if _cut > 2.0 and _clear:
+            _run.append((_xf, _zf))
+        else:
+            _flush()
+    _flush()
+print("retaining walls", _ret)
+# Road bridge where the prefectural road crosses Miyazawa: a short concrete slab with low parapets
+for st in streams:
+    if any(c_[0] == "bridge" for c_ in st["covers"]):
+        _zb = st["z"]
+        _, _, _th = road_dir(_zb)
+        # a skew bridge: the deck ends run along the brook, the parapets along the road
+        _span = (STREAM_W + 2 * 0.16 + 1.6) / math.cos(_th)     # channel, its walls, the bearings
+        # (object y = underside of the deck; the deck top is level with the road; the collider reaches
+        # past the skewed ends, flush with the road)
+        obj("road-bridge", float(road_x(_zb)), road_level(_zb) - 0.5, _zb, _th, 1.0, span=round(_span, 2), width=9.4, skew=round(_th, 4),
+            collider={"type": "box", "halfExtents": [4.7, 0.25, _span / 2 + 4.7 * abs(math.tan(_th)) + 0.3]})
 # a water-god stone (suijin-hi) under the zelkova at the west bridgehead
 obj("sekihi", _bt[0] + 2.0, sample(_bt[0] + 2.0, _bt[1] + 2.2), _bt[1] + 2.2, math.pi / 2 + 0.25, 0.75)
 
@@ -1962,7 +2523,7 @@ for z in np.arange(-HALF, HALF + 0.01, 1.5):
     xz = float(river_x(z))
     toe = [float(bed_surface(np.array(sg * B), np.array(z), np.array(xz + sg * B))) for sg in (-1.0, 1.0)]
     bed_pts.append([round(xz, 3), round(float(z), 3), round(B, 3), round(float(bank_top(z)), 3), round(toe[0], 3), round(toe[1], 3),
-                    round(float(earth_bank(z, False)), 3), round(float(earth_bank(z, True)), 3), 1 if wall_kind(z, True) == "block" else 0])
+                    round(float(earth_bank(z, False)), 3), round(float(earth_bank(z, True)), 3), int(wall_facing(z, False)), int(wall_facing(z, True))])
 drops_out = []
 for info in DROP_INFO:
     d = info["z"]
@@ -1973,9 +2534,11 @@ INTAKE_Z = WEIR_Z - 6.0
 river_meta = {
     "points": river_pts, "format": "[x, waterY, z, widthX, fall, riffle]",
     "note": "cross-sections along X centred on the bed; the water's edge is where waterY meets the terrain; fall=1 rows are the crest and foot of an overfall",
-    "bed": {"points": bed_pts, "format": "[xCentre, z, halfWidth, bankTopY, toeYWest, toeYEast, earthWest, earthEast, blockFacing]",
+    "bed": {"points": bed_pts, "format": "[xCentre, z, halfWidth, bankTopY, toeYWest, toeYEast, earthWest, earthEast, facingWest, facingEast]",
             "wallRun": WALL_RUN, "capWidth": CAP_W, "pathWidth": PATH_W,
-            "note": "earth=1: plain earth slope (1:1.6); earth=0: masonry revetment 1:0.4 from the toe to the bank top; blockFacing=1: concrete kenchi blocks, 0: mossy dry stone"},
+            "walled": [CHAN_Z0, CHAN_Z1],
+            "leveePath": [[round(float(levee_path_x(z_)), 2), round(float(z_), 2)] for z_ in np.arange(-(HALF - 40), HALF - 20, 3.0)],
+            "note": "earth=1: natural earth bank (1:0.9 cut bank outside a bend to 1:2.3 inside it); earth=0: masonry revetment 1:0.4 from the toe to the bank top; facing: 0 old mossy dry stone, 1 concrete kenchi blocks, 2 cut granite (kenchi-ishi)"},
     "drops": drops_out,
     "intake": {"z": INTAKE_Z, "side": "east", "sillY": round(float(water_level(INTAKE_Z)) - 0.55, 3), "waterY": round(float(water_level(INTAKE_Z)), 3)},
     "canal": {"points": canal_pts, "format": "[x, waterY, z, width]", "culvert": list(CULVERT), "depth": CANAL_D, "wallTop": 0.22},
@@ -2044,6 +2607,35 @@ for st in streams:
                         "channel": {"x0": round(st["x_out"], 2), "x1": round(st["x_levee"], 2), "xRiver": round(st["x_riv"], 2), "bed0": st["bed0"], "bed1": st["bed1"], "tops": st["tops"]},
                         "covers": [{"kind": k_, "x0": round(a_, 2), "x1": round(b_, 2)} for k_, a_, b_ in st["covers"]],
                         "roadY": round(road_level(zc_), 3), "water": runs})
+for _k, _dt in enumerate(irr_ditches):
+    cov = sorted([(c_[1], c_[2]) for c_ in _dt["covers"]], reverse=True)
+    runs, run = [[]], []                    # (no brook: the first run is empty)
+    for x_ in np.arange(_dt["x0"] - 0.3, _dt["xr"] - 0.01, -2.0):
+        if any(a_ - 0.2 < x_ < b_ + 0.2 for a_, b_ in cov):
+            if len(run) > 1:
+                runs.append(run)
+            run = []
+            continue
+        tx_ = min(max((_dt["x0"] - x_) / (_dt["x0"] - _dt["xr"]), 0), 1)
+        run.append([round(float(x_), 2), round(_dt["bed0"] + (_dt["bed1"] - _dt["bed0"]) * tx_ + 0.12, 3), _dt["z"], round(IRR_DITCH_W / 2 - 0.02, 3)])
+    if len(run) > 1:
+        runs.append(run)
+    stream_meta.append({"name": f"ditch-{_k}", "kind": "ditch", "z": _dt["z"], "brook": [], "width": IRR_DITCH_W,
+                        "channel": {"x0": round(_dt["x0"], 2), "x1": round(_dt["x1"], 2), "xRiver": round(_dt["xr"], 2), "bed0": _dt["bed0"], "bed1": _dt["bed1"], "tops": _dt["tops"]},
+                        "covers": [{"kind": k_, "x0": round(a_, 2), "x1": round(b_, 2)} for k_, a_, b_ in _dt["covers"]],
+                        "intoCanal": bool(_dt["into_canal"]), "water": runs})
+canal_meta = []
+for _c in canals:
+    _p = _c["pts"]
+    _xi, _zi, _by, _crest = _c["intake"]
+    _hp = next(s_ for s_ in streams if s_["name"] == _c["stream"])["hill"]
+    _j = int(np.argmin(np.hypot(_hp[:, 0] - _xi, _hp[:, 1] - _zi)))
+    _a, _b = _hp[max(_j - 2, 0)], _hp[min(_j + 2, len(_hp) - 1)]
+    canal_meta.append({"name": _c["name"], "from": _c["stream"], "width": CANAL2_W, "depth": CANAL2_D, "wallTop": CANAL2_TOP,
+                       "points": [[round(float(q[0]), 3), round(float(q[2]), 3), round(float(q[1]), 3), CANAL2_W, int(q[3])] for q in _p],
+                       "format": "[x, waterY, z, width, cover]", "covers": "0 open, 1 pipe under the prefectural road, 2 slab where a lane or farm road crosses",
+                       "intake": {"x": round(_xi, 2), "z": round(_zi, 2), "bedY": round(_by, 3), "crestY": round(_crest, 3),
+                                  "dir": [round(float(_b[0] - _a[0]), 3), round(float(_b[1] - _a[1]), 3)]}})
 
 landmarks = {
     "foot": [104.0, FOOT_Y + 1.62, STAIR_Z, 90.0, -2.0],            # x,y,z, yaw(deg), pitch(deg)
@@ -2083,7 +2675,7 @@ meta = {
     "vegetationMask": {"file": "vegetation-mask.png", "channels": ["forestDensity", "paddyIdHash", "riceEdgeDistance (0.5 = edge of the rice, +-2 m)", "grassDensity"]},
     "paddyLevel": {"file": "paddy-level.png", "encoding": "same as heightEncoding, uint16 PNG"},
     "environment": {"date": "1994-08-08", "latitude": 38.32, "longitude": 141.02, "timezone": 9, "defaultTime": 18.0,
-                    "timeRange": [17.0, 19.0], "sky": "assets/sky/evening_road_01_puresky", "notes": "Sun position from a standard solar position algorithm (NOAA approximation)."},
+                    "timeRange": [17.0, 19.0], "sky": "assets/sky/kloppenheim_06_puresky", "notes": "Sun position from a standard solar position algorithm (NOAA approximation)."},
     "landmarks": landmarks,
     "stair": {"axis": "+X", "z": STAIR_Z, "x0": STAIR_X0, "x1": round(STAIR_X1, 3), "footY": FOOT_Y, "topY": TOP_Y,
               "rise": RISE, "tread": TREAD, "steps": STEPS, "flight": FLIGHT, "landing": LANDING, "width": STAIR_W},
@@ -2110,6 +2702,7 @@ meta = {
     "tunnel": TUNNEL,
     "temple": {"x": round(TEMPLE["x"], 2), "y": TEMPLE["y"], "z": TEMPLE["z"], "yaw": round(TEMPLE["yaw"], 4), "halfWidth": TEMPLE["hw"], "halfDepth": TEMPLE["hd"]},
     "streams": stream_meta,
+    "canals": canal_meta,
     "ditch": {"offset": DITCH_OFF, "width": 0.45, "depth": 0.42, "zRange": [round(ROAD_Z0 + 0.7, 2), HALF - 60], "crossings": sorted(ditch_crossings)},
     "budgets": {"high": {"triangles": 4500000, "drawCalls": 900, "pixelRatio": 1.5},
                 "standard": {"triangles": 2800000, "drawCalls": 650, "pixelRatio": 1.0},
