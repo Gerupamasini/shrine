@@ -529,6 +529,8 @@ body:not(.exploring) #minimap-wrap,
 .lg.sym { color: #5f7c4c; font-size: 12px; }
 .lg.circ { color: #2b241e; border: 1px solid #2b241e; border-radius: 50%; width: 14px; height: 14px; line-height: 13px; font-size: 9px; margin: 0 6px; }
 .lg.contour { height: 1px; background: #b8865a; }
+.lg.canal { height: 3px; background: #467daf; }
+.lg.grave { color: #3c3732; }
 .lg.place { width: 10px; height: 10px; background: #f6f0de; border: 2px solid #b8321f; transform: rotate(45deg); margin: 0 8px; }
 .map-tools {
   position: absolute;

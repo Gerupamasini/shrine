@@ -90,8 +90,9 @@ test("river: revetment cap, washing steps and bridge are walkable", async ({ pag
     const g = (window as any).__satoyama, R = g.world.river, bp = R.bed.points as number[][];
     const row = (z: number) => bp.reduce((a, b) => (Math.abs(b[1] - z) < Math.abs(a[1] - z) ? b : a));
     const out: Record<string, number> = {};
-    // east levee path at a masonry reach: walking over the cap never drops into the sunken ground
-    const [xc, z, B, top] = row(-150);
+    // east levee path at a walled reach (the straightened stretch through the centre, clear of the
+    // weir intake and the bridge): walking over the cap never drops into the sunken ground
+    const [xc, z, B, top] = row(R.bed.walled[0] + 60);
     g.place(xc + B + 3.5, top + 3, z);
     g.walk(0, 0, 90);
     let minCap = 1e9;
@@ -114,6 +115,21 @@ test("river: revetment cap, washing steps and bridge are walkable", async ({ pag
     out.deckEye = g.walk(0, 0, 120)[1] - b.position[1] - 0.4;
     out.parapet = Math.abs(g.walk(0, -1, 240)[2] - b.position[2]);
     out.across = g.walk(1, 0, 400)[0] - (b.position[0] + b.span / 2);
+    // the prefectural road over Miyazawa: walk along the road across the short bridge; the deck
+    // carries the walker over the brook's channel at road height
+    const rb = g.world.objects.find((o: any) => o.asset === "road-bridge");
+    const road = g.world.roads.find((x: any) => x.class === "prefectural").points as number[][];
+    const start = road.reduce((a2: number[], q: number[]) => (Math.abs(q[2] - (rb.position[2] + 16)) < Math.abs(a2[2] - (rb.position[2] + 16)) ? q : a2));
+    g.place(start[0], start[1] + 1.7, start[2]);
+    g.walk(0, 0, 60);
+    let lowest = 1e9;
+    const dx = Math.sin(rb.rotation[1]), dz = Math.cos(rb.rotation[1]);
+    for (let i = 0; i < 16; i++) {
+      const p = g.walk(-dx, -dz, 15, true);
+      if (Math.abs(p[2] - rb.position[2]) < 3) lowest = Math.min(lowest, p[1] - (rb.position[1] + 0.5));
+    }
+    out.roadBridgeEye = lowest;
+    out.roadBridgePast = rb.position[2] - g.state.position[2];
     return out;
   });
   expect(r.capEye).toBeGreaterThan(1.5);
@@ -122,6 +138,8 @@ test("river: revetment cap, washing steps and bridge are walkable", async ({ pag
   expect(Math.abs(r.deckEye - 1.65)).toBeLessThan(0.1);
   expect(r.parapet).toBeLessThan(1.4);
   expect(r.across).toBeGreaterThan(0);
+  expect(Math.abs(r.roadBridgeEye - 1.62)).toBeLessThan(0.15);
+  expect(r.roadBridgePast).toBeGreaterThan(4);
   expect(dataUrls.length).toBeGreaterThan(5);
   for (const u of dataUrls) expect(u).toMatch(/[?&]v=[\w-]+/);
 });
