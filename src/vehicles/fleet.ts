@@ -1,3 +1,4 @@
+import { surfaceAt } from '../world/surface';
 import * as T from "three";
 import RAPIER from "@dimforge/rapier3d-compat";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
@@ -105,7 +106,8 @@ export class VehicleFleet {
   step(dt: number, input: DriveInput) {
     if (!this.active) return;
     const previous = this.active.sim.position;
-    this.active.sim.beforeStep(dt, input, this.walker.collider);
+    const ground = surfaceAt(this.land.world.data, this.active.sim.position.x, this.active.sim.position.z);
+    this.active.sim.beforeStep(dt, input, this.walker.collider, ground);
     this.walker.world.timestep = dt; this.walker.world.step();
     const p = this.active.sim.position, half = this.land.world.data.extent / 2 - 3;
     this.active.sim.distance += Math.hypot(p.x - previous.x, p.z - previous.z);

@@ -1,0 +1,60 @@
+{
+  "before": {
+    "east": {
+      "circuitMetres": 1591,
+      "newRoads": [
+        "miyazawa-farm",
+        "east-forest",
+        "minamizawa-farm"
+      ]
+    },
+    "north": {
+      "circuitMetres": 809,
+      "newRoads": [
+        "okusawa-farm",
+        "north-forest"
+      ]
+    },
+    "kawamuko": {
+      "circuitMetres": 486,
+      "newRoads": [
+        "kawamuko-north-farm",
+        "kawamuko-contour-farm",
+        "kawamuko-south-farm"
+      ]
+    },
+    "terraces": 283,
+    "oldPlots": 225
+  },
+  "after": {
+    "east": {
+      "circuitMetres": 1526,
+      "newRoads": [
+        "miyazawa-farm",
+        "east-forest",
+        "minamizawa-farm"
+      ]
+    },
+    "north": {
+      "circuitMetres": 736,
+      "newRoads": [
+        "okusawa-farm",
+        "north-forest"
+      ]
+    },
+    "kawamuko": {
+      "circuitMetres": 430,
+      "newRoads": [
+        "kawamuko-north-farm",
+        "kawamuko-contour-farm",
+        "kawamuko-south-farm"
+      ]
+    },
+    "terraces": 278,
+    "oldPlots": 225
+  },
+  "water": {
+    "supplied": 126,
+    "unresolved": 393
+  }
+}

@@ -265,6 +265,10 @@ for r in roads:
     if c:
         w = max(px(r.get("width", c["w"])), 6)
         dr.line(poly(r), fill=c["fill"], width=w, joint="curve")
+# Narrow field connections; buried road crossings stay beneath the road symbol.
+for link in scene.get('irrigation', {}).get('links', []):
+    if not link['covered']:
+        dr.line([P(p[0],p[2]) for p in link['points']],fill=(91,137,153,255),width=max(1,SS))
 # the tunnel: dashed casings on through the hill to the map edge, with the portal brackets
 tu = scene.get("tunnel")
 if tu:

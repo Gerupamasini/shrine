@@ -86,7 +86,7 @@ export class VehicleSimulation {
     this.steering = 0;
     this.world.propagateModifiedBodyPositionsToColliders();
   }
-  beforeStep(dt: number, input: DriveInput, walkerCollider: RAPIER.Collider) {
+  beforeStep(dt: number, input: DriveInput, walkerCollider: RAPIER.Collider, surface: 'asphalt' | 'gravel' | 'grass' = 'asphalt') {
     const speed = this.speed;
     // Reduce steering at speed to keep lateral acceleration manageable on narrow village roads.
     const limit = Math.min(.56, Math.atan(4 * this.spec.wheelbase / (speed * speed + 1)));
@@ -96,9 +96,10 @@ export class VehicleSimulation {
     const capped = input.throttle > 0 ? speed > 16.7 : speed < -4.2;
     const force = this.braking || capped ? 0 : input.throttle * this.spec.mass * 1.65;
     for (let i = 0; i < 4; i++) {
+      this.controller.setWheelFrictionSlip(i, surface === 'asphalt' ? 2.8 : surface === 'gravel' ? 2.2 : 1.8);
       this.controller.setWheelSteering(i, i < 2 ? this.steering : 0);
       this.controller.setWheelEngineForce(i, i >= 2 ? force : 0);
-      this.controller.setWheelBrake(i, this.braking ? 100 : input.throttle === 0 ? 6 : 0);
+      this.controller.setWheelBrake(i, this.braking ? 100 : input.throttle === 0 ? (surface === 'asphalt' ? 6 : surface === 'gravel' ? 9 : 14) : (surface === 'grass' ? 3 : 0));
     }
     this.controller.updateVehicle(dt, undefined, undefined, c => c.parent()?.handle !== this.body.handle && c.handle !== walkerCollider.handle);
   }

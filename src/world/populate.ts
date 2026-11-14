@@ -1,3 +1,4 @@
+import { irrigationWorks } from './irrigation';
 import type { Landscape } from "./landscape";
 import { Vegetation } from "./vegetation";
 import { Architecture } from "./architecture";
@@ -63,4 +64,5 @@ export async function populate(land: Landscape, progress: (p: number, label: str
   land.add(smoke);
   land.add(new Dragonflies(land, wt, () => land.lighting.elevation));
   crops(land);
+  irrigationWorks(land);
 }

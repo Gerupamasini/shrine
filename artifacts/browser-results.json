@@ -1,14 +1,15 @@
 {
   "config": {
     "argv": [
-      "/opt/node22/bin/node",
-      "/home/user/shrine/node_modules/.bin/playwright",
+      "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+      "/workspace/shrine-integration/node_modules/.bin/playwright",
       "test",
-      "--trace",
-      "off"
+      "-c",
+      ".cache/final-playwright.config.ts",
+      "--workers=2"
     ],
-    "configFile": "/home/user/shrine/playwright.config.ts",
-    "rootDir": "/home/user/shrine/tests",
+    "configFile": "/workspace/shrine-integration/.cache/final-playwright.config.ts",
+    "rootDir": "/workspace/shrine-integration/tests",
     "failOnFlakyTests": false,
     "forbidOnly": false,
     "fullyParallel": false,
@@ -19,20 +20,20 @@
     "grepInvert": null,
     "maxFailures": 0,
     "metadata": {
-      "actualWorkers": 1
+      "actualWorkers": 2
     },
     "preserveOutput": "always",
     "projects": [
       {
-        "outputDir": "/home/user/shrine/test-results",
+        "outputDir": "/workspace/shrine-integration/test-results",
         "repeatEach": 1,
         "retries": 0,
         "metadata": {
-          "actualWorkers": 1
+          "actualWorkers": 2
         },
         "id": "",
         "name": "",
-        "testDir": "/home/user/shrine/tests",
+        "testDir": "/workspace/shrine-integration/tests",
         "testIgnore": [],
         "testMatch": [
           "*.spec.ts"
@@ -44,26 +45,26 @@
       {
         "grep": {},
         "grepInvert": null,
-        "outputDir": "/home/user/shrine/test-results",
+        "outputDir": "/workspace/shrine-integration/test-results",
         "repeatEach": 1,
         "retries": 0,
         "metadata": {
-          "actualWorkers": 1
+          "actualWorkers": 2
         },
         "name": "",
-        "testDir": "/home/user/shrine/tests",
-        "snapshotDir": "/home/user/shrine/tests",
+        "testDir": "/workspace/shrine-integration/tests",
+        "snapshotDir": "/workspace/shrine-integration/tests",
         "testIgnore": [],
         "testMatch": "*.spec.ts",
         "timeout": 1800000,
         "use": {
-          "baseURL": "http://127.0.0.1:5173",
+          "baseURL": "http://127.0.0.1:5175",
           "viewport": {
             "width": 960,
             "height": 600
           },
           "launchOptions": {
-            "executablePath": "/opt/pw-browsers/chromium",
+            "executablePath": "/usr/bin/chromium",
             "args": [
               "--no-sandbox",
               "--ignore-gpu-blocklist",
@@ -71,8 +72,7 @@
               "--use-angle=swiftshader",
               "--disable-dev-shm-usage"
             ]
-          },
-          "trace": "off"
+          }
         },
         "dependencies": [],
         "ignoreSnapshots": false,
@@ -101,14 +101,57 @@
     "updateSnapshots": "default",
     "updateSourceMethod": "patch",
     "version": "1.65.0",
-    "workers": 1,
+    "workers": 2,
     "webServer": {
-      "command": "npm run dev -- --port 5173 --strictPort",
-      "url": "http://127.0.0.1:5173",
-      "reuseExistingServer": true
+      "command": "npm run preview -- --port 5175 --strictPort",
+      "url": "http://127.0.0.1:5175",
+      "reuseExistingServer": false,
+      "cwd": "/workspace/shrine-integration"
     }
   },
   "suites": [
+    {
+      "title": "driving.spec.ts",
+      "file": "driving.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "driving: all parked trucks, enter, steer, brake, views, pause, exit and recovery",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 1800000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 125732,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-14T22:02:35.495Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "93e2c3316732e7234603-ac7229a4fb7c2b3a4e48",
+          "file": "driving.spec.ts",
+          "line": 3,
+          "column": 1
+        }
+      ]
+    },
     {
       "title": "exploration.spec.ts",
       "file": "exploration.spec.ts",
@@ -128,15 +171,15 @@
               "projectName": "",
               "results": [
                 {
-                  "workerIndex": 0,
-                  "parallelIndex": 0,
+                  "workerIndex": 1,
+                  "parallelIndex": 1,
                   "status": "passed",
-                  "duration": 265940,
+                  "duration": 370765,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-11-13T05:18:01.786Z",
+                  "startTime": "2026-11-14T22:02:35.378Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -162,15 +205,15 @@
               "projectName": "",
               "results": [
                 {
-                  "workerIndex": 0,
-                  "parallelIndex": 0,
+                  "workerIndex": 1,
+                  "parallelIndex": 1,
                   "status": "passed",
-                  "duration": 52142,
+                  "duration": 55691,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-11-13T05:22:27.973Z",
+                  "startTime": "2026-11-14T22:08:46.619Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -184,15 +227,215 @@
           "column": 1
         }
       ]
+    },
+    {
+      "title": "rural-driving.spec.ts",
+      "file": "rural-driving.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "rural lanes: low speed truck traversal and braking",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 1800000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 533868,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // deep equality\u001b[22m\n\n\u001b[32m- Expected  -  1\u001b[39m\n\u001b[31m+ Received  + 26\u001b[39m\n\n\u001b[32m- Array []\u001b[39m\n\u001b[31m+ Array [\u001b[39m\n\u001b[31m+   Object {\u001b[39m\n\u001b[31m+     \"frames\": 1800,\u001b[39m\n\u001b[31m+     \"id\": \"okusawa-farm\",\u001b[39m\n\u001b[31m+     \"index\": 20,\u001b[39m\n\u001b[31m+     \"ok\": false,\u001b[39m\n\u001b[31m+     \"position\": Array [\u001b[39m\n\u001b[31m+       33.76613596612549,\u001b[39m\n\u001b[31m+       10.942121866566213,\u001b[39m\n\u001b[31m+       -366.24073061575945,\u001b[39m\n\u001b[31m+     ],\u001b[39m\n\u001b[31m+     \"rotation\": Array [\u001b[39m\n\u001b[31m+       -0.025192514061927795,\u001b[39m\n\u001b[31m+       0.7916759848594666,\u001b[39m\n\u001b[31m+       0.03321733698248863,\u001b[39m\n\u001b[31m+       0.6095171570777893,\u001b[39m\n\u001b[31m+     ],\u001b[39m\n\u001b[31m+     \"speed\": 0,\u001b[39m\n\u001b[31m+     \"target\": Array [\u001b[39m\n\u001b[31m+       38.8,\u001b[39m\n\u001b[31m+       11.348,\u001b[39m\n\u001b[31m+       -367.46,\u001b[39m\n\u001b[31m+     ],\u001b[39m\n\u001b[31m+     \"total\": 226,\u001b[39m\n\u001b[31m+   },\u001b[39m\n\u001b[31m+ ]\u001b[39m",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // deep equality\u001b[22m\n\n\u001b[32m- Expected  -  1\u001b[39m\n\u001b[31m+ Received  + 26\u001b[39m\n\n\u001b[32m- Array []\u001b[39m\n\u001b[31m+ Array [\u001b[39m\n\u001b[31m+   Object {\u001b[39m\n\u001b[31m+     \"frames\": 1800,\u001b[39m\n\u001b[31m+     \"id\": \"okusawa-farm\",\u001b[39m\n\u001b[31m+     \"index\": 20,\u001b[39m\n\u001b[31m+     \"ok\": false,\u001b[39m\n\u001b[31m+     \"position\": Array [\u001b[39m\n\u001b[31m+       33.76613596612549,\u001b[39m\n\u001b[31m+       10.942121866566213,\u001b[39m\n\u001b[31m+       -366.24073061575945,\u001b[39m\n\u001b[31m+     ],\u001b[39m\n\u001b[31m+     \"rotation\": Array [\u001b[39m\n\u001b[31m+       -0.025192514061927795,\u001b[39m\n\u001b[31m+       0.7916759848594666,\u001b[39m\n\u001b[31m+       0.03321733698248863,\u001b[39m\n\u001b[31m+       0.6095171570777893,\u001b[39m\n\u001b[31m+     ],\u001b[39m\n\u001b[31m+     \"speed\": 0,\u001b[39m\n\u001b[31m+     \"target\": Array [\u001b[39m\n\u001b[31m+       38.8,\u001b[39m\n\u001b[31m+       11.348,\u001b[39m\n\u001b[31m+       -367.46,\u001b[39m\n\u001b[31m+     ],\u001b[39m\n\u001b[31m+     \"total\": 226,\u001b[39m\n\u001b[31m+   },\u001b[39m\n\u001b[31m+ ]\u001b[39m\n    at /workspace/shrine-integration/tests/rural-driving.spec.ts:37:35",
+                    "location": {
+                      "file": "/workspace/shrine-integration/tests/rural-driving.spec.ts",
+                      "column": 35,
+                      "line": 37
+                    },
+                    "snippet": " \u001b[90m 35 |\u001b[39m  }\n \u001b[90m 36 |\u001b[39m  fs\u001b[33m.\u001b[39mwriteFileSync(\u001b[32m'artifacts/terrain/driving-routes.json'\u001b[39m\u001b[33m,\u001b[39m\u001b[33mJSON\u001b[39m\u001b[33m.\u001b[39mstringify(results\u001b[33m,\u001b[39m\u001b[36mnull\u001b[39m\u001b[33m,\u001b[39m\u001b[35m2\u001b[39m))\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 37 |\u001b[39m  expect(results\u001b[33m.\u001b[39mfilter(r\u001b[33m=>\u001b[39m\u001b[33m!\u001b[39mr\u001b[33m.\u001b[39mok))\u001b[33m.\u001b[39mtoEqual([])\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                   \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 38 |\u001b[39m  \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mevaluate(()\u001b[33m=>\u001b[39m{\u001b[36mconst\u001b[39m g\u001b[33m=\u001b[39m(window \u001b[36mas\u001b[39m any)\u001b[33m.\u001b[39m__satoyama\u001b[33m;\u001b[39mg\u001b[33m.\u001b[39mvehicleSystem\u001b[33m.\u001b[39mview\u001b[33m=\u001b[39m\u001b[32m'first'\u001b[39m\u001b[33m;\u001b[39mdocument\u001b[33m.\u001b[39mgetElementById(\u001b[32m'welcome'\u001b[39m)\u001b[33m!\u001b[39m\u001b[33m.\u001b[39mhidden\u001b[33m=\u001b[39m\u001b[36mtrue\u001b[39m\u001b[33m;\u001b[39m\u001b[36mreturn\u001b[39m g\u001b[33m.\u001b[39mrenderFrames(\u001b[35m2\u001b[39m)})\u001b[33m;\u001b[39m\n \u001b[90m 39 |\u001b[39m  \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mscreenshot({path\u001b[33m:\u001b[39m\u001b[32m'artifacts/terrain/road-driver.png'\u001b[39m\u001b[33m,\u001b[39mtimeout\u001b[33m:\u001b[39m\u001b[35m600000\u001b[39m})\u001b[33m;\u001b[39m\n \u001b[90m 40 |\u001b[39m })\u001b[33m;\u001b[39m"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/workspace/shrine-integration/tests/rural-driving.spec.ts",
+                        "column": 35,
+                        "line": 37
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // deep equality\u001b[22m\n\n\u001b[32m- Expected  -  1\u001b[39m\n\u001b[31m+ Received  + 26\u001b[39m\n\n\u001b[32m- Array []\u001b[39m\n\u001b[31m+ Array [\u001b[39m\n\u001b[31m+   Object {\u001b[39m\n\u001b[31m+     \"frames\": 1800,\u001b[39m\n\u001b[31m+     \"id\": \"okusawa-farm\",\u001b[39m\n\u001b[31m+     \"index\": 20,\u001b[39m\n\u001b[31m+     \"ok\": false,\u001b[39m\n\u001b[31m+     \"position\": Array [\u001b[39m\n\u001b[31m+       33.76613596612549,\u001b[39m\n\u001b[31m+       10.942121866566213,\u001b[39m\n\u001b[31m+       -366.24073061575945,\u001b[39m\n\u001b[31m+     ],\u001b[39m\n\u001b[31m+     \"rotation\": Array [\u001b[39m\n\u001b[31m+       -0.025192514061927795,\u001b[39m\n\u001b[31m+       0.7916759848594666,\u001b[39m\n\u001b[31m+       0.03321733698248863,\u001b[39m\n\u001b[31m+       0.6095171570777893,\u001b[39m\n\u001b[31m+     ],\u001b[39m\n\u001b[31m+     \"speed\": 0,\u001b[39m\n\u001b[31m+     \"target\": Array [\u001b[39m\n\u001b[31m+       38.8,\u001b[39m\n\u001b[31m+       11.348,\u001b[39m\n\u001b[31m+       -367.46,\u001b[39m\n\u001b[31m+     ],\u001b[39m\n\u001b[31m+     \"total\": 226,\u001b[39m\n\u001b[31m+   },\u001b[39m\n\u001b[31m+ ]\u001b[39m\n\n  35 |  }\n  36 |  fs.writeFileSync('artifacts/terrain/driving-routes.json',JSON.stringify(results,null,2));\n> 37 |  expect(results.filter(r=>!r.ok)).toEqual([]);\n     |                                   ^\n  38 |  await page.evaluate(()=>{const g=(window as any).__satoyama;g.vehicleSystem.view='first';document.getElementById('welcome')!.hidden=true;return g.renderFrames(2)});\n  39 |  await page.screenshot({path:'artifacts/terrain/road-driver.png',timeout:600000});\n  40 | });\n    at /workspace/shrine-integration/tests/rural-driving.spec.ts:37:35"
+                    }
+                  ],
+                  "stdout": [
+                    {
+                      "text": "route-progress miyazawa-farm 0 334\n"
+                    },
+                    {
+                      "text": "route-progress miyazawa-farm 160 334\n"
+                    },
+                    {
+                      "text": "{\"id\":\"miyazawa-farm\",\"index\":333,\"total\":334,\"frames\":9460,\"position\":[403.57593158622825,42.5015461853432,250.6907327164807],\"speed\":-0.002531662767098308,\"target\":[404.73,42.575,253.21],\"rotation\":[-0.008376095443964005,0.23211881518363953,0.002292396267876029,0.9726486802101135],\"ok\":true}\n"
+                    },
+                    {
+                      "text": "route-progress east-forest 0 303\n"
+                    },
+                    {
+                      "text": "route-progress east-forest 149 303\n"
+                    },
+                    {
+                      "text": "route-progress east-forest 298 303\n"
+                    },
+                    {
+                      "text": "{\"id\":\"east-forest\",\"index\":302,\"total\":303,\"frames\":10133,\"position\":[308.5894791861507,18.676901414361357,562.1387219493273],\"speed\":-0.011877958726440057,\"target\":[305.81,18.884,562.58],\"rotation\":[-0.022167807444930077,-0.6317169666290283,-0.02365080453455448,0.7745211720466614],\"ok\":true}\n"
+                    },
+                    {
+                      "text": "route-progress minamizawa-farm 0 236\n"
+                    },
+                    {
+                      "text": "route-progress minamizawa-farm 211 236\n"
+                    },
+                    {
+                      "text": "{\"id\":\"minamizawa-farm\",\"index\":235,\"total\":236,\"frames\":5893,\"position\":[16.179185041016535,3.396603988449373,550.0068847732127],\"speed\":-0.0006873359529718893,\"target\":[13.4,3.46,550],\"rotation\":[-0.0020298976451158524,-0.7064259052276611,-0.005936117377132177,0.7077592611312866],\"ok\":true}\n"
+                    },
+                    {
+                      "text": "route-progress okusawa-farm 0 226\n"
+                    },
+                    {
+                      "text": "{\"id\":\"okusawa-farm\",\"index\":20,\"total\":226,\"frames\":1800,\"position\":[33.76613596612549,10.942121866566213,-366.24073061575945],\"speed\":0,\"target\":[38.8,11.348,-367.46],\"rotation\":[-0.025192514061927795,0.7916759848594666,0.03321733698248863,0.6095171570777893],\"ok\":false}\n"
+                    },
+                    {
+                      "text": "route-progress north-forest 0 245\n"
+                    },
+                    {
+                      "text": "route-progress north-forest 185 245\n"
+                    },
+                    {
+                      "text": "{\"id\":\"north-forest\",\"index\":244,\"total\":245,\"frames\":6938,\"position\":[9.978825581439411,8.166756400276103,-272.74026833522527],\"speed\":0.0010274496314670854,\"target\":[9.42,8.214,-270],\"rotation\":[-0.0020119366236031055,-0.09756451845169067,-0.001002960605546832,0.9952267408370972],\"ok\":true}\n"
+                    },
+                    {
+                      "text": "route-progress kawamuko-north-farm 0 38\n"
+                    },
+                    {
+                      "text": "{\"id\":\"kawamuko-north-farm\",\"index\":37,\"total\":38,\"frames\":1077,\"position\":[-284.96847341834984,14.666430322505306,116.11631238172005],\"speed\":0.023440674911073232,\"target\":[-282.25,14.44,116.41],\"rotation\":[0.04220939055085182,0.689849853515625,-0.031839895993471146,0.7220193147659302],\"ok\":true}\n"
+                    },
+                    {
+                      "text": "route-progress kawamuko-contour-farm 0 137\n"
+                    },
+                    {
+                      "text": "{\"id\":\"kawamuko-contour-farm\",\"index\":136,\"total\":137,\"frames\":3491,\"position\":[-264.1320756920803,9.277873785046964,283.7066957965272],\"speed\":-0.005426167456851632,\"target\":[-266.4,9.426,285.28],\"rotation\":[-0.014249678701162338,-0.43879854679107666,-0.008774664252996445,0.8984295725822449],\"ok\":true}\n"
+                    },
+                    {
+                      "text": "route-progress kawamuko-south-farm 0 91\n"
+                    },
+                    {
+                      "text": "{\"id\":\"kawamuko-south-farm\",\"index\":90,\"total\":91,\"frames\":2202,\"position\":[-351.0070873290792,20.046322575900962,223.88913178666255],\"speed\":-0.020321952483803352,\"target\":[-353.81,20.273,224],\"rotation\":[-0.027719181030988693,-0.7006332874298096,-0.043941058218479156,0.7116276621818542],\"ok\":true}\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-14T22:04:42.015Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/workspace/shrine-integration/test-results/rural-driving-rural-lanes--b1afa-truck-traversal-and-braking/error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/workspace/shrine-integration/tests/rural-driving.spec.ts",
+                    "column": 35,
+                    "line": 37
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "4f861c9fd722535f1ec4-7ccdc22ec9e59f2a377a",
+          "file": "rural-driving.spec.ts",
+          "line": 3,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "rural.spec.ts",
+      "file": "rural.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "rural circuits: walk every new lane in both directions with real collisions",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 1800000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 670620,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "Rural world ready; testing complete circuits\n"
+                    },
+                    {
+                      "text": "Circuit east, forward passed\n"
+                    },
+                    {
+                      "text": "Circuit east, reverse passed\n"
+                    },
+                    {
+                      "text": "Circuit north, forward passed\n"
+                    },
+                    {
+                      "text": "Circuit north, reverse passed\n"
+                    },
+                    {
+                      "text": "Circuit kawamuko, forward passed\n"
+                    },
+                    {
+                      "text": "Circuit kawamuko, reverse passed\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-14T22:09:42.469Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "382424fe6d85633b5f00-c7ebac8ab7233366591e",
+          "file": "rural.spec.ts",
+          "line": 3,
+          "column": 1
+        }
+      ]
     }
   ],
   "errors": [],
   "stats": {
-    "startTime": "2026-11-13T05:18:01.175Z",
-    "duration": 319314.218,
-    "expected": 2,
+    "startTime": "2026-11-14T22:02:33.793Z",
+    "duration": 1099719.174,
+    "expected": 4,
     "skipped": 0,
-    "unexpected": 0,
+    "unexpected": 1,
     "flaky": 0
   }
 }

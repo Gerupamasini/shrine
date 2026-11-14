@@ -470,3 +470,57 @@ test("rural terrain retains the old-road settlement, traditional plots and farm 
     assert.ok(data.objects.some(o => o.asset === asset), `${asset} retained after regeneration`);
   }
 });
+
+test('field water connections descend and trace back to named water sources',()=>{
+ const graph=data.irrigation;
+ assert.ok(graph && graph.links.length>0);
+ const fields=new Set(data.fields.map(f=>f.id));
+ const sources=new Set(['weir-canal',...(data.canals??[]).map(c=>c.name),...(data.streams??[]).map(s=>s.name)]);
+ const upstream=new Map(graph.links.filter(l=>l.kind!=='drain').map(l=>[l.target,l.source]));
+ for(const link of graph.links){
+  assert.ok(link.points[0][1]>link.points[1][1]);
+  assert.ok(fields.has(link.source)||sources.has(link.source));
+  assert.ok(fields.has(link.target)||sources.has(link.target));
+ }
+ for(const id of graph.supplied){
+  let node=id;const seen=new Set();
+  while(!sources.has(node)){assert.ok(!seen.has(node),`cycle at ${node}`);seen.add(node);node=upstream.get(node);assert.ok(node);}
+ }
+ assert.ok(graph.unresolved.every(id=>!graph.supplied.includes(id)));
+});
+
+test('rural leg joins have continuous headings instead of endpoint hairpins',()=>{
+ const roads=new Map(data.roads.map(r=>[r.id,r]));
+ for(const loop of data.ruralLoops){
+  for(let i=1;i<loop.roads.length;i++){
+   const a=roads.get(loop.roads[i-1]).points,b=roads.get(loop.roads[i]).points;
+   const u=[a.at(-1)[0]-a.at(-2)[0],a.at(-1)[2]-a.at(-2)[2]],v=[b[1][0]-b[0][0],b[1][2]-b[0][2]];
+   const dot=(u[0]*v[0]+u[1]*v[1])/Math.hypot(...u)/Math.hypot(...v);
+   assert.ok(dot>Math.cos(Math.PI/9),`${loop.id}: disconnected heading ${Math.acos(dot)*180/Math.PI}`);
+  }
+ }
+});
+
+test('all tree groups including house windbreaks clear rural carriageways',()=>{
+ const trees=JSON.parse(fs.readFileSync(`${W}/vegetation.json`,'utf8')).trees;
+ const cells=new Map();
+ for(const rows of Object.values(trees))for(const p of rows){const key=`${Math.floor(p[0]/8)},${Math.floor(p[2]/8)}`;if(!cells.has(key))cells.set(key,[]);cells.get(key).push(p);}
+ const ids=new Set(data.ruralLoops.flatMap(l=>l.roads));
+ for(const road of data.roads.filter(r=>ids.has(r.id)))for(let k=1;k<road.points.length;k++){
+  const a=road.points[k-1],b=road.points[k],dx=b[0]-a[0],dz=b[2]-a[2];
+  for(let x=Math.floor((Math.min(a[0],b[0])-2.7)/8);x<=Math.floor((Math.max(a[0],b[0])+2.7)/8);x++)for(let z=Math.floor((Math.min(a[2],b[2])-2.7)/8);z<=Math.floor((Math.max(a[2],b[2])+2.7)/8);z++){
+   for(const p of cells.get(`${x},${z}`)??[]){
+    const t=Math.max(0,Math.min(1,((p[0]-a[0])*dx+(p[2]-a[2])*dz)/(dx*dx+dz*dz||1)));
+    assert.ok(Math.hypot(p[0]-a[0]-t*dx,p[2]-a[2]-t*dz)>2.7,`${road.id}: trunk at ${p[0]},${p[2]}`);
+   }
+  }
+ }
+});
+
+test('forest road bank no longer forms the former near-vertical trench',()=>{
+ const road=data.roads.find(r=>r.id==='east-forest'),k=Math.floor(road.points.length/2),p=road.points[k],q=road.points[k+2];
+ const dx=q[0]-p[0],dz=q[2]-p[2],length=Math.hypot(dx,dz),nx=-dz/length,nz=dx/length;
+ let previous=H(p[0]-15*nx,p[2]-15*nz),steepest=0;
+ for(let d=-14.5;d<=15;d+=.5){const y=H(p[0]+d*nx,p[2]+d*nz);steepest=Math.max(steepest,Math.abs(y-previous)/.5);previous=y;}
+ assert.ok(steepest<2,`former trench cross slope was 6.6; now ${steepest}`);
+});

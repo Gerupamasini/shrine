@@ -58,19 +58,39 @@ def route(height, blocked, start, end, cell, half):
         nodes.append(parent[nodes[-1]])
     pts = np.array([(j*step-half, i*step-half) for i,j in nodes[::-1]])
     pts = np.vstack([start, pts, end])
-    # Gentle corner rounding, only where it stays out of the exclusion corridors.
-    candidate = ndimage.gaussian_filter1d(pts, .85, axis=0, mode='nearest')
-    candidate[0], candidate[-1] = start, end
+    # Round locally, never discard all smoothing because one constrained bend
+    # touches a yard. Repeated corner cutting leaves straight farm alignments intact.
     def clear(poly):
         for p, q in zip(poly, poly[1:]):
             samples = np.linspace(p, q, max(2, math.ceil(np.linalg.norm(q-p)/cell)*2+1))
-            ci = np.rint((samples[:,1]+half)/cell).astype(int)
-            cj = np.rint((samples[:,0]+half)/cell).astype(int)
+            ci = np.clip(np.rint((samples[:,1]+half)/cell).astype(int), 0, height.shape[0]-1)
+            cj = np.clip(np.rint((samples[:,0]+half)/cell).astype(int), 0, height.shape[1]-1)
             if blocked[ci,cj].any():
                 return False
         return True
-    if clear(candidate):
-        pts = candidate
+    for _ in range(3):
+        rounded = [pts[0]]
+        for i in range(1, len(pts)-1):
+            p, v, q = pts[i-1:i+2]
+            before, after = .25*p+.75*v, .75*v+.25*q
+            if clear([rounded[-1], before, after, q]):
+                rounded.extend([before, after])
+            else:
+                rounded.append(v)
+        rounded.append(pts[-1])
+        pts = np.array(rounded)
+    # Smooth over physical distance rather than vertex count: the search can
+    # alternate lattice headings every few metres on a contour. Those zigzags
+    # are walkable but too tight for a 1.855 m wheelbase truck.
+    distance = np.r_[0., np.cumsum(np.linalg.norm(np.diff(pts, axis=0), axis=1))]
+    samples = np.linspace(0., distance[-1], max(2, int(distance[-1]/2)+1))
+    pts = np.c_[np.interp(samples,distance,pts[:,0]),np.interp(samples,distance,pts[:,1])]
+    for _ in range(2):
+        candidate = ndimage.gaussian_filter1d(pts,4.,axis=0,mode='nearest')
+        candidate[0],candidate[-1]=start,end
+        for i in range(1,len(pts)-1):
+            if clear([pts[i-1],candidate[i],pts[i+1]]):
+                pts[i]=candidate[i]
     return [tuple(p) for k,p in enumerate(pts) if k == 0 or np.linalg.norm(p-pts[k-1]) > .1]
 
 

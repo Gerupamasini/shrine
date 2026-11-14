@@ -1,3 +1,5 @@
+import { MovementAudio } from './movement-audio';
+import { surfaceAt } from './world/surface';
 import "./style.css";
 import * as T from "three";
 import { installAtmosphere } from "./engine/atmosphere";
@@ -22,6 +24,7 @@ let quality = (params.get("quality") as Quality) || "standard";
 const camera = new T.PerspectiveCamera(55, innerWidth / innerHeight, 0.1, 9000);
 camera.rotation.order = "YXZ";
 const audio = new Soundscape();
+const movementAudio = new MovementAudio();
 let renderer: T.WebGLRenderer, land: Landscape, walker: Walker, post: Post;
 let vehicles: VehicleFleet;
 let yaw = Math.PI / 2, pitch = 0, started = false, locked = false, settingsOpen = false, mapOpen = false, ready = false;
@@ -314,6 +317,8 @@ function frame(dt: number, wall: number) {
   villageMap?.update(walker.position.x, walker.position.z, heading, performance.now());
   land.update(dt, elapsed);
   audio.update(camera, land.world, timeOfDay);
+  const ap = vehicles.active?.sim.position ?? walker.position;
+  movementAudio.update(audio, paused() ? 0 : dt, paused() ? 0 : Math.abs(vehicles.active?.sim.speed ?? walker.speed), !!vehicles.active && !paused(), walker.grounded && !walker.free && !paused(), surfaceAt(land.world.data, ap.x, ap.z));
   post.updateRays(camera, land.lighting.sunDir, land.lighting.elevation, quality);
   renderer.info.reset();
   post.draw(dt);

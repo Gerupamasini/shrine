@@ -35,7 +35,8 @@ export type WorldData = {
     bridgeZ: number;
     bridgeDeckY: number;
   };
-  roads: { id: string; class?: string; width: number; surface: string; points: [number, number, number][] }[];
+  roads: { id: string; class?: string; access?: "vehicle" | "foot"; passingPlace?: [number, number, number] | null; width: number; surface: string; points: [number, number, number][] }[];
+  irrigation?: { links: { source: string; target: string; kind: string; covered: boolean; points: number[][] }[]; supplied: string[]; unresolved: string[] };
   /** Ordered rural legs plus the existing road connecting their endpoints. */
   ruralLoops?: { id: string; roads: string[]; returnVia: string }[];
   hamlets?: { name: string; z: number; halfLength: number }[];
