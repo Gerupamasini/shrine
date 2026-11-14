@@ -143,7 +143,7 @@ export class Lighting {
     this.scene.environmentIntensity = T.MathUtils.lerp(t.env[0], t.env[1], day);
     // three equirect u = (compassAz + 90)/360; align the env with the sky dome rotation
     this.scene.environmentRotation.set(0, T.MathUtils.degToRad(this.srcAz - p.azimuth - 90), 0);
-    this.hemi.intensity = 0.0;
+    this.hemi.intensity = T.MathUtils.lerp(.015, .10, day); // low sky fill preserves road edges in forest shade
     // Atmosphere colours
     const u = atmosphereUniforms;
     u.uSunDir.value.copy(this.sunDir);

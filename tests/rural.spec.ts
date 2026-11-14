@@ -56,5 +56,14 @@ test('rural circuits: walk every new lane in both directions with real collision
     return g.renderFrames(2);
   });
   await page.screenshot({path:'artifacts/terrain/forest-road.png',timeout:600000});
+  await page.evaluate(() => {
+    const g=(window as any).__satoyama;
+    const r=g.world.roads.find((r:any)=>r.id==='miyazawa-farm');
+    const p=r.points.at(-12), q=r.points.at(-1);
+    g.place(p[0],p[1]+1.7,p[2]);
+    g.lookCompass(Math.atan2(q[0]-p[0],-(q[2]-p[2]))*180/Math.PI,-8);
+    return g.renderFrames(2);
+  });
+  await page.screenshot({path:'artifacts/terrain/junction.png',timeout:600000});
   expect(errors).toEqual([]);
 });

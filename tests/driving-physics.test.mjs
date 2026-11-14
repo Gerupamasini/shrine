@@ -64,3 +64,10 @@ test('suspension follows a rising ramp and brakes hold on the incline',()=>{
   step(120);assert.ok(Math.abs(sim.speed)<.35,`hill brake ${sim.speed}`);
  }finally{world.free();}
 });
+
+fs.writeFileSync('.cache/surface-test.mjs',ts.transpileModule(fs.readFileSync('src/world/surface.ts','utf8'),{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.ES2022}}).outputText);
+const {surfaceAt}=await import('../.cache/surface-test.mjs');
+test('surface query uses road width and paved priority at shared junctions',()=>{
+ const data={roads:[{surface:'gravel',width:4,points:[[0,0,0],[0,0,20]]},{surface:'asphalt',width:6,points:[[-10,0,10],[10,0,10]]}]};
+ assert.equal(surfaceAt(data,0,10),'asphalt');assert.equal(surfaceAt(data,0,3),'gravel');assert.equal(surfaceAt(data,5,3),'grass');
+});
