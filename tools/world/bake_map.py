@@ -234,6 +234,21 @@ for c_ in scene.get("canals", []):
     if len(run_) > 1:
         dr.line(run_, fill=blue, width=max(3, px(1.2)))
 
+# terrace scarps (dankyu-gai): the survey's "cliff of earth" - a brown line with short ticks running
+# down the face towards the floodplain
+for sc_ in scene.get("terrace", {}).get("scarps", []):
+    pts_ = sc_["points"]
+    dr.line([P(x_, z_) for x_, z_ in pts_], fill=(150, 104, 66, 255), width=3)
+    down_ = -1.0 if sc_["side"] == "east" else 1.0                # towards the river
+    for k_ in range(1, len(pts_) - 1, 2):
+        (ax_, az_), (bx_, bz_) = pts_[k_ - 1], pts_[k_ + 1]
+        l_ = math.hypot(bx_ - ax_, bz_ - az_) or 1.0
+        nx_, nz_ = (bz_ - az_) / l_, -(bx_ - ax_) / l_            # a normal; turn it to the low side
+        if nx_ * down_ < 0:
+            nx_, nz_ = -nx_, -nz_
+        x_, z_ = pts_[k_]
+        dr.line([P(x_, z_), P(x_ + nx_ * 2.2, z_ + nz_ * 2.2)], fill=(150, 104, 66, 255), width=2)
+
 # side streams: the brook and the lined channel
 for st in scene.get("streams", []):
     for run in st["water"]:

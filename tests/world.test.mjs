@@ -587,3 +587,83 @@ test('valley farm branches terminate at staggered junctions and have no open-cha
   assert.ok(Math.hypot(Math.max(0,Math.abs(x)-hx),Math.max(0,Math.abs(z)-hz))>2,`${r.id} crosses ${o.id}`);
  }
 });
+
+test("river terraces: the river and its floodplain lie one terrace step below the paddy floor", () => {
+  const T = data.terrace;
+  assert.ok(T && T.drop >= 2 && T.drop <= 4, "the river cut one step down");
+  const scarps = T.scarps;
+  const len = (pts) => pts.slice(1).reduce((s, p, i) => s + Math.hypot(p[0] - pts[i][0], p[1] - pts[i][1]), 0);
+  for (const side of ["east", "west"]) {
+    const total = scarps.filter((s) => s.side === side).reduce((s, sc) => s + len(sc.points), 0);
+    assert.ok(total > (side === "east" ? 700 : 250), `${side} scarps run ${total.toFixed(0)} m`);
+  }
+  // across every scarp the ground steps up 1.5 m or more from the floodplain to the floor beyond
+  let ok = 0, n = 0;
+  for (const sc of scarps) {
+    const away = sc.side === "east" ? 1 : -1;
+    for (const [x, z] of sc.points) {
+      n++;
+      if (H(x + away * 7, z) - H(x - away * 7, z) > 1.5) ok++;
+    }
+  }
+  assert.ok(ok / n > 0.85, `${ok}/${n} scarp points step up 1.5 m`);
+  // the paddy floor stands well above the river: the water is 3-5.5 m below the fields beside the scarp
+  const R = data.river.points;
+  let deep = 0, m = 0;
+  for (const sc of scarps.filter((s) => s.side === "east")) {
+    for (const [x, z] of sc.points.filter((_, i) => i % 4 === 0)) {
+      const w = R.reduce((b, p) => (Math.abs(p[2] - z) < Math.abs(b[2] - z) ? p : b))[1];
+      m++;
+      const d = H(x + 9, z) - w;
+      if (d > 3.0 && d < 5.5) deep++;
+    }
+  }
+  assert.ok(deep / m > 0.8, `river ${deep}/${m} cut 3-5.5 m below the floor`);
+  // fields on both levels: the low fields of the floodplain are watered from the weir canal
+  const banks = data.river.bed.points;
+  const bankAt = (z) => banks.reduce((b, p) => (Math.abs(p[1] - z) < Math.abs(b[1] - z) ? p : b))[3];
+  const low = data.fields.filter((f) => !f.terrace && f.level < bankAt((f.bounds[1] + f.bounds[3]) / 2) + 0.6);
+  assert.ok(low.length >= 10, `${low.length} fields on the floodplain`);
+  // the farm road from the bridge climbs the scarp on a ramp, not a step
+  const br = data.roads.find((r) => r.id === "town-bridge").points;
+  for (let i = 1; i < br.length; i++) {
+    const g = Math.abs(br[i][1] - br[i - 1][1]) / Math.hypot(br[i][0] - br[i - 1][0], br[i][2] - br[i - 1][2]);
+    assert.ok(g < 0.16, `bridge road grade ${g.toFixed(2)} at x=${br[i][0]}`);
+  }
+});
+
+test("side streams fall in steps: boulder steps and plunge pools, check dams, concrete drops", () => {
+  const brooks = data.streams.filter((st) => st.kind !== "ditch");
+  for (const st of brooks) {
+    const steps = st.drops.filter((d) => d[4] === "step");
+    assert.ok(steps.length >= 15, `${st.name}: ${steps.length} steps`);
+    assert.ok(steps.every((d) => d[2] - d[3] > 0.1 && d[2] - d[3] < 1.3), `${st.name}: steps 0.1-1.3 m`);
+    // a check dam with a 1.8 m drop or more, and the water over every step and dam never rises
+    assert.ok(st.dams.length === 1 && st.dams[0].crest - st.dams[0].bed > 1.8, `${st.name} check dam`);
+    const run = st.water[0];
+    for (let i = 1; i < run.length; i++) assert.ok(run[i][1] <= run[i - 1][1] + 1e-6, `${st.name} water rises at ${run[i]}`);
+    const falls = run.filter((r) => r[4] === 1).length;
+    assert.ok(falls >= 2 * steps.length, `${st.name}: an overfall at every step`);
+    // the pools below the steps are deeper than the runs between them
+    let pool = 0, big = 0;
+    for (const [x, z, top, bot, kind] of st.drops) {
+      if (kind !== "step" || top - bot < 0.5) continue;
+      big++;
+      const k = st.brook.reduce((bi, p, i) => (Math.hypot(p[0] - x, p[2] - z) < Math.hypot(st.brook[bi][0] - x, st.brook[bi][2] - z) ? i : bi), 0);
+      const q = st.brook[Math.min(k + 1, st.brook.length - 1)], p = st.brook[Math.max(k - 1, 0)];
+      const l = Math.hypot(q[0] - p[0], q[2] - p[2]) || 1, fx = (q[0] - p[0]) / l, fz = (q[2] - p[2]) / l;
+      const deepest = Math.min(...[0.6, 1.0, 1.4, 1.8].map((u) => H(x + fx * u, z + fz * u)));
+      if (deepest < bot) pool++;
+    }
+    assert.ok(pool > 0.6 * big, `${st.name}: plunge pools below ${pool}/${big} steps`);
+  }
+  // the lined channels and the field ditches take the terrace scarp in concrete drops, none higher
+  // than 0.8 m, and their bed only falls
+  const built = data.streams.filter((st) => st.channel);
+  for (const st of built) {
+    const pr = st.channel.profile, dr = st.channel.drops;
+    for (let i = 1; i < pr.length; i++) assert.ok(pr[i][0] <= pr[i - 1][0] + 1e-6 && pr[i][1] <= pr[i - 1][1] + 1e-6, `${st.name} bed falls westward`);
+    assert.ok(dr.every((d) => d[1] - d[2] <= 0.8 + 1e-6), `${st.name} drops at most 0.8 m`);
+    assert.ok(dr.filter((d) => d[1] - d[2] > 0.3).length >= 3, `${st.name} steps down the scarp`);
+  }
+});

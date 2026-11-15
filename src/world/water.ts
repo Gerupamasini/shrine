@@ -55,17 +55,26 @@ export class River implements System {
     });
     return this.build(rows);
   }
-  /** Side streams: the brook down its valley (shallow, broken water over cobbles) and the lined
-   *  channel across the paddies; each run of [x, waterY, z, halfWidth] is a ribbon along its path. */
+  /** Side streams: the brook down its valley (shallow, broken water over cobbles, level runs between
+   *  boulder steps) and the lined channels and ditches across the paddies (stepping down the terrace
+   *  scarp in concrete drops). Each run of [x, waterY, z, halfWidth, fall?, foam?] is a ribbon along
+   *  its path; fall = 1 rows are the lip and the foot of an overfall, foam the churn below it. */
   private streams(list: { water: number[][][]; kind?: string }[]) {
     const rows: Parameters<River["build"]>[0] = [];
     for (const st of list)
       st.water.forEach((run, ri) => {
         run.forEach((p, i) => {
-          const a = run[Math.min(i + 1, run.length - 1)], b = run[Math.max(i - 1, 0)];
+          // direction from neighbours a little apart (the lip and foot rows of a drop are only cm apart)
+          let ia = Math.min(i + 1, run.length - 1), ib = Math.max(i - 1, 0);
+          while (ia < run.length - 1 && Math.hypot(run[ia][0] - p[0], run[ia][2] - p[2]) < 0.6) ia++;
+          while (ib > 0 && Math.hypot(run[ib][0] - p[0], run[ib][2] - p[2]) < 0.6) ib--;
+          const a = run[ia], b = run[ib];
           const dx = a[0] - b[0], dz = a[2] - b[2], l = Math.hypot(dx, dz) || 1;
           const brook = ri === 0 && st.kind !== "ditch";
-          rows.push({ cx: p[0], y: p[1], z: p[2], ax: -dz / l, az: dx / l, half: p[3], dir: [dx / l, dz / l], fall: 0, foam: 0, riffle: brook ? 0.55 : 0.1,
+          const fall = p[4] ?? 0, foam = p[5] ?? 0;
+          // a drop's lip row and foot row lie almost on top of each other: keep the crest row's
+          // direction so the overfall sheet hangs straight down the flow
+          rows.push({ cx: p[0], y: p[1], z: p[2], ax: -dz / l, az: dx / l, half: p[3], dir: [dx / l, dz / l], fall, foam: foam * (brook ? 0.9 : 0.45), riffle: brook ? 0.55 : 0.1,
             bank: 0.6, fixed: brook ? 0 : 0.2, across: 3, skip: i === run.length - 1 });
         });
       });

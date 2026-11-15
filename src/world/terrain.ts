@@ -173,7 +173,7 @@ export class Terrain {
           float vnoise(vec2 p){ vec2 i=floor(p), f=fract(p); f=f*f*(3.-2.*f);
             return mix(mix(hash12(i),hash12(i+vec2(1,0)),f.x),mix(hash12(i+vec2(0,1)),hash12(i+vec2(1,1)),f.x),f.y); }
           // Two differently rotated/scaled samples blended by noise hide tiling.
-          void sampleLayer(int i, vec2 xz, float w, inout vec3 alb, inout vec3 nrm, inout vec3 armv, inout float hsum) {
+          void sampleLayer(int i, vec2 xz, float w, float flatN, inout vec3 alb, inout vec3 nrm, inout vec3 armv, inout float hsum) {
             float s = uLayerScale[i];
             vec2 uv1 = xz * s;
             vec2 uv2 = uLayerFixed[i] > 0.5 ? uv1 + vec2(0.37, 0.0) : mat2(0.8, -0.6, 0.6, 0.8) * xz * s * 0.63 + 0.37;
@@ -185,7 +185,7 @@ export class Terrain {
             vec3 c = mix(a1.rgb, a2.rgb, b);
             c = mix(vec3(dot(c, vec3(0.2126, 0.7152, 0.0722))), c, uLayerSat[i]);
             alb += c * uLayerTint[i] * w;
-            nrm += mix(n1, n2, b) * w;
+            nrm += mix(mix(n1, n2, b), vec3(0.0, 0.0, 1.0), flatN) * w;
             armv += mix(r1, r2, b) * w;
             hsum += w;
           }
@@ -198,7 +198,21 @@ export class Terrain {
             float total = 0.0;
             for (int i = 0; i < 12; i++) { float w = wts[i]; w = w * (0.55 + nz * 0.9); w = pow(max(w, 0.0), 2.2); wts[i] = w; total += w; }
             vec3 alb = vec3(0.), nrm = vec3(0.), armv = vec3(0.); float hs = 0.;
-            for (int i = 0; i < 12; i++) { float w = wts[i] / max(total, 1e-4); if (w > 0.02 && i < LAYERS) sampleLayer(i, vTW.xz, w, alb, nrm, armv, hs); }
+            // steep ground (cut banks, terrace scarps, the rocky sides of the brooks) is textured from the
+            // side as well as from above: projected only from above, a face steeper than ~45 degrees
+            // stretched every layer into flat streaks
+            vec3 Ng = normalize(texture2D(tTerrainNormal, tuv).xyz * 2. - 1.);
+            float steep = smoothstep(0.82, 0.6, Ng.y);
+            float wsx = Ng.x * Ng.x / max(Ng.x * Ng.x + Ng.z * Ng.z, 1e-4);
+            for (int i = 0; i < 12; i++) {
+              float w = wts[i] / max(total, 1e-4);
+              if (w <= 0.02 || i >= LAYERS) continue;
+              if (steep < 0.99) sampleLayer(i, vTW.xz, w * (1.0 - steep), 0.0, alb, nrm, armv, hs);
+              if (steep > 0.01) {
+                if (wsx > 0.05) sampleLayer(i, vec2(vTW.z, -vTW.y), w * steep * wsx, 0.7, alb, nrm, armv, hs);
+                if (wsx < 0.95) sampleLayer(i, vec2(vTW.x, -vTW.y), w * steep * (1.0 - wsx), 0.7, alb, nrm, armv, hs);
+              }
+            }
             alb /= max(hs, 1e-4); nrm /= max(hs, 1e-4); armv /= max(hs, 1e-4);
             // macro variation (sun-bleached patches, damp hollows, forest shade)
             vec4 veg = texture2D(tVeg, tuv);

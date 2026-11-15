@@ -837,6 +837,12 @@ function ditches() {
   // in the centre the ditch runs under concrete lids along its whole length (shop fronts, parking)
   const machi = (scene.hamlets ?? []).find((hm) => hm.name === "machi");
   const lidded = (z) => machi && Math.abs(z - machi.z) < machi.halfLength + 2;
+  // lids where a house fronts the road (its stretch of ditch is covered for the yard and the
+  // kei truck), not scattered at random; a broken or missing lid here and there in the open
+  const roadAt = (z) => { let k = 1; while (k < pts.length - 1 && pts[k][2] < z) k++; const a = pts[k - 1], b = pts[k]; return a[0] + ((b[0] - a[0]) * (z - a[2])) / ((b[2] - a[2]) || 1); };
+  const fronts = scene.objects.filter((o) => o.group && o.group !== "machi" && /^minka|^naya|^shop|^kominkan/.test(o.asset) && Math.abs(o.position[0] - roadAt(o.position[2])) < 24)
+    .map((o) => ({ z: o.position[2], side: Math.sign(o.position[0] - roadAt(o.position[2])), half: 3.5 + r() * 3 }));
+  const fronted = (z, side) => fronts.some((f) => f.side === side && Math.abs(z - f.z) < f.half);
   for (let i = 0; i < pts.length - 1; i++) {
     const [ax, ay, az] = pts[i], [bx, by, bz] = pts[i + 1];
     if (az < dd.zRange[0] || bz > dd.zRange[1]) continue;
@@ -848,10 +854,12 @@ function ditches() {
       const y = (ay + by) / 2 + 0.006;
       const L = len + 0.03, w = dd.width, wall = 0.1, dep = dd.depth;
       // two walls, floor (inner faces stained), and a concrete lid on some segments
-      for (const ws of [-1, 1]) m.box("concrete_old", L, dep + 0.35, wall, cx + nx * ws * (w / 2 + wall / 2), y - (dep + 0.35) / 2, cz + nz * ws * (w / 2 + wall / 2), { ry: yaw + Math.PI / 2 });
-      m.box("concrete_dark", L, 0.06, w, cx, y - dep, cz, { ry: yaw + Math.PI / 2 });
+      for (const ws of [-1, 1]) m.box("concrete", L, dep + 0.35, wall, cx + nx * ws * (w / 2 + wall / 2), y - (dep + 0.35) / 2, cz + nz * ws * (w / 2 + wall / 2), { ry: yaw + Math.PI / 2 });
+      m.box("concrete_old", L, 0.06, w, cx, y - dep, cz, { ry: yaw + Math.PI / 2 });
       const crossing = (dd.crossings ?? []).some((zc) => Math.abs(cz - zc) < 2.6);   // farm road over the ditch
-      if (crossing || lidded(cz) || r() < 0.22) m.box(lidded(cz) ? "concrete" : "concrete_old", L * 0.985 + (crossing ? 0.04 : 0), crossing ? 0.12 : 0.08, w + 0.22, cx, y + (crossing ? 0.06 : 0.04), cz, { ry: yaw + Math.PI / 2 });
+      const front = fronted(cz, Math.sign(cx - roadAt(cz)));
+      if (crossing || lidded(cz) || front || r() < 0.04)
+        m.box(lidded(cz) || front || crossing ? "concrete" : "concrete_old", L * 0.985 + (crossing ? 0.04 : 0), crossing ? 0.12 : 0.08, w + 0.22, cx, y + (crossing ? 0.06 : 0.04), cz, { ry: yaw + Math.PI / 2 });
     }
   }
   return m;
@@ -1851,6 +1859,16 @@ function streamWorks() {
   const m = new Model("stream-works");
   canalWorks(m);
   for (const st of scene.streams ?? []) {
+    for (const d of st.dams ?? []) checkDam(m, d);
+    if (st.outlet) {
+      // the brook leaves through a box outlet in the river wall and falls to the water: a concrete
+      // headwall set into the masonry, the dark mouth of the box, a worn lip
+      const o = st.outlet, yaw = Math.atan2(o.dir[0], o.dir[1]);
+      const top = o.bed + 1.05, bot = o.bed - 0.4;           // (set into the face; the masonry runs on below)
+      m.box("concrete", 2.4, top - bot, 0.32, o.x + 0.18, (top + bot) / 2, o.z, { ry: yaw });
+      m.box("interior_dark", 1.3, 0.62, 0.05, o.x + 0.35, o.bed + 0.31, o.z, { ry: yaw });
+      m.box("concrete_old", 1.5, 0.1, 0.5, o.x + 0.45, o.bed - 0.04, o.z, { ry: yaw });
+    }
     if (!st.channel) continue;                    // a natural brook only (Nishizawa): nothing built
     const ch = st.channel, z = st.z, w = st.width, wall = st.kind === "ditch" ? 0.12 : 0.16;
     const topAt = (x) => {
@@ -1858,14 +1876,38 @@ function streamWorks() {
       for (let i = 0; i < t.length - 1; i++) if (x <= t[i + 1][0]) { const f = (x - t[i][0]) / (t[i + 1][0] - t[i][0]); return t[i][1] + (t[i + 1][1] - t[i][1]) * Math.max(0, Math.min(1, f)); }
       return t[t.length - 1][1];
     };
-    const bedAt = (x) => ch.bed0 + (ch.bed1 - ch.bed0) * ((ch.x0 - x) / (ch.x0 - ch.xRiver));
+    // the bed: level runs and vertical drops, as breakpoints [x, y] with x falling downstream (west)
+    const prof = ch.profile ?? [[ch.x0, ch.bed0], [ch.xRiver, ch.bed1]];
+    const bedAt = (x) => {
+      if (x >= prof[0][0]) return prof[0][1];
+      for (let i = 0; i < prof.length - 1; i++) {
+        const [xa, ya] = prof[i], [xb, yb] = prof[i + 1];
+        if (x <= xa && x >= xb) return xa - xb < 1e-6 ? Math.min(ya, yb) : ya + ((yb - ya) * (xa - x)) / (xa - xb);
+      }
+      return prof[prof.length - 1][1];
+    };
     const covered = (x) => st.covers.some((c) => x > c.x0 - 0.05 && x < c.x1 + 0.05);
     for (let x = ch.x1; x < ch.x0 - 0.01; x += 2.0) {
       const xa = x, xb = Math.min(x + 2.0, ch.x0), cx = (xa + xb) / 2, L = xb - xa;
       if (covered(cx)) continue;
-      const top = topAt(cx), bed = bedAt(cx), hgt = top - bed + 0.12;
-      for (const s of [-1, 1]) m.box("concrete_old", L + 0.02, hgt, wall, cx, bed - 0.12 + hgt / 2, z + s * (w / 2 + wall / 2));
-      m.box("concrete_dark", L + 0.02, 0.12, w, cx, bed - 0.06, z);
+      // (the bed falls westward: the lowest point of a piece is its west end)
+      const top = topAt(cx), lo = Math.min(bedAt(xa), bedAt(cx)), hgt = top - lo + 0.12;
+      // (the precast lining is pale grey: in the old dark stain the inside of an open channel read as
+      // a black slot from across the fields)
+      for (const s of [-1, 1]) m.box("concrete", L + 0.02, hgt, wall, cx, lo - 0.12 + hgt / 2, z + s * (w / 2 + wall / 2));
+    }
+    // floor slabs along the level runs, a wet concrete face down every drop
+    for (let i = 0; i < prof.length - 1; i++) {
+      const [xa, ya] = prof[i], [xb, yb] = prof[i + 1];
+      const a = Math.min(xa, ch.x0), b = Math.max(xb, ch.x1);
+      if (a - b < 0.02 || covered((a + b) / 2)) continue;
+      const y = (ya + yb) / 2;
+      m.box("concrete_old", a - b + 0.02, 0.12, w, (a + b) / 2, y - 0.06, z);
+    }
+    for (const [x, top, bot] of ch.drops ?? []) {
+      if (covered(x) || x > ch.x0 || x < ch.x1) continue;
+      m.box("concrete_wet", 0.2, top - bot + 0.12, w, x - 0.1, (top + bot) / 2 - 0.06, z);
+      m.box("concrete_cap", 0.22, 0.05, w + 2 * wall, x + 0.01, top + 0.005, z);      // the worn lip
     }
     for (const c of st.covers) {
       const cx = (c.x0 + c.x1) / 2, L = c.x1 - c.x0;
@@ -1893,6 +1935,40 @@ function streamWorks() {
     }
   }
   return m;
+}
+
+/** Check dam (shoka-entei) across a brook: a concrete wall keyed into both banks, its crest notched
+ *  for the water (the notch is the level of the sediment upstream), a battered downstream face, an
+ *  apron and an end sill below. d: {x, z, dir, crest, bed, left, right}. */
+function checkDam(m, d) {
+  const dl = Math.hypot(d.dir[0], d.dir[1]) || 1, fx = d.dir[0] / dl, fz = d.dir[1] / dl;   // downstream
+  const nx = -fz, nz = fx, yaw = Math.atan2(fx, fz);
+  const notch = 3.0, wing = 0.7, T = 1.4, foot = d.bed - 0.9;
+  const at = (u, v) => [d.x + fx * u + nx * v, d.z + fz * u + nz * v];
+  // the wall in pieces across: the notch, and the two raised wings out into the banks
+  const pieces = [[-notch / 2, notch / 2, d.crest], [-d.left, -notch / 2, d.crest + wing], [notch / 2, d.right, d.crest + wing]];
+  for (const [v0, v1, top] of pieces) {
+    if (v1 - v0 < 0.05) continue;
+    const [px, pz] = at(-T / 2 + 0.1, (v0 + v1) / 2);
+    m.box("concrete", v1 - v0, top - foot, T, px, (top + foot) / 2, pz, { ry: yaw });
+    m.box("concrete_cap", v1 - v0 + 0.02, 0.06, T + 0.04, px, top + 0.01, pz, { ry: yaw });
+  }
+  // the worn lip of the notch where the water goes over
+  const [lx, lz] = at(0.11, 0);
+  m.box("concrete_old", notch, 0.12, 0.1, lx, d.crest - 0.05, lz, { ry: yaw });
+  // apron (mizutataki) and end sill
+  const [ax, az] = at(0.25 + 2.0, 0);
+  m.box("concrete_dark", notch + 2.4, 0.35, 4.0, ax, d.bed - 0.22, az, { ry: yaw });
+  const [sx, sz] = at(0.25 + 4.0, 0);
+  m.box("concrete_old", notch + 2.4, 0.55, 0.5, sx, d.bed - 0.12, sz, { ry: yaw });
+  // side walls along the apron, holding the banks back, as high as the wings at the dam and
+  // stepping down to the end sill
+  for (const s of [-1, 1]) {
+    for (const [u0, u1, hh] of [[0.25, 2.25, d.crest + 0.7 - d.bed], [2.25, 4.75, Math.min(1.4, d.crest + 0.7 - d.bed)]]) {
+      const [wx, wz] = at((u0 + u1) / 2, s * (notch / 2 + 1.38));
+      m.box("concrete", 0.35, hh + 0.4, u1 - u0, wx, d.bed - 0.4 + (hh + 0.4) / 2, wz, { ry: yaw });
+    }
+  }
 }
 
 // ---------------------------------------------------------------- build all
