@@ -1732,20 +1732,56 @@ function rokujizo() {
  *  brook with its sluice gate, the precast U-channel, the headwalls where it dives under the
  *  prefectural road, and the slabs where lanes and farm roads cross it. */
 function canalWorks(m) {
+  // diversion boxes where a branch leaves its canal: centre, branch direction, inside size, and the
+  // directions of the channels that pass through (the main canal in and out, the branch out)
+  const divBoxes = new Map();
+  for (const c of scene.canals ?? []) {
+    if (c.intake) continue;
+    const main = scene.canals.find((o) => o.name === c.branchOf), p0 = c.points[0], p1 = c.points[1];
+    const unit = (a, b) => { const dx = b[0] - a[0], dz = b[2] - a[2], l = Math.hypot(dx, dz) || 1; return [dx / l, dz / l]; };
+    const [gx, gz] = unit(p0, p1), dirs = [[gx, gz]];
+    if (main) {
+      const j = main.points.reduce((bi, p, i) => (Math.hypot(p[0] - p0[0], p[2] - p0[2]) < Math.hypot(main.points[bi][0] - p0[0], main.points[bi][2] - p0[2]) ? i : bi), 0);
+      if (j > 0) dirs.push(unit(main.points[j], main.points[j - 1]));
+      if (j < main.points.length - 1) dirs.push(unit(main.points[j], main.points[j + 1]));
+    }
+    divBoxes.set(c.name, { x: p0[0], z: p0[2], gx, gz, s: p0[3] + 0.9, dirs });
+  }
+  // a stretch of channel stops at the inside face of a box it runs into (the box is square: the
+  // distance to its wall depends on the angle)
+  const clip = (ax, az, bx, bz) => {
+    for (const b of divBoxes.values()) {
+      const L = Math.hypot(bx - ax, bz - az);
+      if (L < 1e-6) continue;
+      const dx = (bx - ax) / L, dz = (bz - az) / L;
+      const r = b.s / 2 / Math.max(Math.abs(dx * b.gx + dz * b.gz), Math.abs(-dx * b.gz + dz * b.gx));
+      if (Math.hypot(ax - b.x, az - b.z) < 0.05) { const t = Math.min(r / L, 1); ax += (bx - ax) * t; az += (bz - az) * t; }
+      else if (Math.hypot(bx - b.x, bz - b.z) < 0.05) { const t = Math.min(r / L, 1); bx -= (bx - ax) * t; bz -= (bz - az) * t; }
+    }
+    return [ax, az, bx, bz];
+  };
   for (const c of scene.canals ?? []) {
     const cp = c.points, D = c.depth, Tp = c.wallTop;
     for (let i = 0; i < cp.length - 1; i++) {
-      const [ax, ay, az, w, ca] = cp[i], [bx, by, bz, , cb] = cp[i + 1];
+      const [, ay, , w, ca] = cp[i], [, by, , , cb] = cp[i + 1];
+      const [ax, az, bx, bz] = clip(cp[i][0], cp[i][2], cp[i + 1][0], cp[i + 1][2]);
       const L = Math.hypot(bx - ax, bz - az);
       if (L < 0.01) continue;
-      const dirx = (bx - ax) / L, dirz = (bz - az) / L, yaw = Math.atan2(dirx, dirz);
-      const nx = -dirz, nz = dirx, cx = (ax + bx) / 2, cz = (az + bz) / 2, wy = (ay + by) / 2;
-      const o = { ry: yaw + Math.PI / 2 };
+      const dirx = (bx - ax) / L, dirz = (bz - az) / L;
+      const L0 = Math.hypot(cp[i + 1][0] - cp[i][0], cp[i + 1][2] - cp[i][2]), sl = (by - ay) / L0;
+      const nx = -dirz, nz = dirx, cx = (ax + bx) / 2, cz = (az + bz) / 2, wy = ay + sl * Math.hypot(cx - cp[i][0], cz - cp[i][2]);
       if (ca === 1 && cb === 1) continue;                                  // in the pipe under the road
-      m.box("concrete_dark", L + 0.01, 0.1, w + 0.28, cx, wy - D - 0.05, cz, o);
-      for (const s of [-1, 1]) m.box("concrete_cap", L + 0.01, D + Tp + 0.1, 0.14, cx + nx * s * (w / 2 + 0.07), wy + (Tp - D - 0.1) / 2, cz + nz * s * (w / 2 + 0.07), o);
+      // (the ground over the channel is opened by the terrain shader up to the inside face of the
+      // walls; the pieces overlap a little so the outside of a bend has no gap to see through)
+      // Each piece follows the fall of the water (sheared, posts kept vertical), so steep stretches
+      // such as the branch down the tip of the terraces meet the ground over the channel.
+      const lap = L + 0.12;
+      const piece = (mat, l, h, d, px, py, pz) =>
+        m.add(mat, new THREE.BoxGeometry(l, h, d), { matrix: new THREE.Matrix4().makeBasis(new THREE.Vector3(dirx, sl, dirz), new THREE.Vector3(0, 1, 0), new THREE.Vector3(nx, 0, nz)).setPosition(px, py, pz) });
+      piece("concrete_dark", lap, 0.1, w + 0.28, cx, wy - D - 0.05, cz);
+      for (const s of [-1, 1]) piece("concrete_cap", lap, D + Tp + 0.1, 0.14, cx + nx * s * (w / 2 + 0.07), wy + (Tp - D - 0.1) / 2, cz + nz * s * (w / 2 + 0.07));
       // slab cover where a lane or a farm road crosses
-      if (ca === 2 || cb === 2) m.box("concrete_old", L + 0.02, 0.14, w + 0.5, cx, wy + Tp + 0.05, cz, o);
+      if (ca === 2 || cb === 2) piece("concrete_old", L + 0.02, 0.14, w + 0.5, cx, wy + Tp + 0.05, cz);
     }
     // headwalls (with the dark mouth of the pipe) where the canal goes under the road and comes out
     for (let i = 1; i < cp.length; i++) {
@@ -1761,6 +1797,34 @@ function canalWorks(m) {
     // the far end opens into the branch ditch: an end wall
     const e = cp[cp.length - 1], e0 = cp[cp.length - 2], ey = Math.atan2(e[0] - e0[0], e[2] - e0[2]);
     m.box("concrete_cap", e[3] + 0.3, D + Tp + 0.1, 0.14, e[0], e[1] + (Tp - D - 0.1) / 2, e[2], { ry: ey });
+    if (!c.intake) {
+      // a branch: the diversion box where it leaves the main canal, a square concrete well open where
+      // the main canal passes through and the branch leaves, with a small slide gate at the branch mouth
+      const p0 = cp[0], bx = divBoxes.get(c.name);
+      const { gx, gz, s } = bx, nx = -gz, nz = gx, gy = Math.atan2(gx, gz);
+      const top = p0[1] + Tp + 0.12, bot = p0[1] - D - 0.2, hw = p0[3] / 2 + 0.14;
+      // which wall each channel crosses, and where along it
+      const gaps = [[], [], [], []];                       // +g, -g, +n, -n
+      for (const [dx, dz] of bx.dirs) {
+        const a = dx * gx + dz * gz, b = dx * nx + dz * nz;
+        if (Math.abs(a) >= Math.abs(b)) gaps[a > 0 ? 0 : 1].push((b / Math.abs(a)) * (s / 2));
+        else gaps[b > 0 ? 2 : 3].push((a / Math.abs(b)) * (s / 2));
+      }
+      [[gx, gz, nx, nz], [-gx, -gz, nx, nz], [nx, nz, gx, gz], [-nx, -nz, gx, gz]].forEach(([ox, oz, tx, tz], k) => {
+        let pieces = [[-s / 2 - 0.07, s / 2 + 0.07]];
+        for (const g of gaps[k]) pieces = pieces.flatMap(([u0, u1]) => [[u0, Math.min(u1, g - hw)], [Math.max(u0, g + hw), u1]]).filter(([u0, u1]) => u1 - u0 > 0.05);
+        for (const [u0, u1] of pieces) {
+          const um = (u0 + u1) / 2;
+          m.box("concrete_cap", u1 - u0, top - bot, 0.14, p0[0] + ox * (s / 2 + 0.07) + tx * um, (top + bot) / 2, p0[2] + oz * (s / 2 + 0.07) + tz * um, { ry: Math.atan2(tx, tz) - Math.PI / 2 });
+        }
+      });
+      m.box("concrete_dark", s, 0.12, s, p0[0], bot + 0.06, p0[2], { ry: gy });
+      const gpx = p0[0] + gx * (s / 2 + 0.1), gpz = p0[2] + gz * (s / 2 + 0.1);
+      m.box("steel_gate", 0.05, D + 0.35, p0[3] + 0.06, gpx, p0[1] - D / 2 + 0.2, gpz, { ry: gy + Math.PI / 2 });
+      m.cyl("metal_dark", 0.025, 0.025, 0.45, gpx, top - 0.05, gpz, 8);
+      m.cyl("steel_red", 0.12, 0.12, 0.035, gpx, top + 0.38, gpz, 12);
+      continue;
+    }
     // intake: a low concrete weir across the brook, the canal mouth with a steel sluice gate
     const it = c.intake, dl = Math.hypot(it.dir[0], it.dir[1]) || 1, bdx = it.dir[0] / dl, bdz = it.dir[1] / dl;
     const by = Math.atan2(bdx, bdz);
@@ -1769,8 +1833,11 @@ function canalWorks(m) {
     m.box("concrete_wet", 1.6, 0.12, 4.2, it.x + bdx * 1.0, it.bedY - 0.02, it.z + bdz * 1.0, { ry: by + Math.PI / 2 });     // apron
     const p0 = cp[0], p1 = cp[1], gl = Math.hypot(p1[0] - p0[0], p1[2] - p0[2]) || 1, gx = (p1[0] - p0[0]) / gl, gz = (p1[2] - p0[2]) / gl, gy = Math.atan2(gx, gz);
     const gpx = p0[0] + gx * 0.4, gpz = p0[2] + gz * 0.4;
-    m.box("concrete_cap", 0.3, D + Tp + 1.0, p0[3] + 0.9, gpx, p0[1] + (Tp + 1.0 - D) / 2, gpz, { ry: gy });         // gate pier
-    m.box("steel_gate", 0.06, D + 0.5, p0[3] + 0.06, gpx + gx * 0.18, p0[1] - D / 2 + 0.25 + 0.15, gpz + gz * 0.18, { ry: gy });
+    // gate frame across the mouth: two posts in line with the walls and a beam over the water
+    const fx = gpx + gx * 0.18, fz = gpz + gz * 0.18;
+    for (const sd of [-1, 1]) m.box("concrete_cap", 0.3, D + Tp + 1.0, 0.3, fx + gz * sd * (p0[3] / 2 + 0.15), p0[1] + (Tp + 1.0 - D) / 2, fz - gx * sd * (p0[3] / 2 + 0.15), { ry: gy });
+    m.box("concrete_cap", 0.3, 0.3, p0[3] + 0.9, fx, p0[1] + Tp + 0.8, fz, { ry: gy + Math.PI / 2 });
+    m.box("steel_gate", 0.06, D + 0.5, p0[3] + 0.06, gpx + gx * 0.18, p0[1] - D / 2 + 0.25 + 0.15, gpz + gz * 0.18, { ry: gy + Math.PI / 2 });
     m.cyl("metal_dark", 0.03, 0.03, 0.55, gpx + gx * 0.18, p0[1] + Tp + 0.95, gpz + gz * 0.18, 8);
     m.cyl("steel_red", 0.16, 0.16, 0.04, gpx + gx * 0.18, p0[1] + Tp + 1.42, gpz + gz * 0.18, 12);
   }
@@ -1784,6 +1851,7 @@ function streamWorks() {
   const m = new Model("stream-works");
   canalWorks(m);
   for (const st of scene.streams ?? []) {
+    if (!st.channel) continue;                    // a natural brook only (Nishizawa): nothing built
     const ch = st.channel, z = st.z, w = st.width, wall = st.kind === "ditch" ? 0.12 : 0.16;
     const topAt = (x) => {
       const t = ch.tops;

@@ -98,7 +98,7 @@ URLパラメータは次のとおりです。
 
 | 出力 | 原本・生成ツール |
 |---|---|
-| `public/world/heightmap.r16` / `.png`（16-bit）、`splat0/1/2.png`、`vegetation-mask.png`、`paddy-level.png`、`mid-heightmap.png`、`mid-cover.png`、`far-heightmap.png` | `tools/world/generate_world.py`（山の浸食は `tools/world/region.py`。結果は `.cache/` に保存して再利用） |
+| `public/world/heightmap.r16` / `.png`（16-bit）、`splat0/1/2.png`、`vegetation-mask.png`、`paddy-level.png`、`channels.png`（用水路の開口）、`mid-heightmap.png`、`mid-cover.png`、`far-heightmap.png` | `tools/world/generate_world.py`（山の浸食は `tools/world/region.py`。結果は `.cache/` に保存して再利用） |
 | `public/world/scene.json`（石段・建物・川・道・電線・水田・目印）、`vegetation.json`、`clutter.json` | 同上 |
 | `public/world/map.webp`、`map.json`（ミニマップと全体図の地形図。地名はmap.jsonから実行時に描く） | `tools/world/bake_map.py`（`generate_world.py` と `build.mjs` の後） |
 | `public/world/materials.json`（材質名 → 写真PBRの対応表。ランタイムとUnityで共用） | 手動で管理 |
