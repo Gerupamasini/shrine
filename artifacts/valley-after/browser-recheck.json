@@ -1,0 +1,284 @@
+{
+  "config": {
+    "argv": [
+      "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+      "/workspace/shrine-integration/node_modules/.bin/playwright",
+      "test",
+      "tests/rural-driving.spec.ts",
+      "tests/steering-input.spec.ts",
+      "tests/valley-views.spec.ts",
+      "--config=.cache/valley-recheck-playwright.config.ts"
+    ],
+    "configFile": "/workspace/shrine-integration/.cache/valley-recheck-playwright.config.ts",
+    "rootDir": "/workspace/shrine-integration/tests",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/workspace/shrine-integration/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "",
+        "name": "",
+        "testDir": "/workspace/shrine-integration/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "*.spec.ts"
+        ],
+        "timeout": 1800000
+      }
+    ],
+    "filteredProjects": [
+      {
+        "grep": {},
+        "grepInvert": null,
+        "outputDir": "/workspace/shrine-integration/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "name": "",
+        "testDir": "/workspace/shrine-integration/tests",
+        "snapshotDir": "/workspace/shrine-integration/tests",
+        "testIgnore": [],
+        "testMatch": "*.spec.ts",
+        "timeout": 1800000,
+        "use": {
+          "baseURL": "http://127.0.0.1:5176",
+          "viewport": {
+            "width": 960,
+            "height": 600
+          },
+          "launchOptions": {
+            "executablePath": "/usr/bin/chromium",
+            "args": [
+              "--no-sandbox",
+              "--ignore-gpu-blocklist",
+              "--enable-unsafe-swiftshader",
+              "--use-angle=swiftshader",
+              "--disable-dev-shm-usage"
+            ]
+          }
+        },
+        "dependencies": [],
+        "ignoreSnapshots": false,
+        "__projectId": ""
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "/workspace/shrine-integration/artifacts/valley-after/browser-recheck.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "default",
+    "updateSourceMethod": "patch",
+    "version": "1.65.0",
+    "workers": 1,
+    "webServer": {
+      "command": "npm run preview -- --port 5176 --strictPort --outDir .cache/valley-final-dist",
+      "url": "http://127.0.0.1:5176",
+      "reuseExistingServer": false,
+      "cwd": "/workspace/shrine-integration"
+    }
+  },
+  "suites": [
+    {
+      "title": "rural-driving.spec.ts",
+      "file": "rural-driving.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "rural lanes: low speed truck traversal and braking",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 1800000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 267909,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "route-progress farm-04 0 45\n"
+                    },
+                    {
+                      "text": "{\"id\":\"farm-04\",\"index\":44,\"total\":45,\"frames\":1809,\"position\":[-72.86722555613157,4.919796083552035,271.76036685892643],\"speed\":-0.0038832234084801203,\"target\":[-75.62,5.03,272],\"rotation\":[-0.009119606576859951,-0.6732082366943359,-0.006400615442544222,0.7393690943717957],\"ok\":true}\n"
+                    },
+                    {
+                      "text": "route-progress farm-06 0 42\n"
+                    },
+                    {
+                      "text": "{\"id\":\"farm-06\",\"index\":41,\"total\":42,\"frames\":1682,\"position\":[-62.72897552899853,3.223926743105331,531.2255104757749],\"speed\":-0.002411301218882661,\"target\":[-65.49,3.343,531],\"rotation\":[0.012722168117761612,-0.7359450459480286,-0.01603168621659279,0.6767318844795227],\"ok\":true}\n"
+                    },
+                    {
+                      "text": "route-progress farm-10 0 35\n"
+                    },
+                    {
+                      "text": "{\"id\":\"farm-10\",\"index\":34,\"total\":35,\"frames\":1419,\"position\":[-149.59284185862867,3.771794503221061,337.59898070041083],\"speed\":-0.0014469266730109476,\"target\":[-152.35,3.849,338],\"rotation\":[-0.004872104153037071,-0.649861752986908,-0.004625757224857807,0.7600228190422058],\"ok\":true}\n"
+                    },
+                    {
+                      "text": "route-progress turn-north 0 112\n"
+                    },
+                    {
+                      "text": "route-progress turn-north 106 112\n"
+                    },
+                    {
+                      "text": "{\"id\":\"turn-north\",\"index\":111,\"total\":112,\"frames\":5244,\"position\":[-132.75182364720527,7.648509523985691,-311.7484914735896],\"speed\":-0.004250481857485986,\"target\":[-135.51,7.784,-312],\"rotation\":[-0.010220032185316086,-0.7416204214096069,-0.002472987864166498,0.6707374453544617],\"ok\":true}\n"
+                    },
+                    {
+                      "text": "route-progress turn-south 0 91\n"
+                    },
+                    {
+                      "text": "{\"id\":\"turn-south\",\"index\":90,\"total\":91,\"frames\":3928,\"position\":[-149.60519462511348,3.7718428002127764,337.60217159734316],\"speed\":-0.0014482373725534375,\"target\":[-152.35,3.849,338],\"rotation\":[-0.004888232331722975,-0.6499873995780945,-0.004621029365807772,0.759915292263031],\"ok\":true}\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-15T08:07:48.171Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "4f861c9fd722535f1ec4-7ccdc22ec9e59f2a377a",
+          "file": "rural-driving.spec.ts",
+          "line": 3,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "steering-input.spec.ts",
+      "file": "steering-input.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "A/D and arrow keys turn toward the driver left/right in both views",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 1800000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 313602,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-15T08:12:16.505Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "610a49fce99ac6af57f9-d3425e41df646044e6d4",
+          "file": "steering-input.spec.ts",
+          "line": 3,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "valley-views.spec.ts",
+      "file": "valley-views.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "valley fields and bunds at ground and distant viewpoints",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 1800000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 224921,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-15T08:17:30.194Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "f412e093c3468ace7860-1c586b0e3ca34966076a",
+          "file": "valley-views.spec.ts",
+          "line": 4,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-11-15T08:07:46.761Z",
+    "duration": 808568.5090000001,
+    "expected": 3,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

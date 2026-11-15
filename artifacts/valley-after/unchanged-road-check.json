@@ -1,0 +1,93 @@
+[
+  {
+    "id": "farm-00",
+    "sameAlignment": true,
+    "maxHeightChangeAcross2point5m": 0.310102,
+    "maxHeightChangeOutsideRecheckedSection": 0
+  },
+  {
+    "id": "farm-01",
+    "sameAlignment": true,
+    "maxHeightChangeAcross2point5m": 0
+  },
+  {
+    "id": "farm-02",
+    "sameAlignment": true,
+    "maxHeightChangeAcross2point5m": 0
+  },
+  {
+    "id": "farm-03",
+    "sameAlignment": true,
+    "maxHeightChangeAcross2point5m": 0
+  },
+  {
+    "id": "farm-05",
+    "sameAlignment": true,
+    "maxHeightChangeAcross2point5m": 0
+  },
+  {
+    "id": "farm-07",
+    "sameAlignment": true,
+    "maxHeightChangeAcross2point5m": 0
+  },
+  {
+    "id": "farm-08",
+    "sameAlignment": true,
+    "maxHeightChangeAcross2point5m": 0
+  },
+  {
+    "id": "farm-09",
+    "sameAlignment": true,
+    "maxHeightChangeAcross2point5m": 0
+  },
+  {
+    "id": "farm-11",
+    "sameAlignment": true,
+    "maxHeightChangeAcross2point5m": 0
+  },
+  {
+    "id": "farm-12",
+    "sameAlignment": true,
+    "maxHeightChangeAcross2point5m": 0
+  },
+  {
+    "id": "miyazawa-farm",
+    "sameAlignment": true,
+    "maxHeightChangeAcross2point5m": 0
+  },
+  {
+    "id": "east-forest",
+    "sameAlignment": true,
+    "maxHeightChangeAcross2point5m": 0
+  },
+  {
+    "id": "minamizawa-farm",
+    "sameAlignment": true,
+    "maxHeightChangeAcross2point5m": 0
+  },
+  {
+    "id": "okusawa-farm",
+    "sameAlignment": true,
+    "maxHeightChangeAcross2point5m": 0
+  },
+  {
+    "id": "north-forest",
+    "sameAlignment": true,
+    "maxHeightChangeAcross2point5m": 0
+  },
+  {
+    "id": "kawamuko-north-farm",
+    "sameAlignment": true,
+    "maxHeightChangeAcross2point5m": 0
+  },
+  {
+    "id": "kawamuko-contour-farm",
+    "sameAlignment": true,
+    "maxHeightChangeAcross2point5m": 0
+  },
+  {
+    "id": "kawamuko-south-farm",
+    "sameAlignment": true,
+    "maxHeightChangeAcross2point5m": 0
+  }
+]

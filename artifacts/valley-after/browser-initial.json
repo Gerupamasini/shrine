@@ -1,0 +1,495 @@
+{
+  "config": {
+    "argv": [
+      "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+      "/workspace/shrine-integration/node_modules/.bin/playwright",
+      "test",
+      "tests/steering-input.spec.ts",
+      "tests/valley-views.spec.ts",
+      "tests/driving.spec.ts",
+      "tests/rural.spec.ts",
+      "tests/rural-driving.spec.ts",
+      "--config=.cache/final-playwright.config.ts"
+    ],
+    "configFile": "/workspace/shrine-integration/.cache/final-playwright.config.ts",
+    "rootDir": "/workspace/shrine-integration/tests",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/workspace/shrine-integration/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "",
+        "name": "",
+        "testDir": "/workspace/shrine-integration/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "*.spec.ts"
+        ],
+        "timeout": 1800000
+      }
+    ],
+    "filteredProjects": [
+      {
+        "grep": {},
+        "grepInvert": null,
+        "outputDir": "/workspace/shrine-integration/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "name": "",
+        "testDir": "/workspace/shrine-integration/tests",
+        "snapshotDir": "/workspace/shrine-integration/tests",
+        "testIgnore": [],
+        "testMatch": "*.spec.ts",
+        "timeout": 1800000,
+        "use": {
+          "baseURL": "http://127.0.0.1:5175",
+          "viewport": {
+            "width": 960,
+            "height": 600
+          },
+          "launchOptions": {
+            "executablePath": "/usr/bin/chromium",
+            "args": [
+              "--no-sandbox",
+              "--ignore-gpu-blocklist",
+              "--enable-unsafe-swiftshader",
+              "--use-angle=swiftshader",
+              "--disable-dev-shm-usage"
+            ]
+          }
+        },
+        "dependencies": [],
+        "ignoreSnapshots": false,
+        "__projectId": ""
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "artifacts/browser-results.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "default",
+    "updateSourceMethod": "patch",
+    "version": "1.65.0",
+    "workers": 1,
+    "webServer": {
+      "command": "npm run preview -- --port 5175 --strictPort",
+      "url": "http://127.0.0.1:5175",
+      "reuseExistingServer": false,
+      "cwd": "/workspace/shrine-integration"
+    }
+  },
+  "suites": [
+    {
+      "title": "driving.spec.ts",
+      "file": "driving.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "driving: all parked trucks, enter, steer, brake, views, pause, exit and recovery",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 1800000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 83663,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-15T07:55:44.396Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "93e2c3316732e7234603-ac7229a4fb7c2b3a4e48",
+          "file": "driving.spec.ts",
+          "line": 3,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "rural-driving.spec.ts",
+      "file": "rural-driving.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "rural lanes: low speed truck traversal and braking",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 1800000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 412965,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // deep equality\u001b[22m\n\n\u001b[32m- Expected  -  1\u001b[39m\n\u001b[31m+ Received  + 50\u001b[39m\n\n\u001b[32m- Array []\u001b[39m\n\u001b[31m+ Array [\u001b[39m\n\u001b[31m+   Object {\u001b[39m\n\u001b[31m+     \"frames\": 2700,\u001b[39m\n\u001b[31m+     \"id\": \"farm-04\",\u001b[39m\n\u001b[31m+     \"index\": 11,\u001b[39m\n\u001b[31m+     \"ok\": false,\u001b[39m\n\u001b[31m+     \"position\": Array [\u001b[39m\n\u001b[31m+       -31.638231539975738,\u001b[39m\n\u001b[31m+       4.644801022002822,\u001b[39m\n\u001b[31m+       220.16821862035036,\u001b[39m\n\u001b[31m+     ],\u001b[39m\n\u001b[31m+     \"rotation\": Array [\u001b[39m\n\u001b[31m+       -0.2614225149154663,\u001b[39m\n\u001b[31m+       -0.6395668983459473,\u001b[39m\n\u001b[31m+       0.2599513828754425,\u001b[39m\n\u001b[31m+       0.6745648384094238,\u001b[39m\n\u001b[31m+     ],\u001b[39m\n\u001b[31m+     \"speed\": -0.00806328819903314,\u001b[39m\n\u001b[31m+     \"target\": Array [\u001b[39m\n\u001b[31m+       -9.86,\u001b[39m\n\u001b[31m+       5.631,\u001b[39m\n\u001b[31m+       224.38,\u001b[39m\n\u001b[31m+     ],\u001b[39m\n\u001b[31m+     \"total\": 45,\u001b[39m\n\u001b[31m+   },\u001b[39m\n\u001b[31m+   Object {\u001b[39m\n\u001b[31m+     \"frames\": 2700,\u001b[39m\n\u001b[31m+     \"id\": \"farm-06\",\u001b[39m\n\u001b[31m+     \"index\": 24,\u001b[39m\n\u001b[31m+     \"ok\": false,\u001b[39m\n\u001b[31m+     \"position\": Array [\u001b[39m\n\u001b[31m+       -26.493595556365655,\u001b[39m\n\u001b[31m+       3.5395467879466755,\u001b[39m\n\u001b[31m+       583.0050498524349,\u001b[39m\n\u001b[31m+     ],\u001b[39m\n\u001b[31m+     \"rotation\": Array [\u001b[39m\n\u001b[31m+       -0.004804618190973997,\u001b[39m\n\u001b[31m+       -0.5090749263763428,\u001b[39m\n\u001b[31m+       -0.0026544237043708563,\u001b[39m\n\u001b[31m+       0.8607046604156494,\u001b[39m\n\u001b[31m+     ],\u001b[39m\n\u001b[31m+     \"speed\": 0,\u001b[39m\n\u001b[31m+     \"target\": Array [\u001b[39m\n\u001b[31m+       -29.39,\u001b[39m\n\u001b[31m+       3.604,\u001b[39m\n\u001b[31m+       586.16,\u001b[39m\n\u001b[31m+     ],\u001b[39m\n\u001b[31m+     \"total\": 34,\u001b[39m\n\u001b[31m+   },\u001b[39m\n\u001b[31m+ ]\u001b[39m",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // deep equality\u001b[22m\n\n\u001b[32m- Expected  -  1\u001b[39m\n\u001b[31m+ Received  + 50\u001b[39m\n\n\u001b[32m- Array []\u001b[39m\n\u001b[31m+ Array [\u001b[39m\n\u001b[31m+   Object {\u001b[39m\n\u001b[31m+     \"frames\": 2700,\u001b[39m\n\u001b[31m+     \"id\": \"farm-04\",\u001b[39m\n\u001b[31m+     \"index\": 11,\u001b[39m\n\u001b[31m+     \"ok\": false,\u001b[39m\n\u001b[31m+     \"position\": Array [\u001b[39m\n\u001b[31m+       -31.638231539975738,\u001b[39m\n\u001b[31m+       4.644801022002822,\u001b[39m\n\u001b[31m+       220.16821862035036,\u001b[39m\n\u001b[31m+     ],\u001b[39m\n\u001b[31m+     \"rotation\": Array [\u001b[39m\n\u001b[31m+       -0.2614225149154663,\u001b[39m\n\u001b[31m+       -0.6395668983459473,\u001b[39m\n\u001b[31m+       0.2599513828754425,\u001b[39m\n\u001b[31m+       0.6745648384094238,\u001b[39m\n\u001b[31m+     ],\u001b[39m\n\u001b[31m+     \"speed\": -0.00806328819903314,\u001b[39m\n\u001b[31m+     \"target\": Array [\u001b[39m\n\u001b[31m+       -9.86,\u001b[39m\n\u001b[31m+       5.631,\u001b[39m\n\u001b[31m+       224.38,\u001b[39m\n\u001b[31m+     ],\u001b[39m\n\u001b[31m+     \"total\": 45,\u001b[39m\n\u001b[31m+   },\u001b[39m\n\u001b[31m+   Object {\u001b[39m\n\u001b[31m+     \"frames\": 2700,\u001b[39m\n\u001b[31m+     \"id\": \"farm-06\",\u001b[39m\n\u001b[31m+     \"index\": 24,\u001b[39m\n\u001b[31m+     \"ok\": false,\u001b[39m\n\u001b[31m+     \"position\": Array [\u001b[39m\n\u001b[31m+       -26.493595556365655,\u001b[39m\n\u001b[31m+       3.5395467879466755,\u001b[39m\n\u001b[31m+       583.0050498524349,\u001b[39m\n\u001b[31m+     ],\u001b[39m\n\u001b[31m+     \"rotation\": Array [\u001b[39m\n\u001b[31m+       -0.004804618190973997,\u001b[39m\n\u001b[31m+       -0.5090749263763428,\u001b[39m\n\u001b[31m+       -0.0026544237043708563,\u001b[39m\n\u001b[31m+       0.8607046604156494,\u001b[39m\n\u001b[31m+     ],\u001b[39m\n\u001b[31m+     \"speed\": 0,\u001b[39m\n\u001b[31m+     \"target\": Array [\u001b[39m\n\u001b[31m+       -29.39,\u001b[39m\n\u001b[31m+       3.604,\u001b[39m\n\u001b[31m+       586.16,\u001b[39m\n\u001b[31m+     ],\u001b[39m\n\u001b[31m+     \"total\": 34,\u001b[39m\n\u001b[31m+   },\u001b[39m\n\u001b[31m+ ]\u001b[39m\n    at /workspace/shrine-integration/tests/rural-driving.spec.ts:41:35",
+                    "location": {
+                      "file": "/workspace/shrine-integration/tests/rural-driving.spec.ts",
+                      "column": 35,
+                      "line": 41
+                    },
+                    "snippet": " \u001b[90m 39 |\u001b[39m    fleet\u001b[33m.\u001b[39mstep(\u001b[35m1\u001b[39m\u001b[33m/\u001b[39m\u001b[35m60\u001b[39m\u001b[33m,\u001b[39m{throttle\u001b[33m:\u001b[39msim\u001b[33m.\u001b[39mspeed\u001b[33m<\u001b[39m\u001b[35m3\u001b[39m\u001b[33m?\u001b[39m\u001b[35m1\u001b[39m\u001b[33m:\u001b[39m\u001b[35m0\u001b[39m\u001b[33m,\u001b[39msteer\u001b[33m:\u001b[39m\u001b[33mMath\u001b[39m\u001b[33m.\u001b[39mmax(\u001b[33m-\u001b[39m\u001b[35m1\u001b[39m\u001b[33m,\u001b[39m\u001b[33mMath\u001b[39m\u001b[33m.\u001b[39mmin(\u001b[35m1\u001b[39m\u001b[33m,\u001b[39m\u001b[33m-\u001b[39mangle\u001b[33m*\u001b[39m\u001b[35m2\u001b[39m))\u001b[33m,\u001b[39mbrake\u001b[33m:\u001b[39msim\u001b[33m.\u001b[39mspeed\u001b[33m>\u001b[39m\u001b[35m3.7\u001b[39m})\u001b[33m;\u001b[39m\n \u001b[90m 40 |\u001b[39m    \u001b[36mif\u001b[39m(index\u001b[33m===\u001b[39mroute\u001b[33m.\u001b[39mlength\u001b[33m-\u001b[39m\u001b[35m1\u001b[39m \u001b[33m&&\u001b[39m \u001b[33mMath\u001b[39m\u001b[33m.\u001b[39mhypot(target[\u001b[35m0\u001b[39m]\u001b[33m-\u001b[39mpos\u001b[33m.\u001b[39mx\u001b[33m,\u001b[39mtarget[\u001b[35m2\u001b[39m]\u001b[33m-\u001b[39mpos\u001b[33m.\u001b[39mz)\u001b[33m<\u001b[39m\u001b[35m3\u001b[39m){arrived\u001b[33m=\u001b[39m\u001b[36mtrue\u001b[39m\u001b[33m;\u001b[39m\u001b[36mbreak\u001b[39m\u001b[33m;\u001b[39m}\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 41 |\u001b[39m    \u001b[36mif\u001b[39m(\u001b[33mMath\u001b[39m\u001b[33m.\u001b[39mhypot(target[\u001b[35m0\u001b[39m]\u001b[33m-\u001b[39mpos\u001b[33m.\u001b[39mx\u001b[33m,\u001b[39mtarget[\u001b[35m2\u001b[39m]\u001b[33m-\u001b[39mpos\u001b[33m.\u001b[39mz)\u001b[33m>\u001b[39m\u001b[35m25\u001b[39m)\u001b[36mbreak\u001b[39m\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                   \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 42 |\u001b[39m   }\n \u001b[90m 43 |\u001b[39m   \u001b[36mfor\u001b[39m(\u001b[36mlet\u001b[39m i\u001b[33m=\u001b[39m\u001b[35m0\u001b[39m\u001b[33m;\u001b[39mi\u001b[33m<\u001b[39m\u001b[35m120\u001b[39m\u001b[33m;\u001b[39mi\u001b[33m++\u001b[39m)fleet\u001b[33m.\u001b[39mstep(\u001b[35m1\u001b[39m\u001b[33m/\u001b[39m\u001b[35m60\u001b[39m\u001b[33m,\u001b[39m{throttle\u001b[33m:\u001b[39m\u001b[35m0\u001b[39m\u001b[33m,\u001b[39msteer\u001b[33m:\u001b[39m\u001b[35m0\u001b[39m\u001b[33m,\u001b[39mbrake\u001b[33m:\u001b[39m\u001b[36mtrue\u001b[39m})\u001b[33m;\u001b[39m\n \u001b[90m 44 |\u001b[39m   \u001b[36mreturn\u001b[39m {id\u001b[33m,\u001b[39mindex\u001b[33m,\u001b[39mtotal\u001b[33m:\u001b[39mroute\u001b[33m.\u001b[39mlength\u001b[33m,\u001b[39mframes\u001b[33m,\u001b[39mposition\u001b[33m:\u001b[39msim\u001b[33m.\u001b[39mposition\u001b[33m.\u001b[39mtoArray()\u001b[33m,\u001b[39mspeed\u001b[33m:\u001b[39msim\u001b[33m.\u001b[39mspeed\u001b[33m,\u001b[39mtarget\u001b[33m:\u001b[39mroute[index]\u001b[33m,\u001b[39mrotation\u001b[33m:\u001b[39msim\u001b[33m.\u001b[39mrotation\u001b[33m.\u001b[39mtoArray()\u001b[33m,\u001b[39mok\u001b[33m:\u001b[39marrived \u001b[33m&&\u001b[39m \u001b[33mMath\u001b[39m\u001b[33m.\u001b[39mabs(sim\u001b[33m.\u001b[39mspeed)\u001b[33m<\u001b[39m\u001b[35m.3\u001b[39m}\u001b[33m;\u001b[39m"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/workspace/shrine-integration/tests/rural-driving.spec.ts",
+                        "column": 35,
+                        "line": 41
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // deep equality\u001b[22m\n\n\u001b[32m- Expected  -  1\u001b[39m\n\u001b[31m+ Received  + 50\u001b[39m\n\n\u001b[32m- Array []\u001b[39m\n\u001b[31m+ Array [\u001b[39m\n\u001b[31m+   Object {\u001b[39m\n\u001b[31m+     \"frames\": 2700,\u001b[39m\n\u001b[31m+     \"id\": \"farm-04\",\u001b[39m\n\u001b[31m+     \"index\": 11,\u001b[39m\n\u001b[31m+     \"ok\": false,\u001b[39m\n\u001b[31m+     \"position\": Array [\u001b[39m\n\u001b[31m+       -31.638231539975738,\u001b[39m\n\u001b[31m+       4.644801022002822,\u001b[39m\n\u001b[31m+       220.16821862035036,\u001b[39m\n\u001b[31m+     ],\u001b[39m\n\u001b[31m+     \"rotation\": Array [\u001b[39m\n\u001b[31m+       -0.2614225149154663,\u001b[39m\n\u001b[31m+       -0.6395668983459473,\u001b[39m\n\u001b[31m+       0.2599513828754425,\u001b[39m\n\u001b[31m+       0.6745648384094238,\u001b[39m\n\u001b[31m+     ],\u001b[39m\n\u001b[31m+     \"speed\": -0.00806328819903314,\u001b[39m\n\u001b[31m+     \"target\": Array [\u001b[39m\n\u001b[31m+       -9.86,\u001b[39m\n\u001b[31m+       5.631,\u001b[39m\n\u001b[31m+       224.38,\u001b[39m\n\u001b[31m+     ],\u001b[39m\n\u001b[31m+     \"total\": 45,\u001b[39m\n\u001b[31m+   },\u001b[39m\n\u001b[31m+   Object {\u001b[39m\n\u001b[31m+     \"frames\": 2700,\u001b[39m\n\u001b[31m+     \"id\": \"farm-06\",\u001b[39m\n\u001b[31m+     \"index\": 24,\u001b[39m\n\u001b[31m+     \"ok\": false,\u001b[39m\n\u001b[31m+     \"position\": Array [\u001b[39m\n\u001b[31m+       -26.493595556365655,\u001b[39m\n\u001b[31m+       3.5395467879466755,\u001b[39m\n\u001b[31m+       583.0050498524349,\u001b[39m\n\u001b[31m+     ],\u001b[39m\n\u001b[31m+     \"rotation\": Array [\u001b[39m\n\u001b[31m+       -0.004804618190973997,\u001b[39m\n\u001b[31m+       -0.5090749263763428,\u001b[39m\n\u001b[31m+       -0.0026544237043708563,\u001b[39m\n\u001b[31m+       0.8607046604156494,\u001b[39m\n\u001b[31m+     ],\u001b[39m\n\u001b[31m+     \"speed\": 0,\u001b[39m\n\u001b[31m+     \"target\": Array [\u001b[39m\n\u001b[31m+       -29.39,\u001b[39m\n\u001b[31m+       3.604,\u001b[39m\n\u001b[31m+       586.16,\u001b[39m\n\u001b[31m+     ],\u001b[39m\n\u001b[31m+     \"total\": 34,\u001b[39m\n\u001b[31m+   },\u001b[39m\n\u001b[31m+ ]\u001b[39m\n\n  39 |    fleet.step(1/60,{throttle:sim.speed<3?1:0,steer:Math.max(-1,Math.min(1,-angle*2)),brake:sim.speed>3.7});\n  40 |    if(index===route.length-1 && Math.hypot(target[0]-pos.x,target[2]-pos.z)<3){arrived=true;break;}\n> 41 |    if(Math.hypot(target[0]-pos.x,target[2]-pos.z)>25)break;\n     |                                   ^\n  42 |   }\n  43 |   for(let i=0;i<120;i++)fleet.step(1/60,{throttle:0,steer:0,brake:true});\n  44 |   return {id,index,total:route.length,frames,position:sim.position.toArray(),speed:sim.speed,target:route[index],rotation:sim.rotation.toArray(),ok:arrived && Math.abs(sim.speed)<.3};\n    at /workspace/shrine-integration/tests/rural-driving.spec.ts:41:35"
+                    }
+                  ],
+                  "stdout": [
+                    {
+                      "text": "route-progress farm-00 0 387\n"
+                    },
+                    {
+                      "text": "route-progress farm-00 81 387\n"
+                    },
+                    {
+                      "text": "route-progress farm-00 158 387\n"
+                    },
+                    {
+                      "text": "route-progress farm-00 233 387\n"
+                    },
+                    {
+                      "text": "route-progress farm-00 313 387\n"
+                    },
+                    {
+                      "text": "{\"id\":\"farm-00\",\"index\":386,\"total\":387,\"frames\":24627,\"position\":[-56.804932055291594,2.0032613473883627,685.353016887009],\"speed\":0.0005507080012136824,\"target\":[-57.59,2.046,688],\"rotation\":[-0.0025346078909933567,-0.14385715126991272,-0.00017156680405605584,0.9895952939987183],\"ok\":true}\n"
+                    },
+                    {
+                      "text": "route-progress farm-01 0 45\n"
+                    },
+                    {
+                      "text": "{\"id\":\"farm-01\",\"index\":44,\"total\":45,\"frames\":1823,\"position\":[-81.14204151464418,8.286312872584034,-344.1606160784977],\"speed\":-0.00401283939027697,\"target\":[-83.93,8.403,-344],\"rotation\":[-0.009283496998250484,-0.6843956112861633,-0.007921750657260418,0.7290087342262268],\"ok\":true}\n"
+                    },
+                    {
+                      "text": "route-progress farm-02 0 33\n"
+                    },
+                    {
+                      "text": "{\"id\":\"farm-02\",\"index\":32,\"total\":33,\"frames\":1327,\"position\":[-65.65306444740047,7.465060396993593,-171.3899311842471],\"speed\":-0.0019459204516347373,\"target\":[-68.4,7.563,-171],\"rotation\":[-0.007587730884552002,-0.6513321399688721,-0.004827684257179499,0.7587394714355469],\"ok\":true}\n"
+                    },
+                    {
+                      "text": "route-progress farm-03 0 57\n"
+                    },
+                    {
+                      "text": "{\"id\":\"farm-03\",\"index\":56,\"total\":57,\"frames\":2287,\"position\":[-44.96842364906006,6.2583403503595205,-17.905349685062777],\"speed\":-0.00403512704333605,\"target\":[-47.77,6.368,-18],\"rotation\":[-0.006366139743477106,-0.7198254466056824,-0.006434423383325338,0.6940961480140686],\"ok\":true}\n"
+                    },
+                    {
+                      "text": "route-progress farm-04 0 45\n"
+                    },
+                    {
+                      "text": "{\"id\":\"farm-04\",\"index\":11,\"total\":45,\"frames\":2700,\"position\":[-31.638231539975738,4.644801022002822,220.16821862035036],\"speed\":-0.00806328819903314,\"target\":[-9.86,5.631,224.38],\"rotation\":[-0.2614225149154663,-0.6395668983459473,0.2599513828754425,0.6745648384094238],\"ok\":false}\n"
+                    },
+                    {
+                      "text": "route-progress farm-05 0 41\n"
+                    },
+                    {
+                      "text": "{\"id\":\"farm-05\",\"index\":40,\"total\":41,\"frames\":1652,\"position\":[-105.2807633448695,3.890394486900509,403.20345023949676],\"speed\":-0.0027027108838458018,\"target\":[-108.07,3.998,403],\"rotation\":[-0.007249887567013502,-0.73406583070755,-0.007445428054779768,0.6789988279342651],\"ok\":true}\n"
+                    },
+                    {
+                      "text": "route-progress farm-06 0 34\n"
+                    },
+                    {
+                      "text": "{\"id\":\"farm-06\",\"index\":24,\"total\":34,\"frames\":2700,\"position\":[-26.493595556365655,3.5395467879466755,583.0050498524349],\"speed\":0,\"target\":[-29.39,3.604,586.16],\"rotation\":[-0.004804618190973997,-0.5090749263763428,-0.0026544237043708563,0.8607046604156494],\"ok\":false}\n"
+                    },
+                    {
+                      "text": "route-progress farm-07 0 44\n"
+                    },
+                    {
+                      "text": "{\"id\":\"farm-07\",\"index\":43,\"total\":44,\"frames\":1781,\"position\":[-43.986210615962804,2.468016436193122,650.1791669472923],\"speed\":-0.005624184255887516,\"target\":[-46.75,2.594,650],\"rotation\":[-0.008828764781355858,-0.7312754988670349,-0.007435807026922703,0.6819846630096436],\"ok\":true}\n"
+                    },
+                    {
+                      "text": "route-progress farm-08 0 44\n"
+                    },
+                    {
+                      "text": "{\"id\":\"farm-08\",\"index\":43,\"total\":44,\"frames\":1766,\"position\":[-132.73208846090668,7.648157651201449,-311.7471582373215],\"speed\":-0.004205316875055825,\"target\":[-135.51,7.784,-312],\"rotation\":[-0.009683560580015182,-0.741611123085022,-0.002547438256442547,0.6707553267478943],\"ok\":true}\n"
+                    },
+                    {
+                      "text": "route-progress farm-09 0 24\n"
+                    },
+                    {
+                      "text": "{\"id\":\"farm-09\",\"index\":23,\"total\":24,\"frames\":970,\"position\":[-98.86240655796614,6.047282935952122,-64.20959158158213],\"speed\":-0.00015146444779360935,\"target\":[-101.39,6.249,-63],\"rotation\":[-0.004002127330750227,-0.5133077502250671,-0.0021279521752148867,0.8581926226615906],\"ok\":true}\n"
+                    },
+                    {
+                      "text": "route-progress farm-10 0 40\n"
+                    },
+                    {
+                      "text": "{\"id\":\"farm-10\",\"index\":39,\"total\":40,\"frames\":1613,\"position\":[-149.5917436683833,4.012479997778461,315.7237684209022],\"speed\":-0.0009048099600990266,\"target\":[-152.35,4.071,316],\"rotation\":[-0.005325235892087221,-0.6675346493721008,-0.0036368875298649073,0.744550883769989],\"ok\":true}\n"
+                    },
+                    {
+                      "text": "route-progress farm-11 0 28\n"
+                    },
+                    {
+                      "text": "{\"id\":\"farm-11\",\"index\":27,\"total\":28,\"frames\":1152,\"position\":[-137.04946058009003,3.4673721861145936,492.49150825869197],\"speed\":-0.0012578346131438772,\"target\":[-139.78,3.466,493],\"rotation\":[-0.0052612777799367905,-0.6336249113082886,-0.0037850053049623966,0.7736133933067322],\"ok\":true}\n"
+                    },
+                    {
+                      "text": "route-progress farm-12 0 36\n"
+                    },
+                    {
+                      "text": "{\"id\":\"farm-12\",\"index\":35,\"total\":36,\"frames\":1483,\"position\":[-102.49782949619879,2.046523205821095,659.5195866380624],\"speed\":-0.0006894676593754454,\"target\":[-105.21,2.11,660],\"rotation\":[-0.004345383029431105,-0.6370046734809875,-0.0035889577120542526,0.7708393335342407],\"ok\":true}\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-15T07:57:08.445Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/workspace/shrine-integration/test-results/rural-driving-rural-lanes--b1afa-truck-traversal-and-braking/error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/workspace/shrine-integration/tests/rural-driving.spec.ts",
+                    "column": 35,
+                    "line": 41
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "4f861c9fd722535f1ec4-7ccdc22ec9e59f2a377a",
+          "file": "rural-driving.spec.ts",
+          "line": 3,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "rural.spec.ts",
+      "file": "rural.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "rural circuits: walk every new lane in both directions with real collisions",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 1800000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 790818,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "Rural world ready; testing complete circuits\n"
+                    },
+                    {
+                      "text": "Circuit east, forward passed\n"
+                    },
+                    {
+                      "text": "Circuit east, reverse passed\n"
+                    },
+                    {
+                      "text": "Circuit north, forward passed\n"
+                    },
+                    {
+                      "text": "Circuit north, reverse passed\n"
+                    },
+                    {
+                      "text": "Circuit kawamuko, forward passed\n"
+                    },
+                    {
+                      "text": "Circuit kawamuko, reverse passed\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-15T08:04:02.532Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "382424fe6d85633b5f00-c7ebac8ab7233366591e",
+          "file": "rural.spec.ts",
+          "line": 3,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "steering-input.spec.ts",
+      "file": "steering-input.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "A/D and arrow keys turn toward the driver left/right in both views",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 1800000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "interrupted",
+                  "duration": 55187,
+                  "error": {
+                    "message": "Error: page.evaluate: Test ended.",
+                    "stack": "Error: page.evaluate: Test ended.\n    at /workspace/shrine-integration/tests/steering-input.spec.ts:33:15",
+                    "location": {
+                      "file": "/workspace/shrine-integration/tests/steering-input.spec.ts",
+                      "column": 15,
+                      "line": 33
+                    },
+                    "snippet": " \u001b[90m 31 |\u001b[39m   expect(result\u001b[33m.\u001b[39msteering\u001b[33m*\u001b[39m(right\u001b[33m?\u001b[39m\u001b[33m-\u001b[39m\u001b[35m1\u001b[39m\u001b[33m:\u001b[39m\u001b[35m1\u001b[39m))\u001b[33m.\u001b[39mtoBeGreaterThan(\u001b[35m.1\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 32 |\u001b[39m   \u001b[36mif\u001b[39m(view\u001b[33m===\u001b[39m\u001b[32m'first'\u001b[39m){\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 33 |\u001b[39m    \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mevaluate(()\u001b[33m=>\u001b[39m(window \u001b[36mas\u001b[39m any)\u001b[33m.\u001b[39m__satoyama\u001b[33m.\u001b[39mrenderFrames(\u001b[35m2\u001b[39m))\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m               \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 34 |\u001b[39m    \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mscreenshot({path\u001b[33m:\u001b[39m\u001b[32m`artifacts/valley-${process.env.VALLEY_FINAL?'final':'after'}/steer-${right?'right':'left'}.png`\u001b[39m\u001b[33m,\u001b[39mtimeout\u001b[33m:\u001b[39m\u001b[35m600000\u001b[39m})\u001b[33m;\u001b[39m\n \u001b[90m 35 |\u001b[39m   }\n \u001b[90m 36 |\u001b[39m  }"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/workspace/shrine-integration/tests/steering-input.spec.ts",
+                        "column": 15,
+                        "line": 33
+                      },
+                      "message": "Error: page.evaluate: Test ended.\n\n  31 |   expect(result.steering*(right?-1:1)).toBeGreaterThan(.1);\n  32 |   if(view==='first'){\n> 33 |    await page.evaluate(()=>(window as any).__satoyama.renderFrames(2));\n     |               ^\n  34 |    await page.screenshot({path:`artifacts/valley-${process.env.VALLEY_FINAL?'final':'after'}/steer-${right?'right':'left'}.png`,timeout:600000});\n  35 |   }\n  36 |  }\n    at /workspace/shrine-integration/tests/steering-input.spec.ts:33:15"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-15T08:17:14.094Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/workspace/shrine-integration/test-results/steering-input-A-D-and-arr-435c4-er-left-right-in-both-views/error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/workspace/shrine-integration/tests/steering-input.spec.ts",
+                    "column": 15,
+                    "line": 33
+                  }
+                }
+              ],
+              "status": "skipped"
+            }
+          ],
+          "id": "610a49fce99ac6af57f9-d3425e41df646044e6d4",
+          "file": "steering-input.spec.ts",
+          "line": 3,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "valley-views.spec.ts",
+      "file": "valley-views.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "valley fields and bunds at ground and distant viewpoints",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 1800000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "f412e093c3468ace7860-1c586b0e3ca34966076a",
+          "file": "valley-views.spec.ts",
+          "line": 4,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-11-15T07:55:42.774Z",
+    "duration": 1366239.4000000001,
+    "expected": 2,
+    "skipped": 2,
+    "unexpected": 1,
+    "flaky": 0
+  }
+}

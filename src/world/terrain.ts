@@ -274,7 +274,13 @@ export class Terrain {
     const geoCache: T.BufferGeometry[][] = [];
     for (let cj = 0; cj < per; cj++)
       for (let ci = 0; ci < per; ci++) {
-        const meshes = [1, 4, 8].map((step) => {
+        // A 4/8-cell LOD drops narrow bund crests beneath the separately drawn
+        // rice surface. Retain the heightfield in cultivated chunks at all ranges.
+        const x0=ci*CHUNK*this.height.spacing-this.data.extent/2;
+        const z0=cj*CHUNK*this.height.spacing-this.data.extent/2;
+        const span=CHUNK*this.height.spacing;
+        const cultivated=this.data.fields.some(f => f.bounds[0]<=x0+span+2 && f.bounds[2]>=x0-2 && f.bounds[1]<=z0+span+2 && f.bounds[3]>=z0-2);
+        const meshes = (cultivated ? [1] : [1, 4, 8]).map((step) => {
           const g = this.chunkGeometry(ci * CHUNK, cj * CHUNK, step);
           const mesh = new T.Mesh(g, this.material);
           mesh.receiveShadow = true;
@@ -334,7 +340,7 @@ export class Terrain {
     const near = quality === "low" ? 120 : 220, mid = quality === "low" ? 300 : 480;
     for (const c of this.chunks) {
       const d = Math.hypot(c.center.x - camera.x, c.center.z - camera.z);
-      const lod = d < near ? 0 : d < mid ? 1 : 2;
+      const lod = c.meshes.length === 1 ? 0 : d < near ? 0 : d < mid ? 1 : 2;
       if (lod === c.lod) continue;
       c.meshes.forEach((m, i) => (m.visible = i === lod));
       c.lod = lod;

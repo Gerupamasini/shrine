@@ -90,7 +90,9 @@ export class VehicleSimulation {
     const speed = this.speed;
     // Reduce steering at speed to keep lateral acceleration manageable on narrow village roads.
     const limit = Math.min(.56, Math.atan(4 * this.spec.wheelbase / (speed * speed + 1)));
-    this.steering = T.MathUtils.damp(this.steering, input.steer * limit, 7, dt);
+    // Input +1 is the driver's right. Vehicles face local +Z, so a right
+    // turn is negative rotation about +Y (positive rotation turns left).
+    this.steering = T.MathUtils.damp(this.steering, -input.steer * limit, 7, dt);
     const changingDirection = Math.abs(speed) > .45 && input.throttle * speed < 0;
     this.braking = input.brake || changingDirection;
     const capped = input.throttle > 0 ? speed > 16.7 : speed < -4.2;

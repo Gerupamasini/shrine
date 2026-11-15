@@ -512,11 +512,13 @@ export class RiceCanopy implements System {
     const tx = (i: number) => ((i + 0.5) / W) * E - half;
     const level = (x: number, z: number) => {
       const gi = Math.round((x + half) / sp), gj = Math.round((z + half) / sp);
-      let best = -100;
+      let best = -100, nearest = Infinity;
       for (let dj = -2; dj <= 2; dj++)
         for (let di = -2; di <= 2; di++) {
           const v = lv[Math.min(Math.max(gj + dj, 0), n - 1) * n + Math.min(Math.max(gi + di, 0), n - 1)];
-          if (v > -15 && (best < -15 || Math.abs(di) + Math.abs(dj) < 2)) best = Math.max(best, v);
+          // A neighbouring upper terrace must never lift the lower field's edge.
+          const distance=(gi+di-(x+half)/sp)**2+(gj+dj-(z+half)/sp)**2;
+          if (v > -15 && distance < nearest) { best=v; nearest=distance; }
         }
       return best;
     };

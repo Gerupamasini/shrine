@@ -54,7 +54,7 @@ test("driving: all parked trucks, enter, steer, brake, views, pause, exit and re
   await page.keyboard.down("a");
   await page.evaluate(() => (window as any).__satoyama.advance(15));
   await page.keyboard.up("a");
-  expect(await page.evaluate(() => (window as any).__satoyama.state.vehicle.steering)).toBeLessThan(-.01);
+  expect(await page.evaluate(() => (window as any).__satoyama.state.vehicle.steering)).toBeGreaterThan(.01);
   await page.keyboard.down("Space");
   await page.evaluate(() => (window as any).__satoyama.advance(120));
   await page.keyboard.up("Space");
