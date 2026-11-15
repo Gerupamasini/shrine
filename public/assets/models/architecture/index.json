@@ -103,7 +103,7 @@
  },
  "assets": {
   "road-ditch": {
-   "triangles": 41676,
+   "triangles": 41496,
    "min": [
     -84.092,
     1.901,
@@ -373,10 +373,10 @@
    ]
   },
   "stream-works": {
-   "triangles": 34448,
+   "triangles": 41252,
    "min": [
     -174.21,
-    1.095,
+    1.105,
     -412.529
    ],
    "max": [
@@ -2188,7 +2188,7 @@
    ]
   },
   "road-markings": {
-   "triangles": 15588,
+   "triangles": 15744,
    "min": [
     -85.014,
     2.391,

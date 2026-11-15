@@ -1,0 +1,9 @@
+{
+  "samples": 40317,
+  "openings": 773,
+  "minimumFreeboard": 0.3368,
+  "belowBed": 0,
+  "below20cm": 0,
+  "crownHeight": 0.34,
+  "riceSetback": 1.65
+}

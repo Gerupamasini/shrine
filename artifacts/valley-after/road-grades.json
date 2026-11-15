@@ -1,0 +1,67 @@
+[
+  {
+    "id": "farm-00",
+    "metres": 1239.8,
+    "maximumSampledGrade": 0.166
+  },
+  {
+    "id": "farm-01",
+    "metres": 92.2,
+    "maximumSampledGrade": 0.065
+  },
+  {
+    "id": "farm-02",
+    "metres": 67.6,
+    "maximumSampledGrade": 0.053
+  },
+  {
+    "id": "farm-03",
+    "metres": 115.6,
+    "maximumSampledGrade": 0.056
+  },
+  {
+    "id": "farm-04",
+    "metres": 91.6,
+    "maximumSampledGrade": 0.067
+  },
+  {
+    "id": "farm-05",
+    "metres": 83.8,
+    "maximumSampledGrade": 0.112
+  },
+  {
+    "id": "farm-06",
+    "metres": 85.3,
+    "maximumSampledGrade": 0.052
+  },
+  {
+    "id": "farm-07",
+    "metres": 90.2,
+    "maximumSampledGrade": 0.075
+  },
+  {
+    "id": "farm-08",
+    "metres": 89.8,
+    "maximumSampledGrade": 0.102
+  },
+  {
+    "id": "farm-09",
+    "metres": 50.5,
+    "maximumSampledGrade": 0.078
+  },
+  {
+    "id": "farm-10",
+    "metres": 72.5,
+    "maximumSampledGrade": 0.077
+  },
+  {
+    "id": "farm-11",
+    "metres": 59.1,
+    "maximumSampledGrade": 0.263
+  },
+  {
+    "id": "farm-12",
+    "metres": 75.8,
+    "maximumSampledGrade": 0.054
+  }
+]

@@ -33,9 +33,12 @@ test('accelerates forward, brakes to a stop, then reverses',()=>{
   assert.ok(sim.position.y>-.2 && sim.position.y<.2,`ground y=${sim.position.y}`);
  }finally{world.free();}
 });
-test('steering changes the travel direction while driving',()=>{
- const {world,sim,step}=fixture();
- try{step(150,{throttle:1,steer:-1,brake:false});assert.ok(sim.position.x<-.5,`left x=${sim.position.x}`);assert.ok(Math.abs(sim.rotation.y)>.1);}finally{world.free();}
+test('left/right input turns toward the corresponding side of the driver',()=>{
+ // A driver looking along local +Z has right=-X and left=+X.
+ for(const throttle of [-1,1]) for(const steer of [-1,1]) {
+  const {world,sim,step}=fixture();
+  try{step(150,{throttle,steer,brake:false});assert.ok(sim.position.x*steer<-.5,`throttle=${throttle}, steer=${steer}, x=${sim.position.x}`);assert.ok(Math.abs(sim.rotation.y)>.1);}finally{world.free();}
+ }
 });
 test('a solid wall blocks the chassis even with the throttle held',()=>{
  const {world,sim,step}=fixture();

@@ -1,0 +1,54 @@
+[
+  {
+    "id": "farm-00",
+    "minimumSampledRadius": 4.11
+  },
+  {
+    "id": "farm-01",
+    "minimumSampledRadius": 60.29
+  },
+  {
+    "id": "farm-02",
+    "minimumSampledRadius": 25.02
+  },
+  {
+    "id": "farm-03",
+    "minimumSampledRadius": 95.99
+  },
+  {
+    "id": "farm-04",
+    "minimumSampledRadius": 42.67
+  },
+  {
+    "id": "farm-05",
+    "minimumSampledRadius": 50.82
+  },
+  {
+    "id": "farm-06",
+    "minimumSampledRadius": 45.97
+  },
+  {
+    "id": "farm-07",
+    "minimumSampledRadius": 58.32
+  },
+  {
+    "id": "farm-08",
+    "minimumSampledRadius": 40.32
+  },
+  {
+    "id": "farm-09",
+    "minimumSampledRadius": 6.38
+  },
+  {
+    "id": "farm-10",
+    "minimumSampledRadius": 24.78
+  },
+  {
+    "id": "farm-11",
+    "minimumSampledRadius": 19.49
+  },
+  {
+    "id": "farm-12",
+    "minimumSampledRadius": 21.44
+  }
+]

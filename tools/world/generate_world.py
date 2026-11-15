@@ -827,8 +827,8 @@ def add_house(x, z, kind, yaw, group, side, asset=None, w=None, d=None, storeys=
     houses.append(hs)
     return hs
 
-# Farm roads (gravel, 3 m): one along the middle of the valley floor, and cross roads from the
-# main road down to the river levee (or to the canal, where it runs along the levee).
+# Legacy farm-road reservations used to reproduce the established house placement.
+# The actual gravel roads are laid out by valley_layout after the houses are fixed.
 def canal_x_(z):
     return float(canal_x(z))
 # in the gaps between hamlets, and between the fields of the long reaches (every 90-130 m: each
@@ -1079,6 +1079,25 @@ kawa = [hs for hs in houses if hs["group"] == "kawamuko"]
 bx0 = float(river_x(BRIDGE_Z)) - float(bed_half(BRIDGE_Z)) - WALL_RUN - CAP_W - 0.4
 trunk = [(x_, z_, (float(bank_top(BRIDGE_Z)) + 0.1) if k_ == 0 else None) for k_, (x_, z_) in enumerate(kawa_trunk)]
 branch_k = [(x_, z_, None) for x_, z_ in kawa_branch]
+
+# Keep legacy road reservations above only to preserve the established settlement.
+# Actual road geometry is chosen after those houses, before their access lanes.
+from valley_roads import layout as valley_layout
+farm_roads, valley_entries = valley_layout(
+    lambda z: float(levee_path_x(z)), lambda z: float(road_x(z)), canal_x_,
+    (WEIR_Z-8,375), ROAD_HALF, houses, mid_pts)
+ditch_crossings = [z for z in ditch_crossings if z not in FARM_CROSS] + valley_entries
+# Rebuild stream crossings from the actual road intersections; the legacy
+# middle-of-valley estimate would leave an open channel across the new spine.
+for st in streams:
+    st['covers'] = [c for c in st['covers'] if c[0] != 'farm']
+    for fr in farm_roads:
+        for (ax,az),(bx,bz) in zip(fr,fr[1:]):
+            if abs(bz-az)<1e-8 or not min(az,bz)<=st['z']<max(az,bz): continue
+            t=(st['z']-az)/(bz-az); cx=ax+(bx-ax)*t
+            if st['x_levee']<cx<st['x_out']:
+                half_cover=1.5*math.hypot(bx-ax,bz-az)/abs(bz-az)+.9
+                st['covers'].append(('farm',cx-half_cover,cx+half_cover))
 
 # Driveways: straight and short, from each yard to the nearest road of any class. Houses in the
 # centre and those that front the road open straight onto it.
@@ -1681,13 +1700,10 @@ for k_ in range(K):
         type=ftype, **({"terrace": True} if fid >= TERRACE0 else {})))
     type_of[k_ + 1] = {"rice": 1, "hatake": 2, "fallow": 3, "orchard": 4}[ftype]
 field_type = type_of[comp]
-# Surface: flat inside; at a boundary the levee stands 0.26 m above the higher of the two fields
-# (it holds that field's water) and the bank runs down to the lower one at about 40 degrees.
-RICE_EDGE = 0.85                                     # rice starts this far from a levee line
-_lv = np.where(is_paddy, paddy_level, -1e9)
-_fp = np.hypot(*np.mgrid[-3:4, -3:4]) <= 3.2
-crest = ndimage.maximum_filter(_lv, footprint=_fp) + 0.26
-h_field = np.maximum(paddy_level, crest - 0.85 * np.maximum(d_fld - 0.3, 0))
+# Use the final parcel boundaries, including clipped outer edges and split plots.
+from paddy_bunds import shape as shape_bunds, BUND_HEIGHT, RICE_EDGE
+np.savez_compressed(ROOT / '.cache' / 'bund-input.npz',label=label,level=paddy_level,distance=d_fld)
+d_fld, h_field, bund_boundary = shape_bunds(label, paddy_level, d_fld, CELL)
 h = np.where(is_paddy, h_field, h)
 interior = is_paddy & (d_fld >= RICE_EDGE)
 is_paddy_f = is_paddy.astype(float)
@@ -1695,7 +1711,7 @@ aze = is_paddy & (d_fld < 0.75)
 # Banks: terrain next to fields is cut/filled to a <= 35 degree slope from the levee top.
 dist_px, (iy, ix) = ndimage.distance_transform_edt(~is_paddy, return_indices=True)
 dist_m = dist_px * CELL
-near_lvl = paddy_level[iy, ix] + 0.26
+near_lvl = paddy_level[iy, ix] + BUND_HEIGHT
 bank_zone = (~is_paddy) & (dist_m < 14) & ~np.isnan(near_lvl) & (farm_d > 3.0) & (town_d > 3.6) & (lane_d > 3.0)
 tan35 = 0.7
 h = np.where(bank_zone, np.clip(h, near_lvl - 0.05 - dist_m * tan35, near_lvl + dist_m * tan35), h)
@@ -1907,12 +1923,14 @@ for ki,dt in enumerate(irr_ditches):
 irrigation = connect_irrigation(fields, comp, axis, _water_sources,
     lambda x,z: min(at(farm_d,x,z), at(town_d,x,z), at(lane_d,x,z), at(road_d,x,z)))
 print('irrigation supplied',len(irrigation['supplied']),'unresolved',len(irrigation['unresolved']))
+bund_openings = np.zeros_like(is_paddy)
 for link in irrigation['links']:
     if link['covered']: continue
     (ax,ay,az),(bx,by,bz) = link['points']
     _tmp = np.full_like(h, 1e9)
     (i0,i1,j0,j1),dd,tt = _line_dist(_tmp,ax,az,bx,bz,reach=2)
     sl = np.s_[i0:i1,j0:j1]
+    bund_openings[sl] |= dd < 1.2
     bed = ay+(by-ay)*tt-.18
     weight = 1-smoothstep(.3,.9,dd)
     h[sl] = h[sl]*(1-weight)+np.minimum(h[sl],bed)*weight
@@ -1941,6 +1959,11 @@ _rw = 1-smoothstep(2.0, 4.5, _rdist)
 h = h*(1-_rw)+_rlevel*_rw
 h = np.where((Z >= ROAD_Z0-.6) & (Z < HALF-32) & (road_d < W_FLAT), road_y, h)
 
+# Late river-bank / road-shoulder grading must not cut through a closed field
+# rim. Parcel masks already exclude carriageways and main channels. Preserve
+# only the explicit inlet/outlet cuts from the water graph.
+h = np.where(is_paddy & ~bund_openings, np.maximum(h,h_field),h)
+
 # ---- Encode height -------------------------------------------------------------
 _tick('Encode height')
 h = np.clip(h, H_MIN, H_MIN + H_RANGE)
@@ -1948,6 +1971,15 @@ raw = np.rint((h - H_MIN) / H_RANGE * 65535).astype("<u2")
 raw.tofile(OUT / "heightmap.r16")
 Image.fromarray(raw.astype(np.uint16)).save(OUT / "heightmap.png")
 hq = raw.astype(np.float64) / 65535 * H_RANGE + H_MIN
+# Inspect the delivered, quantized terrain, not just the intermediate bund model.
+# Water inlets/outlets are deliberate gaps and are checked separately by irrigation.
+_bund_check = bund_boundary & ~bund_openings
+_freeboard = hq[_bund_check] - paddy_level[_bund_check]
+_bund_report = dict(samples=int(_bund_check.sum()), openings=int((bund_boundary & bund_openings).sum()),
+    minimumFreeboard=round(float(_freeboard.min()),4), belowBed=int((_freeboard<-.01).sum()),
+    below20cm=int((_freeboard<.20).sum()), crownHeight=BUND_HEIGHT, riceSetback=RICE_EDGE)
+(ROOT / '.cache' / 'paddy-bunds.json').write_text(json.dumps(_bund_report,indent=2))
+assert _bund_report['belowBed'] == 0, _bund_report
 
 def sample(x, z):
     fx = (x / EXTENT + 0.5) * (N - 1)
@@ -2424,7 +2456,7 @@ add_tree("keyaki", _bt[0], _bt[1], 1.15)
 # mask pass. Apply road clearance to EVERY group, including these exceptions.
 _removed_road_trees=0
 for kind,rows in trees.items():
-    kept=[row for row in rows if at(_rdist,row[0],row[2])>3.8]
+    kept=[row for row in rows if at(_rdist,row[0],row[2])>3.8 and at(farm_d,row[0],row[2])>3.3]
     _removed_road_trees+=len(rows)-len(kept)
     trees[kind]=kept
 print('road clearance removed trees',_removed_road_trees)

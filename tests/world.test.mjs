@@ -506,7 +506,7 @@ test('all tree groups including house windbreaks clear rural carriageways',()=>{
  const cells=new Map();
  for(const rows of Object.values(trees))for(const p of rows){const key=`${Math.floor(p[0]/8)},${Math.floor(p[2]/8)}`;if(!cells.has(key))cells.set(key,[]);cells.get(key).push(p);}
  const ids=new Set(data.ruralLoops.flatMap(l=>l.roads));
- for(const road of data.roads.filter(r=>ids.has(r.id)))for(let k=1;k<road.points.length;k++){
+ for(const road of data.roads.filter(r=>ids.has(r.id) || r.id.startsWith('farm-')))for(let k=1;k<road.points.length;k++){
   const a=road.points[k-1],b=road.points[k],dx=b[0]-a[0],dz=b[2]-a[2];
   for(let x=Math.floor((Math.min(a[0],b[0])-2.7)/8);x<=Math.floor((Math.max(a[0],b[0])+2.7)/8);x++)for(let z=Math.floor((Math.min(a[2],b[2])-2.7)/8);z<=Math.floor((Math.max(a[2],b[2])+2.7)/8);z++){
    for(const p of cells.get(`${x},${z}`)??[]){
@@ -523,4 +523,31 @@ test('forest road bank no longer forms the former near-vertical trench',()=>{
  let previous=H(p[0]-15*nx,p[2]-15*nz),steepest=0;
  for(let d=-14.5;d<=15;d+=.5){const y=H(p[0]+d*nx,p[2]+d*nz);steepest=Math.max(steepest,Math.abs(y-previous)/.5);previous=y;}
  assert.ok(steepest<2,`former trench cross slope was 6.6; now ${steepest}`);
+});
+
+test('valley farm branches terminate at staggered junctions and have no open-channel steps',()=>{
+ const roads=data.roads.filter(r=>r.id.startsWith('farm-'));
+ assert.ok(roads.length>=10);
+ const spine=roads[0].points;
+ const sx=z=>{let k=1;while(k<spine.length-1&&spine[k][2]<z)k++;const a=spine[k-1],b=spine[k];return a[0]+(b[0]-a[0])*(z-a[2])/(b[2]-a[2]);};
+ const joins=[];
+ for(const r of roads.slice(1)){
+  const ends=[r.points[0],r.points.at(-1)],atSpine=ends.filter(p=>Math.abs(p[0]-sx(p[2]))<.1);
+  assert.equal(atSpine.length,1,`${r.id} ends in a T`);
+  assert.ok(Math.abs(ends[0][2]-ends[1][2])>20,`${r.id} is not a repeated horizontal cross road`);
+  joins.push(atSpine[0][2]);
+ }
+ joins.sort((a,b)=>a-b);
+ assert.ok(joins.slice(1).every((z,k)=>z-joins[k]>20));
+ for(const r of roads)for(let k=1;k<r.points.length;k++){
+  const a=r.points[k-1],b=r.points[k],length=Math.hypot(b[0]-a[0],b[2]-a[2]),n=Math.ceil(length/.5);
+  let prev=H(a[0],a[2]);
+  for(let i=1;i<=n;i++){const y=H(a[0]+(b[0]-a[0])*i/n,a[2]+(b[2]-a[2])*i/n);assert.ok(Math.abs(y-prev)/(length/n)<.35,`${r.id} step at ${a[0]},${a[2]}`);prev=y;}
+ }
+ for(const r of roads)for(const p of r.points)for(const o of data.objects.filter(o=>o.group && o.collider?.type==='box')){
+  const dx=p[0]-o.position[0],dz=p[2]-o.position[2],yaw=o.rotation?.[1]??0;
+  const x=dx*Math.cos(yaw)-dz*Math.sin(yaw),z=dx*Math.sin(yaw)+dz*Math.cos(yaw);
+  const [hx,,hz]=o.collider.halfExtents;
+  assert.ok(Math.hypot(Math.max(0,Math.abs(x)-hx),Math.max(0,Math.abs(z)-hz))>2,`${r.id} crosses ${o.id}`);
+ }
 });

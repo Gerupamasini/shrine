@@ -1,0 +1,174 @@
+{
+  "config": {
+    "argv": [
+      "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+      "/workspace/shrine-integration/node_modules/.bin/playwright",
+      "test",
+      "tests/rural-driving.spec.ts",
+      "--config=.cache/valley-spine-playwright.config.ts"
+    ],
+    "configFile": "/workspace/shrine-integration/.cache/valley-spine-playwright.config.ts",
+    "rootDir": "/workspace/shrine-integration/tests",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/workspace/shrine-integration/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "",
+        "name": "",
+        "testDir": "/workspace/shrine-integration/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "*.spec.ts"
+        ],
+        "timeout": 1800000
+      }
+    ],
+    "filteredProjects": [
+      {
+        "grep": {},
+        "grepInvert": null,
+        "outputDir": "/workspace/shrine-integration/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "name": "",
+        "testDir": "/workspace/shrine-integration/tests",
+        "snapshotDir": "/workspace/shrine-integration/tests",
+        "testIgnore": [],
+        "testMatch": "*.spec.ts",
+        "timeout": 1800000,
+        "use": {
+          "baseURL": "http://127.0.0.1:5177",
+          "viewport": {
+            "width": 960,
+            "height": 600
+          },
+          "launchOptions": {
+            "executablePath": "/usr/bin/chromium",
+            "args": [
+              "--no-sandbox",
+              "--ignore-gpu-blocklist",
+              "--enable-unsafe-swiftshader",
+              "--use-angle=swiftshader",
+              "--disable-dev-shm-usage"
+            ]
+          }
+        },
+        "dependencies": [],
+        "ignoreSnapshots": false,
+        "__projectId": ""
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "/workspace/shrine-integration/artifacts/valley-after/browser-spine.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "default",
+    "updateSourceMethod": "patch",
+    "version": "1.65.0",
+    "workers": 1,
+    "webServer": {
+      "command": "npm run preview -- --port 5177 --strictPort --outDir .cache/valley-final-dist",
+      "url": "http://127.0.0.1:5177",
+      "reuseExistingServer": false,
+      "cwd": "/workspace/shrine-integration"
+    }
+  },
+  "suites": [
+    {
+      "title": "rural-driving.spec.ts",
+      "file": "rural-driving.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "rural lanes: low speed truck traversal and braking",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 1800000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 290536,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "route-progress farm-00 0 137\n"
+                    },
+                    {
+                      "text": "route-progress farm-00 81 137\n"
+                    },
+                    {
+                      "text": "{\"id\":\"farm-00\",\"index\":136,\"total\":137,\"frames\":8539,\"position\":[-43.79215427370888,2.677926693874711,616.2028866053464],\"speed\":-0.011588160986990698,\"target\":[-43.43,2.843,619],\"rotation\":[-0.03136415034532547,0.06486140191555023,-0.0023949705064296722,0.9973983764648438],\"ok\":true}\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-15T08:12:11.514Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "4f861c9fd722535f1ec4-7ccdc22ec9e59f2a377a",
+          "file": "rural-driving.spec.ts",
+          "line": 3,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-11-15T08:12:08.826Z",
+    "duration": 295181.225,
+    "expected": 1,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "before": {
+    "fields": 604,
+    "terraces": 278,
+    "traditionalPlots": 225,
+    "supplied": 126,
+    "unresolved": 393,
+    "farmRoadMetres": 2883
+  },
+  "after": {
+    "fields": 588,
+    "terraces": 266,
+    "traditionalPlots": 227,
+    "supplied": 137,
+    "unresolved": 365,
+    "farmRoadMetres": 2214
+  },
+  "preserved": {
+    "kei-truck": {
+      "count": 7,
+      "placementsEqual": true
+    },
+    "bunko": {
+      "count": 1,
+      "placementsEqual": true
+    },
+    "shobo-tsumesho": {
+      "count": 1,
+      "placementsEqual": true
+    },
+    "settlement": {
+      "count": 82,
+      "placementsAndVariantsEqual": true
+    }
+  },
+  "ruralLoopsUnchanged": true
+}
