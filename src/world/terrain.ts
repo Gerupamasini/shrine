@@ -96,7 +96,8 @@ export class Terrain {
   async build(quality: string) {
     const size = quality === "low" ? 512 : 1024;
     const base = (f: string) => TERRAIN_LAYERS.map((l) => `assets/textures/${l.id}/${f}`);
-    const [albedo, normal, arm, splat0, splat1, veg, splat2] = await Promise.all([
+    const chan = (this.data as unknown as { channelMask?: { file: string; range: number; openBelow: number } }).channelMask;
+    const [albedo, normal, arm, splat0, splat1, veg, splat2, channels] = await Promise.all([
       textureArray(base("albedo.jpg"), size, true),
       textureArray(base("normal.jpg"), size, false),
       textureArray(base("arm.jpg"), size, false),
@@ -104,6 +105,7 @@ export class Terrain {
       loadImage("world/splat1.png"),
       loadImage("world/vegetation-mask.png"),
       loadImage("world/splat2.png"),
+      chan ? loadImage(`world/${chan.file}`) : Promise.resolve(null),
     ]);
     const u = (this.uniforms = {
       tAlbedo: { value: albedo },
@@ -121,6 +123,9 @@ export class Terrain {
       uLayerSat: { value: [...TERRAIN_LAYERS.map((l) => l.saturation ?? 1), ...Array(NL - TERRAIN_LAYERS.length).fill(1)] },
       uWet: { value: 0.0 },
       ...this.holeUniforms(),
+      // openings of the brook-fed canals: distance to the nearest open channel (x = metres at 1.0, y = open below)
+      tChannels: { value: channels ? dataTexture(channels) : new T.DataTexture(new Uint8Array([255, 255, 255, 255]), 1, 1) },
+      uChannel: { value: new T.Vector2(chan?.range ?? 0, chan?.openBelow ?? -1) },
     });
     const m = (this.material = new T.MeshStandardMaterial({ roughness: 1, metalness: 0 }));
     this.lib.finish(m);
@@ -145,6 +150,7 @@ export class Terrain {
           uniform vec3 uLayerTint[12];
           // openings in the ground: the roadside ditch channels and the tunnel mouth
           uniform sampler2D tRoadX; uniform vec3 uRoadZ; uniform vec4 uDitch; uniform vec4 uTunnel; uniform vec2 uTunnelSize;
+          uniform sampler2D tChannels; uniform vec2 uChannel;
           float roadX(float z, out float slope) {
             float f = clamp((z - uRoadZ.x) / uRoadZ.y, 0.0, uRoadZ.z - 2.0);
             int i = int(floor(f));
@@ -158,6 +164,7 @@ export class Terrain {
               float d = abs(vTW.x - rx) * inversesqrt(1.0 + sl * sl);
               if (abs(d - uDitch.x) < uDitch.y) discard;
             }
+            if (texture2D(tChannels, vTW.xz / uExtent + 0.5).r * uChannel.x < uChannel.y) discard;
             float dz = uTunnel.y - vTW.z;
             if (dz > 0.04 && dz < 220.0 && vTW.y < uTunnel.w + uTunnelSize.y && abs(vTW.x - (uTunnel.x - uTunnel.z * dz)) < uTunnelSize.x) discard;
           }

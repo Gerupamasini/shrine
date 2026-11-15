@@ -61,6 +61,12 @@
   "file": "paddy-level.png",
   "encoding": "same as heightEncoding, uint16 PNG"
  },
+ "channelMask": {
+  "file": "channels.png",
+  "range": 2.0,
+  "openBelow": 0.47,
+  "encoding": "distance (m) from each texel centre to the nearest open stretch of a brook-fed canal = value/255*range; row 0 is z=-750, texel 0.5 m; the ground is drawn open where the distance is below openBelow (the heightfield closes over the channel at the wall tops)"
+ },
  "environment": {
   "date": "1994-08-08",
   "latitude": 38.32,
@@ -113,7 +119,7 @@
   "tanada": [
    -294.140625,
    16.938837262531475,
-   236.71875,
+   239.0625,
    70.0,
    -9.0
   ],
@@ -132,9 +138,9 @@
    -14.0
   ],
   "paddies": [
-   -121.88,
-   5.5888715953307395,
-   309.38,
+   -119.53,
+   5.4799221789883275,
+   326.95,
    255.0,
    -2.0
   ],
@@ -14968,7 +14974,7 @@
    "asset": "denchu",
    "position": [
     3.377,
-    5.186,
+    5.183,
     251.182
    ],
    "rotation": [
@@ -15016,7 +15022,7 @@
    "asset": "denchu",
    "position": [
     -15.629,
-    4.755,
+    4.751,
     325.456
    ],
    "rotation": [
@@ -16301,7 +16307,7 @@
    "asset": "mizuguchi",
    "position": [
     2.615,
-    8.529,
+    8.706,
     -353.0
    ],
    "rotation": [
@@ -16320,7 +16326,7 @@
    "asset": "mizuguchi",
    "position": [
     5.031,
-    8.365,
+    8.586,
     -335.0
    ],
    "rotation": [
@@ -16339,7 +16345,7 @@
    "asset": "mizuguchi",
    "position": [
     6.023,
-    8.025,
+    8.079,
     -315.0
    ],
    "rotation": [
@@ -16358,7 +16364,7 @@
    "asset": "mizuguchi",
    "position": [
     -13.76,
-    7.068,
+    7.264,
     -179.0
    ],
    "rotation": [
@@ -16396,7 +16402,7 @@
    "asset": "mizuguchi",
    "position": [
     -3.358,
-    4.711,
+    4.814,
     265.75
    ],
    "rotation": [
@@ -16415,7 +16421,7 @@
    "asset": "mizuguchi",
    "position": [
     -19.183,
-    3.85,
+    3.946,
     483.75
    ],
    "rotation": [
@@ -16434,7 +16440,7 @@
    "asset": "mizuguchi",
    "position": [
     -11.131,
-    3.708,
+    3.87,
     505.75
    ],
    "rotation": [
@@ -19191,14 +19197,14 @@
   {
    "id": "paddy-178",
    "label": 300083,
-   "level": 6.371,
+   "level": 6.381,
    "bounds": [
-    -151.17,
+    -150.0,
     5.86,
     -135.94,
     38.67
    ],
-   "area": 280.2,
+   "area": 273.3,
    "tint": -0.163,
    "growth": 1.06,
    "type": "hatake"
@@ -19296,14 +19302,14 @@
   {
    "id": "paddy-185",
    "label": 300090,
-   "level": 6.292,
+   "level": 6.38,
    "bounds": [
     -164.06,
-    37.5,
-    -147.66,
+    38.67,
+    -152.34,
     57.42
    ],
-   "area": 244.4,
+   "area": 157.9,
    "tint": -0.376,
    "growth": 0.878,
    "type": "rice"
@@ -25609,8 +25615,11 @@
   "sources": [
    "okusawa-yosui",
    "miyazawa-yosui",
+   "kawamuko-yosui",
+   "kawamuko-yosui-kita",
    "okusawa",
    "miyazawa",
+   "nishizawa",
    "weir-canal",
    "ditch-0",
    "ditch-1",
@@ -26126,6 +26135,24 @@
     ],
     "kind": "supply",
     "covered": true
+   },
+   {
+    "source": "nishizawa",
+    "target": "paddy-185",
+    "points": [
+     [
+      -156.25490183961955,
+      6.470287561541758,
+      32.57887378284073
+     ],
+     [
+      -157.03125,
+      6.42,
+      38.671875
+     ]
+    ],
+    "kind": "supply",
+    "covered": false
    },
    {
     "source": "miyazawa",
@@ -27226,6 +27253,24 @@
     "covered": false
    },
    {
+    "source": "kawamuko-yosui",
+    "target": "paddy-542",
+    "points": [
+     [
+      -387.4601436887327,
+      25.150807868979687,
+      416.0
+     ],
+     [
+      -380.859375,
+      23.46,
+      410.15625
+     ]
+    ],
+    "kind": "supply",
+    "covered": false
+   },
+   {
     "source": "okusawa",
     "target": "paddy-543",
     "points": [
@@ -27244,6 +27289,744 @@
     "covered": false
    },
    {
+    "source": "kawamuko-yosui-kita",
+    "target": "paddy-544",
+    "points": [
+     [
+      -326.71806126493493,
+      25.253222672074344,
+      24.0
+     ],
+     [
+      -325.78125,
+      24.993,
+      28.125
+     ]
+    ],
+    "kind": "supply",
+    "covered": false
+   },
+   {
+    "source": "kawamuko-yosui",
+    "target": "paddy-552",
+    "points": [
+     [
+      -391.6049582300175,
+      26.53154569766038,
+      412.0
+     ],
+     [
+      -386.71875,
+      24.891,
+      406.640625
+     ]
+    ],
+    "kind": "supply",
+    "covered": false
+   },
+   {
+    "source": "kawamuko-yosui-kita",
+    "target": "paddy-553",
+    "points": [
+     [
+      -339.27709225072874,
+      26.525055534378197,
+      32.0
+     ],
+     [
+      -335.15625,
+      26.265,
+      37.5
+     ]
+    ],
+    "kind": "supply",
+    "covered": false
+   },
+   {
+    "source": "kawamuko-yosui-kita",
+    "target": "paddy-556",
+    "points": [
+     [
+      -347.27792037938525,
+      27.600003697670648,
+      38.0
+     ],
+     [
+      -342.1875,
+      27.34,
+      42.1875
+     ]
+    ],
+    "kind": "supply",
+    "covered": false
+   },
+   {
+    "source": "kawamuko-yosui-kita",
+    "target": "paddy-565",
+    "points": [
+     [
+      -364.6414475127625,
+      29.260683944080505,
+      54.0
+     ],
+     [
+      -359.765625,
+      28.637999999999998,
+      58.59375
+     ]
+    ],
+    "kind": "supply",
+    "covered": false
+   },
+   {
+    "source": "kawamuko-yosui",
+    "target": "paddy-572",
+    "points": [
+     [
+      -407.23310452396623,
+      30.46421315224205,
+      396.0
+     ],
+     [
+      -398.4375,
+      28.677,
+      390.234375
+     ]
+    ],
+    "kind": "supply",
+    "covered": false
+   },
+   {
+    "source": "kawamuko-yosui-kita",
+    "target": "paddy-573",
+    "points": [
+     [
+      -380.96479770780695,
+      31.413693129792563,
+      68.0
+     ],
+     [
+      -378.515625,
+      30.134999999999998,
+      72.65625
+     ]
+    ],
+    "kind": "supply",
+    "covered": false
+   },
+   {
+    "source": "kawamuko-yosui",
+    "target": "paddy-577",
+    "points": [
+     [
+      -428.372058160277,
+      31.51626622960578,
+      274.0
+     ],
+     [
+      -420.703125,
+      30.012999999999998,
+      273.046875
+     ]
+    ],
+    "kind": "supply",
+    "covered": false
+   },
+   {
+    "source": "kawamuko-yosui",
+    "target": "paddy-579",
+    "points": [
+     [
+      -430.5150774655534,
+      31.51626622960578,
+      330.0
+     ],
+     [
+      -427.734375,
+      30.285,
+      330.46875
+     ]
+    ],
+    "kind": "supply",
+    "covered": false
+   },
+   {
+    "source": "kawamuko-yosui",
+    "target": "paddy-581",
+    "points": [
+     [
+      -424.73238217813815,
+      31.51626622960578,
+      358.0
+     ],
+     [
+      -420.703125,
+      31.256,
+      356.25
+     ]
+    ],
+    "kind": "supply",
+    "covered": false
+   },
+   {
+    "source": "kawamuko-yosui",
+    "target": "paddy-582",
+    "points": [
+     [
+      -410.35799198358563,
+      34.563768759833735,
+      112.0
+     ],
+     [
+      -406.640625,
+      32.650999999999996,
+      113.671875
+     ]
+    ],
+    "kind": "supply",
+    "covered": false
+   },
+   {
+    "source": "kawamuko-yosui",
+    "target": "paddy-583",
+    "points": [
+     [
+      -411.0082636702098,
+      34.563768759833735,
+      114.0
+     ],
+     [
+      -406.640625,
+      32.74,
+      114.84375
+     ]
+    ],
+    "kind": "supply",
+    "covered": false
+   },
+   {
+    "source": "kawamuko-yosui",
+    "target": "paddy-584",
+    "points": [
+     [
+      -429.73241813055483,
+      34.563768759833735,
+      200.0
+     ],
+     [
+      -420.703125,
+      32.732,
+      201.5625
+     ]
+    ],
+    "kind": "supply",
+    "covered": false
+   },
+   {
+    "source": "kawamuko-yosui",
+    "target": "paddy-585",
+    "points": [
+     [
+      -433.93748259343374,
+      33.05104453429958,
+      260.0
+     ],
+     [
+      -432.421875,
+      32.791,
+      258.984375
+     ]
+    ],
+    "kind": "supply",
+    "covered": false
+   },
+   {
+    "source": "kawamuko-yosui",
+    "target": "paddy-586",
+    "points": [
+     [
+      -422.6856341151041,
+      34.563768759833735,
+      164.0
+     ],
+     [
+      -419.53125,
+      34.22,
+      165.234375
+     ]
+    ],
+    "kind": "supply",
+    "covered": false
+   },
+   {
+    "source": "paddy-579",
+    "target": "paddy-571",
+    "points": [
+     [
+      -414.84375,
+      30.285,
+      315.234375
+     ],
+     [
+      -413.671875,
+      28.642,
+      315.234375
+     ]
+    ],
+    "kind": "tagoshi",
+    "covered": false
+   },
+   {
+    "source": "paddy-573",
+    "target": "paddy-566",
+    "points": [
+     [
+      -378.515625,
+      30.134999999999998,
+      91.40625
+     ],
+     [
+      -378.515625,
+      28.616,
+      92.578125
+     ]
+    ],
+    "kind": "tagoshi",
+    "covered": false
+   },
+   {
+    "source": "paddy-572",
+    "target": "paddy-563",
+    "points": [
+     [
+      -392.578125,
+      28.677,
+      356.25
+     ],
+     [
+      -391.40625,
+      27.391,
+      356.25
+     ]
+    ],
+    "kind": "tagoshi",
+    "covered": false
+   },
+   {
+    "source": "paddy-571",
+    "target": "paddy-562",
+    "points": [
+     [
+      -407.8125,
+      28.642,
+      314.0625
+     ],
+     [
+      -407.8125,
+      27.374,
+      312.890625
+     ]
+    ],
+    "kind": "tagoshi",
+    "covered": false
+   },
+   {
+    "source": "paddy-565",
+    "target": "paddy-557",
+    "points": [
+     [
+      -358.59375,
+      28.637999999999998,
+      66.796875
+     ],
+     [
+      -358.59375,
+      27.375999999999998,
+      67.96875
+     ]
+    ],
+    "kind": "tagoshi",
+    "covered": false
+   },
+   {
+    "source": "paddy-563",
+    "target": "paddy-554",
+    "points": [
+     [
+      -391.40625,
+      27.391,
+      338.671875
+     ],
+     [
+      -390.234375,
+      26.314999999999998,
+      338.671875
+     ]
+    ],
+    "kind": "tagoshi",
+    "covered": false
+   },
+   {
+    "source": "paddy-554",
+    "target": "paddy-550",
+    "points": [
+     [
+      -386.71875,
+      26.314999999999998,
+      338.671875
+     ],
+     [
+      -386.71875,
+      24.913999999999998,
+      336.328125
+     ]
+    ],
+    "kind": "tagoshi",
+    "covered": false
+   },
+   {
+    "source": "paddy-553",
+    "target": "paddy-545",
+    "points": [
+     [
+      -333.984375,
+      26.265,
+      50.390625
+     ],
+     [
+      -333.984375,
+      24.93,
+      51.5625
+     ]
+    ],
+    "kind": "tagoshi",
+    "covered": false
+   },
+   {
+    "source": "paddy-553",
+    "target": "paddy-546",
+    "points": [
+     [
+      -349.21875,
+      26.265,
+      71.484375
+     ],
+     [
+      -346.875,
+      24.884999999999998,
+      75.0
+     ]
+    ],
+    "kind": "tagoshi",
+    "covered": false
+   },
+   {
+    "source": "paddy-544",
+    "target": "paddy-535",
+    "points": [
+     [
+      -315.234375,
+      24.993,
+      35.15625
+     ],
+     [
+      -314.0625,
+      23.423,
+      35.15625
+     ]
+    ],
+    "kind": "tagoshi",
+    "covered": false
+   },
+   {
+    "source": "paddy-545",
+    "target": "paddy-536",
+    "points": [
+     [
+      -324.609375,
+      24.93,
+      57.421875
+     ],
+     [
+      -324.609375,
+      23.423,
+      58.59375
+     ]
+    ],
+    "kind": "tagoshi",
+    "covered": false
+   },
+   {
+    "source": "paddy-552",
+    "target": "paddy-541",
+    "points": [
+     [
+      -364.453125,
+      24.891,
+      372.65625
+     ],
+     [
+      -364.453125,
+      23.375999999999998,
+      371.484375
+     ]
+    ],
+    "kind": "tagoshi",
+    "covered": false
+   },
+   {
+    "source": "paddy-546",
+    "target": "paddy-537",
+    "points": [
+     [
+      -346.875,
+      24.884999999999998,
+      89.0625
+     ],
+     [
+      -346.875,
+      23.371,
+      90.234375
+     ]
+    ],
+    "kind": "tagoshi",
+    "covered": false
+   },
+   {
+    "source": "paddy-542",
+    "target": "paddy-532",
+    "points": [
+     [
+      -355.078125,
+      23.46,
+      394.921875
+     ],
+     [
+      -353.90625,
+      22.241,
+      394.921875
+     ]
+    ],
+    "kind": "tagoshi",
+    "covered": false
+   },
+   {
+    "source": "paddy-535",
+    "target": "paddy-524",
+    "points": [
+     [
+      -304.6875,
+      23.423,
+      35.15625
+     ],
+     [
+      -304.6875,
+      22.221,
+      36.328125
+     ]
+    ],
+    "kind": "tagoshi",
+    "covered": false
+   },
+   {
+    "source": "paddy-535",
+    "target": "paddy-525",
+    "points": [
+     [
+      -311.71875,
+      23.423,
+      51.5625
+     ],
+     [
+      -311.71875,
+      22.229,
+      52.734375
+     ]
+    ],
+    "kind": "tagoshi",
+    "covered": false
+   },
+   {
+    "source": "paddy-536",
+    "target": "paddy-526",
+    "points": [
+     [
+      -328.125,
+      23.423,
+      75.0
+     ],
+     [
+      -328.125,
+      22.207,
+      76.171875
+     ]
+    ],
+    "kind": "tagoshi",
+    "covered": false
+   },
+   {
+    "source": "paddy-537",
+    "target": "paddy-527",
+    "points": [
+     [
+      -350.390625,
+      23.371,
+      110.15625
+     ],
+     [
+      -349.21875,
+      22.252,
+      110.15625
+     ]
+    ],
+    "kind": "tagoshi",
+    "covered": false
+   },
+   {
+    "source": "paddy-527",
+    "target": "paddy-516",
+    "points": [
+     [
+      -345.703125,
+      22.252,
+      112.5
+     ],
+     [
+      -344.53125,
+      20.733999999999998,
+      112.5
+     ]
+    ],
+    "kind": "tagoshi",
+    "covered": false
+   },
+   {
+    "source": "paddy-532",
+    "target": "paddy-520",
+    "points": [
+     [
+      -346.875,
+      22.241,
+      378.515625
+     ],
+     [
+      -345.703125,
+      20.744,
+      378.515625
+     ]
+    ],
+    "kind": "tagoshi",
+    "covered": false
+   },
+   {
+    "source": "paddy-532",
+    "target": "paddy-521",
+    "points": [
+     [
+      -344.53125,
+      22.241,
+      391.40625
+     ],
+     [
+      -343.359375,
+      20.744,
+      391.40625
+     ]
+    ],
+    "kind": "tagoshi",
+    "covered": false
+   },
+   {
+    "source": "paddy-525",
+    "target": "paddy-514",
+    "points": [
+     [
+      -303.515625,
+      22.229,
+      53.90625
+     ],
+     [
+      -301.171875,
+      20.814,
+      52.734375
+     ]
+    ],
+    "kind": "tagoshi",
+    "covered": false
+   },
+   {
+    "source": "paddy-525",
+    "target": "paddy-515",
+    "points": [
+     [
+      -303.515625,
+      22.229,
+      53.90625
+     ],
+     [
+      -302.34375,
+      20.759999999999998,
+      53.90625
+     ]
+    ],
+    "kind": "tagoshi",
+    "covered": false
+   },
+   {
+    "source": "paddy-524",
+    "target": "paddy-513",
+    "points": [
+     [
+      -294.140625,
+      22.221,
+      29.296875
+     ],
+     [
+      -292.96875,
+      20.625,
+      26.953125
+     ]
+    ],
+    "kind": "tagoshi",
+    "covered": false
+   },
+   {
+    "source": "paddy-514",
+    "target": "paddy-501",
+    "points": [
+     [
+      -277.734375,
+      20.814,
+      30.46875
+     ],
+     [
+      -276.5625,
+      19.142,
+      30.46875
+     ]
+    ],
+    "kind": "tagoshi",
+    "covered": false
+   },
+   {
+    "source": "paddy-514",
+    "target": "paddy-502",
+    "points": [
+     [
+      -281.25,
+      20.814,
+      43.359375
+     ],
+     [
+      -281.25,
+      19.09,
+      44.53125
+     ]
+    ],
+    "kind": "tagoshi",
+    "covered": false
+   },
+   {
     "source": "paddy-511",
     "target": "paddy-498",
     "points": [
@@ -27256,6 +28039,474 @@
       285.9375,
       19.477,
       -445.3125
+     ]
+    ],
+    "kind": "tagoshi",
+    "covered": false
+   },
+   {
+    "source": "paddy-515",
+    "target": "paddy-503",
+    "points": [
+     [
+      -305.859375,
+      20.759999999999998,
+      75.0
+     ],
+     [
+      -305.859375,
+      19.067,
+      76.171875
+     ]
+    ],
+    "kind": "tagoshi",
+    "covered": false
+   },
+   {
+    "source": "paddy-520",
+    "target": "paddy-510",
+    "points": [
+     [
+      -332.8125,
+      20.744,
+      382.03125
+     ],
+     [
+      -331.640625,
+      19.139,
+      382.03125
+     ]
+    ],
+    "kind": "tagoshi",
+    "covered": false
+   },
+   {
+    "source": "paddy-501",
+    "target": "paddy-487",
+    "points": [
+     [
+      -263.671875,
+      19.142,
+      21.09375
+     ],
+     [
+      -262.5,
+      17.861,
+      21.09375
+     ]
+    ],
+    "kind": "tagoshi",
+    "covered": false
+   },
+   {
+    "source": "paddy-501",
+    "target": "paddy-488",
+    "points": [
+     [
+      -268.359375,
+      19.142,
+      43.359375
+     ],
+     [
+      -267.1875,
+      17.843,
+      44.53125
+     ]
+    ],
+    "kind": "tagoshi",
+    "covered": false
+   },
+   {
+    "source": "paddy-510",
+    "target": "paddy-497",
+    "points": [
+     [
+      -319.921875,
+      19.139,
+      380.859375
+     ],
+     [
+      -318.75,
+      17.837,
+      380.859375
+     ]
+    ],
+    "kind": "tagoshi",
+    "covered": false
+   },
+   {
+    "source": "paddy-503",
+    "target": "paddy-490",
+    "points": [
+     [
+      -312.890625,
+      19.067,
+      99.609375
+     ],
+     [
+      -312.890625,
+      17.840999999999998,
+      100.78125
+     ]
+    ],
+    "kind": "tagoshi",
+    "covered": false
+   },
+   {
+    "source": "paddy-487",
+    "target": "paddy-472",
+    "points": [
+     [
+      -255.46875,
+      17.861,
+      18.75
+     ],
+     [
+      -254.296875,
+      16.61,
+      18.75
+     ]
+    ],
+    "kind": "tagoshi",
+    "covered": false
+   },
+   {
+    "source": "paddy-487",
+    "target": "paddy-473",
+    "points": [
+     [
+      -260.15625,
+      17.861,
+      43.359375
+     ],
+     [
+      -260.15625,
+      16.657,
+      45.703125
+     ]
+    ],
+    "kind": "tagoshi",
+    "covered": false
+   },
+   {
+    "source": "paddy-488",
+    "target": "paddy-474",
+    "points": [
+     [
+      -281.25,
+      17.843,
+      70.3125
+     ],
+     [
+      -281.25,
+      16.56,
+      72.65625
+     ]
+    ],
+    "kind": "tagoshi",
+    "covered": false
+   },
+   {
+    "source": "paddy-490",
+    "target": "paddy-475",
+    "points": [
+     [
+      -305.859375,
+      17.840999999999998,
+      101.953125
+     ],
+     [
+      -305.859375,
+      16.73,
+      103.125
+     ]
+    ],
+    "kind": "tagoshi",
+    "covered": false
+   },
+   {
+    "source": "paddy-497",
+    "target": "paddy-482",
+    "points": [
+     [
+      -315.234375,
+      17.837,
+      369.140625
+     ],
+     [
+      -314.0625,
+      16.548,
+      369.140625
+     ]
+    ],
+    "kind": "tagoshi",
+    "covered": false
+   },
+   {
+    "source": "paddy-497",
+    "target": "paddy-484",
+    "points": [
+     [
+      -314.0625,
+      17.837,
+      401.953125
+     ],
+     [
+      -314.0625,
+      16.601,
+      403.125
+     ]
+    ],
+    "kind": "tagoshi",
+    "covered": false
+   },
+   {
+    "source": "paddy-473",
+    "target": "paddy-456",
+    "points": [
+     [
+      -248.4375,
+      16.657,
+      45.703125
+     ],
+     [
+      -248.4375,
+      15.023,
+      46.875
+     ]
+    ],
+    "kind": "tagoshi",
+    "covered": false
+   },
+   {
+    "source": "paddy-473",
+    "target": "paddy-457",
+    "points": [
+     [
+      -258.984375,
+      16.657,
+      62.109375
+     ],
+     [
+      -258.984375,
+      15.004999999999999,
+      63.28125
+     ]
+    ],
+    "kind": "tagoshi",
+    "covered": false
+   },
+   {
+    "source": "paddy-472",
+    "target": "paddy-455",
+    "points": [
+     [
+      -242.578125,
+      16.61,
+      19.921875
+     ],
+     [
+      -241.40625,
+      15.078,
+      19.921875
+     ]
+    ],
+    "kind": "tagoshi",
+    "covered": false
+   },
+   {
+    "source": "paddy-484",
+    "target": "paddy-469",
+    "points": [
+     [
+      -302.34375,
+      16.601,
+      405.46875
+     ],
+     [
+      -301.171875,
+      15.133,
+      405.46875
+     ]
+    ],
+    "kind": "tagoshi",
+    "covered": false
+   },
+   {
+    "source": "paddy-482",
+    "target": "paddy-467",
+    "points": [
+     [
+      -310.546875,
+      16.548,
+      345.703125
+     ],
+     [
+      -309.375,
+      14.937,
+      345.703125
+     ]
+    ],
+    "kind": "tagoshi",
+    "covered": false
+   },
+   {
+    "source": "paddy-482",
+    "target": "paddy-468",
+    "points": [
+     [
+      -302.34375,
+      16.548,
+      362.109375
+     ],
+     [
+      -301.171875,
+      15.02,
+      362.109375
+     ]
+    ],
+    "kind": "tagoshi",
+    "covered": false
+   },
+   {
+    "source": "paddy-469",
+    "target": "paddy-450",
+    "points": [
+     [
+      -287.109375,
+      15.133,
+      400.78125
+     ],
+     [
+      -287.109375,
+      13.603,
+      401.953125
+     ]
+    ],
+    "kind": "tagoshi",
+    "covered": false
+   },
+   {
+    "source": "paddy-455",
+    "target": "paddy-437",
+    "points": [
+     [
+      -232.03125,
+      15.078,
+      38.671875
+     ],
+     [
+      -232.03125,
+      13.473999999999998,
+      39.84375
+     ]
+    ],
+    "kind": "tagoshi",
+    "covered": false
+   },
+   {
+    "source": "paddy-468",
+    "target": "paddy-449",
+    "points": [
+     [
+      -289.453125,
+      15.02,
+      360.9375
+     ],
+     [
+      -289.453125,
+      13.492999999999999,
+      359.765625
+     ]
+    ],
+    "kind": "tagoshi",
+    "covered": false
+   },
+   {
+    "source": "paddy-457",
+    "target": "paddy-439",
+    "points": [
+     [
+      -262.5,
+      15.004999999999999,
+      85.546875
+     ],
+     [
+      -261.328125,
+      13.261999999999999,
+      85.546875
+     ]
+    ],
+    "kind": "tagoshi",
+    "covered": false
+   },
+   {
+    "source": "paddy-467",
+    "target": "paddy-448",
+    "points": [
+     [
+      -302.34375,
+      14.937,
+      329.296875
+     ],
+     [
+      -302.34375,
+      13.473999999999998,
+      328.125
+     ]
+    ],
+    "kind": "tagoshi",
+    "covered": false
+   },
+   {
+    "source": "paddy-450",
+    "target": "paddy-432",
+    "points": [
+     [
+      -274.21875,
+      13.603,
+      386.71875
+     ],
+     [
+      -273.046875,
+      12.215,
+      386.71875
+     ]
+    ],
+    "kind": "tagoshi",
+    "covered": false
+   },
+   {
+    "source": "paddy-449",
+    "target": "paddy-431",
+    "points": [
+     [
+      -282.421875,
+      13.492999999999999,
+      345.703125
+     ],
+     [
+      -281.25,
+      12.172999999999998,
+      345.703125
+     ]
+    ],
+    "kind": "tagoshi",
+    "covered": false
+   },
+   {
+    "source": "paddy-448",
+    "target": "paddy-430",
+    "points": [
+     [
+      -294.140625,
+      13.473999999999998,
+      298.828125
+     ],
+     [
+      -292.96875,
+      12.174,
+      298.828125
      ]
     ],
     "kind": "tagoshi",
@@ -27298,6 +28549,60 @@
     "covered": false
    },
    {
+    "source": "paddy-439",
+    "target": "paddy-424",
+    "points": [
+     [
+      -261.328125,
+      13.261999999999999,
+      103.125
+     ],
+     [
+      -260.15625,
+      12.109,
+      103.125
+     ]
+    ],
+    "kind": "tagoshi",
+    "covered": false
+   },
+   {
+    "source": "paddy-432",
+    "target": "paddy-411",
+    "points": [
+     [
+      -268.359375,
+      12.215,
+      370.3125
+     ],
+     [
+      -267.1875,
+      10.739999999999998,
+      370.3125
+     ]
+    ],
+    "kind": "tagoshi",
+    "covered": false
+   },
+   {
+    "source": "paddy-432",
+    "target": "paddy-412",
+    "points": [
+     [
+      -267.1875,
+      12.215,
+      372.65625
+     ],
+     [
+      -266.015625,
+      10.797999999999998,
+      372.65625
+     ]
+    ],
+    "kind": "tagoshi",
+    "covered": false
+   },
+   {
     "source": "paddy-426",
     "target": "paddy-427",
     "points": [
@@ -27310,6 +28615,42 @@
       283.59375,
       12.029,
       202.734375
+     ]
+    ],
+    "kind": "tagoshi",
+    "covered": false
+   },
+   {
+    "source": "paddy-424",
+    "target": "paddy-402",
+    "points": [
+     [
+      -249.609375,
+      12.109,
+      105.46875
+     ],
+     [
+      -249.609375,
+      10.748999999999999,
+      106.640625
+     ]
+    ],
+    "kind": "tagoshi",
+    "covered": false
+   },
+   {
+    "source": "paddy-424",
+    "target": "paddy-403",
+    "points": [
+     [
+      -255.46875,
+      12.109,
+      120.703125
+     ],
+     [
+      -254.296875,
+      10.736999999999998,
+      120.703125
      ]
     ],
     "kind": "tagoshi",
@@ -27334,6 +28675,114 @@
     "covered": false
    },
    {
+    "source": "paddy-412",
+    "target": "paddy-385",
+    "points": [
+     [
+      -254.296875,
+      10.797999999999998,
+      373.828125
+     ],
+     [
+      -253.125,
+      9.187999999999999,
+      372.65625
+     ]
+    ],
+    "kind": "tagoshi",
+    "covered": false
+   },
+   {
+    "source": "paddy-412",
+    "target": "paddy-386",
+    "points": [
+     [
+      -254.296875,
+      10.797999999999998,
+      373.828125
+     ],
+     [
+      -253.125,
+      9.104,
+      373.828125
+     ]
+    ],
+    "kind": "tagoshi",
+    "covered": false
+   },
+   {
+    "source": "paddy-402",
+    "target": "paddy-374",
+    "points": [
+     [
+      -212.109375,
+      10.748999999999999,
+      71.484375
+     ],
+     [
+      -210.9375,
+      9.135,
+      70.3125
+     ]
+    ],
+    "kind": "tagoshi",
+    "covered": false
+   },
+   {
+    "source": "paddy-402",
+    "target": "paddy-375",
+    "points": [
+     [
+      -212.109375,
+      10.748999999999999,
+      71.484375
+     ],
+     [
+      -212.109375,
+      9.168999999999999,
+      72.65625
+     ]
+    ],
+    "kind": "tagoshi",
+    "covered": false
+   },
+   {
+    "source": "paddy-402",
+    "target": "paddy-376",
+    "points": [
+     [
+      -236.71875,
+      10.748999999999999,
+      120.703125
+     ],
+     [
+      -235.546875,
+      9.177999999999999,
+      120.703125
+     ]
+    ],
+    "kind": "tagoshi",
+    "covered": false
+   },
+   {
+    "source": "paddy-411",
+    "target": "paddy-384",
+    "points": [
+     [
+      -262.5,
+      10.739999999999998,
+      338.671875
+     ],
+     [
+      -261.328125,
+      9.103,
+      336.328125
+     ]
+    ],
+    "kind": "tagoshi",
+    "covered": false
+   },
+   {
     "source": "paddy-407",
     "target": "paddy-381",
     "points": [
@@ -27352,6 +28801,96 @@
     "covered": false
    },
    {
+    "source": "paddy-385",
+    "target": "paddy-368",
+    "points": [
+     [
+      -247.265625,
+      9.187999999999999,
+      341.015625
+     ],
+     [
+      -246.09375,
+      7.91,
+      341.015625
+     ]
+    ],
+    "kind": "tagoshi",
+    "covered": false
+   },
+   {
+    "source": "paddy-385",
+    "target": "paddy-369",
+    "points": [
+     [
+      -244.921875,
+      9.187999999999999,
+      353.90625
+     ],
+     [
+      -243.75,
+      7.902,
+      353.90625
+     ]
+    ],
+    "kind": "tagoshi",
+    "covered": false
+   },
+   {
+    "source": "paddy-376",
+    "target": "paddy-359",
+    "points": [
+     [
+      -217.96875,
+      9.177999999999999,
+      120.703125
+     ],
+     [
+      -216.796875,
+      7.891,
+      120.703125
+     ]
+    ],
+    "kind": "tagoshi",
+    "covered": false
+   },
+   {
+    "source": "paddy-376",
+    "target": "paddy-360",
+    "points": [
+     [
+      -222.65625,
+      9.177999999999999,
+      133.59375
+     ],
+     [
+      -221.484375,
+      7.944,
+      133.59375
+     ]
+    ],
+    "kind": "tagoshi",
+    "covered": false
+   },
+   {
+    "source": "paddy-375",
+    "target": "paddy-358",
+    "points": [
+     [
+      -195.703125,
+      9.168999999999999,
+      71.484375
+     ],
+     [
+      -195.703125,
+      7.891,
+      72.65625
+     ]
+    ],
+    "kind": "tagoshi",
+    "covered": false
+   },
+   {
     "source": "paddy-378",
     "target": "paddy-361",
     "points": [
@@ -27364,6 +28903,60 @@
       158.203125,
       7.822,
       169.921875
+     ]
+    ],
+    "kind": "tagoshi",
+    "covered": false
+   },
+   {
+    "source": "paddy-384",
+    "target": "paddy-367",
+    "points": [
+     [
+      -251.953125,
+      9.103,
+      297.65625
+     ],
+     [
+      -250.78125,
+      7.867,
+      297.65625
+     ]
+    ],
+    "kind": "tagoshi",
+    "covered": false
+   },
+   {
+    "source": "paddy-384",
+    "target": "paddy-383",
+    "points": [
+     [
+      -255.46875,
+      9.103,
+      297.65625
+     ],
+     [
+      -255.46875,
+      8.703999999999999,
+      296.484375
+     ]
+    ],
+    "kind": "tagoshi",
+    "covered": false
+   },
+   {
+    "source": "paddy-383",
+    "target": "paddy-365",
+    "points": [
+     [
+      -246.09375,
+      8.703999999999999,
+      253.125
+     ],
+     [
+      -244.921875,
+      7.909,
+      253.125
      ]
     ],
     "kind": "tagoshi",
@@ -27418,6 +29011,132 @@
       -52.734375,
       7.6610000000000005,
       -343.359375
+     ]
+    ],
+    "kind": "tagoshi",
+    "covered": false
+   },
+   {
+    "source": "paddy-360",
+    "target": "paddy-341",
+    "points": [
+     [
+      -209.765625,
+      7.944,
+      134.765625
+     ],
+     [
+      -208.59375,
+      6.924,
+      134.765625
+     ]
+    ],
+    "kind": "tagoshi",
+    "covered": false
+   },
+   {
+    "source": "paddy-368",
+    "target": "paddy-350",
+    "points": [
+     [
+      -239.0625,
+      7.91,
+      312.890625
+     ],
+     [
+      -237.890625,
+      6.66,
+      312.890625
+     ]
+    ],
+    "kind": "tagoshi",
+    "covered": false
+   },
+   {
+    "source": "paddy-368",
+    "target": "paddy-351",
+    "points": [
+     [
+      -235.546875,
+      7.91,
+      349.21875
+     ],
+     [
+      -234.375,
+      6.689,
+      349.21875
+     ]
+    ],
+    "kind": "tagoshi",
+    "covered": false
+   },
+   {
+    "source": "paddy-365",
+    "target": "paddy-346",
+    "points": [
+     [
+      -229.6875,
+      7.909,
+      227.34375
+     ],
+     [
+      -228.515625,
+      6.673,
+      227.34375
+     ]
+    ],
+    "kind": "tagoshi",
+    "covered": false
+   },
+   {
+    "source": "paddy-365",
+    "target": "paddy-349",
+    "points": [
+     [
+      -236.71875,
+      7.909,
+      262.5
+     ],
+     [
+      -236.71875,
+      6.709,
+      263.671875
+     ]
+    ],
+    "kind": "tagoshi",
+    "covered": false
+   },
+   {
+    "source": "paddy-358",
+    "target": "paddy-339",
+    "points": [
+     [
+      -176.953125,
+      7.891,
+      59.765625
+     ],
+     [
+      -176.953125,
+      7.066,
+      60.9375
+     ]
+    ],
+    "kind": "tagoshi",
+    "covered": false
+   },
+   {
+    "source": "paddy-358",
+    "target": "paddy-340",
+    "points": [
+     [
+      -191.015625,
+      7.891,
+      85.546875
+     ],
+     [
+      -191.015625,
+      6.891,
+      86.71875
      ]
     ],
     "kind": "tagoshi",
@@ -27532,6 +29251,42 @@
     "covered": false
    },
    {
+    "source": "paddy-339",
+    "target": "paddy-190",
+    "points": [
+     [
+      -174.609375,
+      7.066,
+      73.828125
+     ],
+     [
+      -172.265625,
+      6.085,
+      73.828125
+     ]
+    ],
+    "kind": "tagoshi",
+    "covered": false
+   },
+   {
+    "source": "paddy-339",
+    "target": "paddy-195",
+    "points": [
+     [
+      -174.609375,
+      7.066,
+      75.0
+     ],
+     [
+      -174.609375,
+      6.233,
+      76.171875
+     ]
+    ],
+    "kind": "tagoshi",
+    "covered": false
+   },
+   {
     "source": "paddy-345",
     "target": "paddy-220",
     "points": [
@@ -27580,6 +29335,132 @@
       -92.578125,
       6.604,
       -188.671875
+     ]
+    ],
+    "kind": "tagoshi",
+    "covered": false
+   },
+   {
+    "source": "paddy-341",
+    "target": "paddy-199",
+    "points": [
+     [
+      -191.015625,
+      6.924,
+      119.53125
+     ],
+     [
+      -187.5,
+      5.822,
+      117.1875
+     ]
+    ],
+    "kind": "tagoshi",
+    "covered": false
+   },
+   {
+    "source": "paddy-341",
+    "target": "paddy-203",
+    "points": [
+     [
+      -194.53125,
+      6.924,
+      135.9375
+     ],
+     [
+      -193.359375,
+      5.632,
+      135.9375
+     ]
+    ],
+    "kind": "tagoshi",
+    "covered": false
+   },
+   {
+    "source": "paddy-349",
+    "target": "paddy-329",
+    "points": [
+     [
+      -219.140625,
+      6.709,
+      262.5
+     ],
+     [
+      -217.96875,
+      5.721,
+      262.5
+     ]
+    ],
+    "kind": "tagoshi",
+    "covered": false
+   },
+   {
+    "source": "paddy-349",
+    "target": "paddy-330",
+    "points": [
+     [
+      -220.3125,
+      6.709,
+      285.9375
+     ],
+     [
+      -220.3125,
+      5.614,
+      287.109375
+     ]
+    ],
+    "kind": "tagoshi",
+    "covered": false
+   },
+   {
+    "source": "paddy-351",
+    "target": "paddy-331",
+    "points": [
+     [
+      -217.96875,
+      6.689,
+      348.046875
+     ],
+     [
+      -216.796875,
+      5.515,
+      348.046875
+     ]
+    ],
+    "kind": "tagoshi",
+    "covered": false
+   },
+   {
+    "source": "paddy-351",
+    "target": "paddy-332",
+    "points": [
+     [
+      -216.796875,
+      6.689,
+      373.828125
+     ],
+     [
+      -215.625,
+      5.415,
+      373.828125
+     ]
+    ],
+    "kind": "tagoshi",
+    "covered": false
+   },
+   {
+    "source": "paddy-346",
+    "target": "paddy-221",
+    "points": [
+     [
+      -213.28125,
+      6.673,
+      219.140625
+     ],
+     [
+      -208.59375,
+      5.104,
+      219.140625
      ]
     ],
     "kind": "tagoshi",
@@ -27712,6 +29593,60 @@
     "covered": false
    },
    {
+    "source": "paddy-329",
+    "target": "paddy-227",
+    "points": [
+     [
+      -212.109375,
+      5.721,
+      250.78125
+     ],
+     [
+      -210.9375,
+      5.106,
+      249.609375
+     ]
+    ],
+    "kind": "tagoshi",
+    "covered": false
+   },
+   {
+    "source": "paddy-329",
+    "target": "paddy-230",
+    "points": [
+     [
+      -212.109375,
+      5.721,
+      250.78125
+     ],
+     [
+      -210.9375,
+      4.8790000000000004,
+      250.78125
+     ]
+    ],
+    "kind": "tagoshi",
+    "covered": false
+   },
+   {
+    "source": "paddy-329",
+    "target": "paddy-235",
+    "points": [
+     [
+      -212.109375,
+      5.721,
+      281.25
+     ],
+     [
+      -210.9375,
+      4.676,
+      280.078125
+     ]
+    ],
+    "kind": "tagoshi",
+    "covered": false
+   },
+   {
     "source": "paddy-044",
     "target": "paddy-048",
     "points": [
@@ -27742,6 +29677,78 @@
       -16.40625,
       5.467,
       62.109375
+     ]
+    ],
+    "kind": "tagoshi",
+    "covered": false
+   },
+   {
+    "source": "paddy-330",
+    "target": "paddy-239",
+    "points": [
+     [
+      -210.9375,
+      5.614,
+      307.03125
+     ],
+     [
+      -206.25,
+      4.291,
+      307.03125
+     ]
+    ],
+    "kind": "tagoshi",
+    "covered": false
+   },
+   {
+    "source": "paddy-330",
+    "target": "paddy-243",
+    "points": [
+     [
+      -209.765625,
+      5.614,
+      322.265625
+     ],
+     [
+      -208.59375,
+      4.767,
+      322.265625
+     ]
+    ],
+    "kind": "tagoshi",
+    "covered": false
+   },
+   {
+    "source": "paddy-331",
+    "target": "paddy-245",
+    "points": [
+     [
+      -207.421875,
+      5.515,
+      345.703125
+     ],
+     [
+      -206.25,
+      4.515,
+      345.703125
+     ]
+    ],
+    "kind": "tagoshi",
+    "covered": false
+   },
+   {
+    "source": "paddy-331",
+    "target": "paddy-247",
+    "points": [
+     [
+      -205.078125,
+      5.515,
+      360.9375
+     ],
+     [
+      -203.90625,
+      4.544,
+      360.9375
      ]
     ],
     "kind": "tagoshi",
@@ -27796,6 +29803,24 @@
       -67.96875,
       5.205,
       8.203125
+     ]
+    ],
+    "kind": "tagoshi",
+    "covered": false
+   },
+   {
+    "source": "paddy-332",
+    "target": "paddy-250",
+    "points": [
+     [
+      -202.734375,
+      5.415,
+      382.03125
+     ],
+     [
+      -201.5625,
+      4.721,
+      382.03125
      ]
     ],
     "kind": "tagoshi",
@@ -28666,6 +30691,42 @@
     "covered": false
    },
    {
+    "source": "paddy-185",
+    "target": "nishizawa",
+    "points": [
+     [
+      -152.34375,
+      6.3999999999999995,
+      52.734375
+     ],
+     [
+      -150.0,
+      4.434496493154795,
+      50.0
+     ]
+    ],
+    "kind": "drain",
+    "covered": false
+   },
+   {
+    "source": "paddy-190",
+    "target": "nishizawa",
+    "points": [
+     [
+      -154.6875,
+      6.0649999999999995,
+      58.59375
+     ],
+     [
+      -150.0,
+      4.434496493154795,
+      50.0
+     ]
+    ],
+    "kind": "drain",
+    "covered": false
+   },
+   {
     "source": "paddy-214",
     "target": "miyazawa",
     "points": [
@@ -29278,6 +31339,24 @@
     "covered": false
    },
    {
+    "source": "paddy-455",
+    "target": "nishizawa",
+    "points": [
+     [
+      -233.203125,
+      15.058,
+      22.265625
+     ],
+     [
+      -225.2935059575566,
+      13.981063064736537,
+      8.030916533706796
+     ]
+    ],
+    "kind": "drain",
+    "covered": false
+   },
+   {
     "source": "paddy-460",
     "target": "miyazawa",
     "points": [
@@ -29674,6 +31753,24 @@
     "covered": false
    },
    {
+    "source": "paddy-532",
+    "target": "kawamuko-yosui",
+    "points": [
+     [
+      -371.484375,
+      22.221,
+      411.328125
+     ],
+     [
+      -383.8394555722276,
+      21.003980935701886,
+      422.0
+     ]
+    ],
+    "kind": "drain",
+    "covered": false
+   },
+   {
     "source": "paddy-533",
     "target": "okusawa",
     "points": [
@@ -29710,6 +31807,24 @@
     "covered": false
    },
    {
+    "source": "paddy-542",
+    "target": "kawamuko-yosui",
+    "points": [
+     [
+      -379.6875,
+      23.44,
+      411.328125
+     ],
+     [
+      -383.8394555722276,
+      21.003980935701886,
+      422.0
+     ]
+    ],
+    "kind": "drain",
+    "covered": false
+   },
+   {
     "source": "paddy-543",
     "target": "okusawa",
     "points": [
@@ -29722,6 +31837,186 @@
       399.74742868961357,
       24.11192167877687,
       -438.4742451239428
+     ]
+    ],
+    "kind": "drain",
+    "covered": false
+   },
+   {
+    "source": "paddy-544",
+    "target": "kawamuko-yosui-kita",
+    "points": [
+     [
+      -318.75,
+      24.973,
+      26.953125
+     ],
+     [
+      -319.0893207771013,
+      23.43500815367993,
+      18.0
+     ]
+    ],
+    "kind": "drain",
+    "covered": false
+   },
+   {
+    "source": "paddy-552",
+    "target": "kawamuko-yosui",
+    "points": [
+     [
+      -385.546875,
+      24.871,
+      407.8125
+     ],
+     [
+      -385.7565912222001,
+      23.719954082093135,
+      418.0
+     ]
+    ],
+    "kind": "drain",
+    "covered": false
+   },
+   {
+    "source": "paddy-553",
+    "target": "kawamuko-yosui-kita",
+    "points": [
+     [
+      -335.15625,
+      26.245,
+      37.5
+     ],
+     [
+      -333.1591859243434,
+      25.253222672074344,
+      28.0
+     ]
+    ],
+    "kind": "drain",
+    "covered": false
+   },
+   {
+    "source": "paddy-556",
+    "target": "kawamuko-yosui-kita",
+    "points": [
+     [
+      -339.84375,
+      27.32,
+      42.1875
+     ],
+     [
+      -339.27709225072874,
+      26.525055534378197,
+      32.0
+     ]
+    ],
+    "kind": "drain",
+    "covered": false
+   },
+   {
+    "source": "paddy-565",
+    "target": "kawamuko-yosui-kita",
+    "points": [
+     [
+      -355.078125,
+      28.618,
+      55.078125
+     ],
+     [
+      -356.3259812314122,
+      28.106746111552226,
+      46.0
+     ]
+    ],
+    "kind": "drain",
+    "covered": false
+   },
+   {
+    "source": "paddy-572",
+    "target": "kawamuko-yosui",
+    "points": [
+     [
+      -398.4375,
+      28.657,
+      390.234375
+     ],
+     [
+      -400.0533079975701,
+      27.673447760821293,
+      404.0
+     ]
+    ],
+    "kind": "drain",
+    "covered": false
+   },
+   {
+    "source": "paddy-573",
+    "target": "kawamuko-yosui-kita",
+    "points": [
+     [
+      -372.65625,
+      30.115,
+      73.828125
+     ],
+     [
+      -368.7644211367418,
+      29.83514008014349,
+      58.0
+     ]
+    ],
+    "kind": "drain",
+    "covered": false
+   },
+   {
+    "source": "paddy-581",
+    "target": "kawamuko-yosui",
+    "points": [
+     [
+      -408.984375,
+      31.236,
+      383.203125
+     ],
+     [
+      -410.21796154005926,
+      30.46421315224205,
+      392.0
+     ]
+    ],
+    "kind": "drain",
+    "covered": false
+   },
+   {
+    "source": "paddy-582",
+    "target": "kawamuko-yosui-kita",
+    "points": [
+     [
+      -390.234375,
+      32.631,
+      84.375
+     ],
+     [
+      -389.0686517577516,
+      32.422040796659935,
+      74.0
+     ]
+    ],
+    "kind": "drain",
+    "covered": false
+   },
+   {
+    "source": "paddy-585",
+    "target": "kawamuko-yosui",
+    "points": [
+     [
+      -430.078125,
+      32.771,
+      258.984375
+     ],
+     [
+      -430.61183432256223,
+      31.51626622960578,
+      268.0
      ]
     ],
     "kind": "drain",
@@ -29784,20 +32079,34 @@
    "paddy-181",
    "paddy-182",
    "paddy-183",
+   "paddy-185",
+   "paddy-190",
+   "paddy-195",
+   "paddy-199",
+   "paddy-203",
    "paddy-214",
    "paddy-219",
    "paddy-220",
+   "paddy-221",
    "paddy-223",
    "paddy-226",
+   "paddy-227",
+   "paddy-230",
    "paddy-234",
+   "paddy-235",
    "paddy-236",
    "paddy-238",
+   "paddy-239",
    "paddy-240",
    "paddy-241",
    "paddy-242",
+   "paddy-243",
    "paddy-244",
+   "paddy-245",
    "paddy-246",
+   "paddy-247",
    "paddy-248",
+   "paddy-250",
    "paddy-256",
    "paddy-257",
    "paddy-261",
@@ -29817,55 +32126,153 @@
    "paddy-303",
    "paddy-305",
    "paddy-306",
+   "paddy-329",
+   "paddy-330",
+   "paddy-331",
+   "paddy-332",
+   "paddy-339",
+   "paddy-340",
+   "paddy-341",
    "paddy-342",
    "paddy-343",
    "paddy-345",
+   "paddy-346",
    "paddy-347",
+   "paddy-349",
+   "paddy-350",
+   "paddy-351",
+   "paddy-358",
+   "paddy-359",
+   "paddy-360",
    "paddy-361",
    "paddy-364",
+   "paddy-365",
+   "paddy-367",
+   "paddy-368",
+   "paddy-369",
+   "paddy-374",
+   "paddy-375",
+   "paddy-376",
    "paddy-378",
    "paddy-381",
+   "paddy-383",
+   "paddy-384",
+   "paddy-385",
+   "paddy-386",
    "paddy-396",
    "paddy-398",
+   "paddy-402",
+   "paddy-403",
    "paddy-404",
    "paddy-406",
    "paddy-407",
+   "paddy-411",
+   "paddy-412",
    "paddy-418",
    "paddy-419",
+   "paddy-424",
    "paddy-426",
    "paddy-427",
+   "paddy-430",
+   "paddy-431",
+   "paddy-432",
    "paddy-433",
    "paddy-434",
    "paddy-435",
+   "paddy-437",
+   "paddy-439",
    "paddy-443",
+   "paddy-448",
+   "paddy-449",
+   "paddy-450",
    "paddy-451",
    "paddy-452",
    "paddy-453",
+   "paddy-455",
+   "paddy-456",
+   "paddy-457",
    "paddy-460",
    "paddy-461",
    "paddy-462",
+   "paddy-467",
+   "paddy-468",
+   "paddy-469",
    "paddy-470",
    "paddy-471",
+   "paddy-472",
+   "paddy-473",
+   "paddy-474",
+   "paddy-475",
    "paddy-478",
+   "paddy-482",
+   "paddy-484",
    "paddy-485",
    "paddy-486",
+   "paddy-487",
+   "paddy-488",
+   "paddy-490",
    "paddy-492",
    "paddy-493",
+   "paddy-497",
    "paddy-498",
    "paddy-499",
    "paddy-500",
+   "paddy-501",
+   "paddy-502",
+   "paddy-503",
    "paddy-505",
    "paddy-507",
+   "paddy-510",
    "paddy-511",
+   "paddy-513",
+   "paddy-514",
+   "paddy-515",
+   "paddy-516",
    "paddy-517",
    "paddy-518",
+   "paddy-520",
+   "paddy-521",
    "paddy-522",
    "paddy-523",
+   "paddy-524",
+   "paddy-525",
+   "paddy-526",
+   "paddy-527",
    "paddy-528",
    "paddy-529",
+   "paddy-532",
    "paddy-533",
    "paddy-534",
-   "paddy-543"
+   "paddy-535",
+   "paddy-536",
+   "paddy-537",
+   "paddy-541",
+   "paddy-542",
+   "paddy-543",
+   "paddy-544",
+   "paddy-545",
+   "paddy-546",
+   "paddy-550",
+   "paddy-552",
+   "paddy-553",
+   "paddy-554",
+   "paddy-556",
+   "paddy-557",
+   "paddy-562",
+   "paddy-563",
+   "paddy-565",
+   "paddy-566",
+   "paddy-571",
+   "paddy-572",
+   "paddy-573",
+   "paddy-577",
+   "paddy-579",
+   "paddy-581",
+   "paddy-582",
+   "paddy-583",
+   "paddy-584",
+   "paddy-585",
+   "paddy-586"
   ],
   "unresolved": [
    "paddy-000",
@@ -29971,22 +32378,17 @@
    "paddy-176",
    "paddy-179",
    "paddy-184",
-   "paddy-185",
    "paddy-186",
    "paddy-187",
    "paddy-189",
-   "paddy-190",
    "paddy-191",
    "paddy-192",
    "paddy-193",
-   "paddy-195",
    "paddy-196",
    "paddy-197",
    "paddy-198",
-   "paddy-199",
    "paddy-201",
    "paddy-202",
-   "paddy-203",
    "paddy-204",
    "paddy-205",
    "paddy-206",
@@ -29999,23 +32401,14 @@
    "paddy-216",
    "paddy-217",
    "paddy-218",
-   "paddy-221",
    "paddy-222",
    "paddy-224",
-   "paddy-227",
    "paddy-229",
-   "paddy-230",
    "paddy-231",
    "paddy-232",
    "paddy-233",
-   "paddy-235",
    "paddy-237",
-   "paddy-239",
-   "paddy-243",
-   "paddy-245",
-   "paddy-247",
    "paddy-249",
-   "paddy-250",
    "paddy-252",
    "paddy-253",
    "paddy-254",
@@ -30059,53 +32452,28 @@
    "paddy-325",
    "paddy-326",
    "paddy-327",
-   "paddy-329",
-   "paddy-330",
-   "paddy-331",
-   "paddy-332",
    "paddy-333",
    "paddy-334",
    "paddy-335",
    "paddy-336",
    "paddy-337",
    "paddy-338",
-   "paddy-339",
-   "paddy-340",
-   "paddy-341",
-   "paddy-346",
    "paddy-348",
-   "paddy-349",
-   "paddy-350",
-   "paddy-351",
    "paddy-352",
    "paddy-353",
    "paddy-354",
    "paddy-355",
    "paddy-356",
    "paddy-357",
-   "paddy-358",
-   "paddy-359",
-   "paddy-360",
    "paddy-362",
-   "paddy-365",
    "paddy-366",
-   "paddy-367",
-   "paddy-368",
-   "paddy-369",
    "paddy-370",
    "paddy-371",
    "paddy-372",
    "paddy-373",
-   "paddy-374",
-   "paddy-375",
-   "paddy-376",
    "paddy-377",
    "paddy-379",
    "paddy-382",
-   "paddy-383",
-   "paddy-384",
-   "paddy-385",
-   "paddy-386",
    "paddy-387",
    "paddy-388",
    "paddy-389",
@@ -30117,122 +32485,49 @@
    "paddy-397",
    "paddy-399",
    "paddy-400",
-   "paddy-402",
-   "paddy-403",
    "paddy-405",
    "paddy-408",
    "paddy-409",
-   "paddy-411",
-   "paddy-412",
    "paddy-413",
    "paddy-414",
    "paddy-415",
    "paddy-416",
    "paddy-417",
    "paddy-421",
-   "paddy-424",
    "paddy-428",
    "paddy-429",
-   "paddy-430",
-   "paddy-431",
-   "paddy-432",
    "paddy-436",
-   "paddy-437",
-   "paddy-439",
    "paddy-440",
    "paddy-442",
    "paddy-445",
    "paddy-446",
    "paddy-447",
-   "paddy-448",
-   "paddy-449",
-   "paddy-450",
    "paddy-454",
-   "paddy-455",
-   "paddy-456",
-   "paddy-457",
    "paddy-458",
    "paddy-459",
    "paddy-463",
    "paddy-464",
    "paddy-465",
    "paddy-466",
-   "paddy-467",
-   "paddy-468",
-   "paddy-469",
-   "paddy-472",
-   "paddy-473",
-   "paddy-474",
-   "paddy-475",
    "paddy-477",
    "paddy-480",
    "paddy-481",
-   "paddy-482",
-   "paddy-484",
-   "paddy-487",
-   "paddy-488",
-   "paddy-490",
    "paddy-491",
    "paddy-494",
    "paddy-496",
-   "paddy-497",
-   "paddy-501",
-   "paddy-502",
-   "paddy-503",
    "paddy-506",
    "paddy-508",
-   "paddy-510",
-   "paddy-513",
-   "paddy-514",
-   "paddy-515",
-   "paddy-516",
    "paddy-519",
-   "paddy-520",
-   "paddy-521",
-   "paddy-524",
-   "paddy-525",
-   "paddy-526",
-   "paddy-527",
    "paddy-530",
-   "paddy-532",
-   "paddy-535",
-   "paddy-536",
-   "paddy-537",
    "paddy-538",
-   "paddy-541",
-   "paddy-542",
-   "paddy-544",
-   "paddy-545",
-   "paddy-546",
    "paddy-547",
    "paddy-549",
-   "paddy-550",
-   "paddy-552",
-   "paddy-553",
-   "paddy-554",
-   "paddy-556",
-   "paddy-557",
    "paddy-560",
    "paddy-561",
-   "paddy-562",
-   "paddy-563",
-   "paddy-565",
-   "paddy-566",
    "paddy-567",
-   "paddy-571",
-   "paddy-572",
-   "paddy-573",
    "paddy-574",
    "paddy-575",
-   "paddy-576",
-   "paddy-577",
-   "paddy-579",
-   "paddy-581",
-   "paddy-582",
-   "paddy-583",
-   "paddy-584",
-   "paddy-585",
-   "paddy-586"
+   "paddy-576"
   ]
  },
  "river": {
@@ -65451,7 +67746,7 @@
    "points": [
     [
      8.93,
-     7.484,
+     7.249,
      -115.23
     ],
     [
@@ -65721,7 +68016,7 @@
    "points": [
     [
      -23.55,
-     4.867,
+     4.852,
      343.05
     ],
     [
@@ -74427,7 +76722,7 @@
    ],
    [
     3.38,
-    5.186,
+    5.183,
     251.18
    ],
    [
@@ -74437,7 +76732,7 @@
    ],
    [
     -15.63,
-    4.755,
+    4.751,
     325.46
    ],
    [
@@ -81573,11 +83868,11 @@
      ],
      [
       2.23,
-      8.179
+      8.175
      ],
      [
       4.23,
-      8.157
+      8.244
      ]
     ]
    },
@@ -82224,7 +84519,7 @@
      ],
      [
       -14.64,
-      7.668
+      7.729
      ]
     ]
    },
@@ -82844,11 +85139,11 @@
      ],
      [
       -4.67,
-      7.692
+      7.636
      ],
      [
       -2.67,
-      7.49
+      7.494
      ]
     ]
    },
@@ -83580,7 +85875,7 @@
      ],
      [
       59.76,
-      6.656
+      6.678
      ]
     ]
    },
@@ -84307,7 +86602,7 @@
      ],
      [
       -16.65,
-      4.556
+      4.678
      ]
     ]
    },
@@ -84955,11 +87250,11 @@
      ],
      [
       -37.49,
-      4.287
+      4.28
      ],
      [
       -35.49,
-      4.249
+      4.269
      ]
     ]
    },
@@ -86477,6 +88772,1943 @@
       1.329,
       557.3,
       0.28
+     ]
+    ]
+   ]
+  },
+  {
+   "name": "nishizawa",
+   "kind": "brook",
+   "z": 50.0,
+   "brook": [
+    [
+     -722.56,
+     38.345,
+     -146.19
+    ],
+    [
+     -717.96,
+     38.23,
+     -150.17
+    ],
+    [
+     -715.73,
+     38.073,
+     -151.82
+    ],
+    [
+     -713.1,
+     37.885,
+     -153.6
+    ],
+    [
+     -710.16,
+     37.677,
+     -155.41
+    ],
+    [
+     -707.04,
+     37.466,
+     -157.18
+    ],
+    [
+     -703.81,
+     37.265,
+     -158.89
+    ],
+    [
+     -700.53,
+     37.077,
+     -160.55
+    ],
+    [
+     -697.23,
+     36.904,
+     -162.12
+    ],
+    [
+     -693.92,
+     36.745,
+     -163.54
+    ],
+    [
+     -690.62,
+     36.603,
+     -164.69
+    ],
+    [
+     -687.31,
+     36.472,
+     -165.43
+    ],
+    [
+     -684.01,
+     36.344,
+     -165.63
+    ],
+    [
+     -680.72,
+     36.21,
+     -165.26
+    ],
+    [
+     -677.48,
+     36.068,
+     -164.34
+    ],
+    [
+     -674.32,
+     35.921,
+     -162.96
+    ],
+    [
+     -671.32,
+     35.773,
+     -161.2
+    ],
+    [
+     -668.52,
+     35.622,
+     -159.1
+    ],
+    [
+     -665.96,
+     35.463,
+     -156.69
+    ],
+    [
+     -663.61,
+     35.294,
+     -154.01
+    ],
+    [
+     -661.37,
+     35.114,
+     -151.13
+    ],
+    [
+     -659.12,
+     34.926,
+     -148.17
+    ],
+    [
+     -656.76,
+     34.732,
+     -145.19
+    ],
+    [
+     -654.26,
+     34.537,
+     -142.24
+    ],
+    [
+     -651.62,
+     34.343,
+     -139.34
+    ],
+    [
+     -648.89,
+     34.148,
+     -136.47
+    ],
+    [
+     -646.1,
+     33.942,
+     -133.63
+    ],
+    [
+     -643.3,
+     33.718,
+     -130.79
+    ],
+    [
+     -640.5,
+     33.471,
+     -127.95
+    ],
+    [
+     -637.74,
+     33.209,
+     -125.09
+    ],
+    [
+     -635.07,
+     32.947,
+     -122.21
+    ],
+    [
+     -632.55,
+     32.702,
+     -119.26
+    ],
+    [
+     -630.25,
+     32.484,
+     -116.26
+    ],
+    [
+     -628.22,
+     32.301,
+     -113.2
+    ],
+    [
+     -626.42,
+     32.15,
+     -110.13
+    ],
+    [
+     -624.72,
+     32.024,
+     -107.14
+    ],
+    [
+     -622.96,
+     31.905,
+     -104.31
+    ],
+    [
+     -620.99,
+     31.775,
+     -101.67
+    ],
+    [
+     -618.73,
+     31.62,
+     -99.18
+    ],
+    [
+     -616.21,
+     31.442,
+     -96.75
+    ],
+    [
+     -613.49,
+     31.25,
+     -94.31
+    ],
+    [
+     -610.65,
+     31.06,
+     -91.86
+    ],
+    [
+     -607.71,
+     30.881,
+     -89.44
+    ],
+    [
+     -604.67,
+     30.714,
+     -87.17
+    ],
+    [
+     -601.53,
+     30.553,
+     -85.12
+    ],
+    [
+     -598.26,
+     30.4,
+     -83.35
+    ],
+    [
+     -594.91,
+     30.258,
+     -81.78
+    ],
+    [
+     -591.54,
+     30.124,
+     -80.28
+    ],
+    [
+     -588.21,
+     29.985,
+     -78.66
+    ],
+    [
+     -584.98,
+     29.819,
+     -76.81
+    ],
+    [
+     -581.85,
+     29.609,
+     -74.7
+    ],
+    [
+     -578.79,
+     29.356,
+     -72.42
+    ],
+    [
+     -575.74,
+     29.073,
+     -70.12
+    ],
+    [
+     -572.63,
+     28.778,
+     -67.98
+    ],
+    [
+     -569.39,
+     28.475,
+     -66.15
+    ],
+    [
+     -565.98,
+     28.162,
+     -64.73
+    ],
+    [
+     -562.39,
+     27.837,
+     -63.74
+    ],
+    [
+     -558.65,
+     27.503,
+     -63.12
+    ],
+    [
+     -554.79,
+     27.164,
+     -62.77
+    ],
+    [
+     -550.86,
+     26.821,
+     -62.61
+    ],
+    [
+     -546.89,
+     26.473,
+     -62.54
+    ],
+    [
+     -542.9,
+     26.128,
+     -62.51
+    ],
+    [
+     -538.9,
+     25.799,
+     -62.5
+    ],
+    [
+     -534.9,
+     25.497,
+     -62.5
+    ],
+    [
+     -530.9,
+     25.22,
+     -62.5
+    ],
+    [
+     -526.9,
+     24.958,
+     -62.5
+    ],
+    [
+     -522.9,
+     24.7,
+     -62.5
+    ],
+    [
+     -518.91,
+     24.442,
+     -62.49
+    ],
+    [
+     -514.92,
+     24.188,
+     -62.46
+    ],
+    [
+     -510.95,
+     23.947,
+     -62.38
+    ],
+    [
+     -507.02,
+     23.722,
+     -62.22
+    ],
+    [
+     -503.15,
+     23.51,
+     -61.89
+    ],
+    [
+     -499.38,
+     23.303,
+     -61.35
+    ],
+    [
+     -495.72,
+     23.094,
+     -60.53
+    ],
+    [
+     -492.17,
+     22.881,
+     -59.44
+    ],
+    [
+     -488.71,
+     22.672,
+     -58.14
+    ],
+    [
+     -485.3,
+     22.477,
+     -56.7
+    ],
+    [
+     -481.91,
+     22.302,
+     -55.23
+    ],
+    [
+     -478.49,
+     22.144,
+     -53.83
+    ],
+    [
+     -475.0,
+     21.995,
+     -52.59
+    ],
+    [
+     -471.41,
+     21.84,
+     -51.61
+    ],
+    [
+     -467.71,
+     21.674,
+     -50.9
+    ],
+    [
+     -463.89,
+     21.495,
+     -50.45
+    ],
+    [
+     -460.0,
+     21.306,
+     -50.2
+    ],
+    [
+     -456.05,
+     21.115,
+     -50.08
+    ],
+    [
+     -452.07,
+     20.926,
+     -50.02
+    ],
+    [
+     -448.09,
+     20.743,
+     -49.98
+    ],
+    [
+     -444.11,
+     20.568,
+     -49.93
+    ],
+    [
+     -440.16,
+     20.4,
+     -49.81
+    ],
+    [
+     -436.25,
+     20.237,
+     -49.58
+    ],
+    [
+     -432.43,
+     20.082,
+     -49.16
+    ],
+    [
+     -428.69,
+     19.937,
+     -48.52
+    ],
+    [
+     -425.04,
+     19.803,
+     -47.68
+    ],
+    [
+     -421.44,
+     19.675,
+     -46.72
+    ],
+    [
+     -417.82,
+     19.544,
+     -45.79
+    ],
+    [
+     -414.15,
+     19.406,
+     -45.0
+    ],
+    [
+     -410.38,
+     19.261,
+     -44.43
+    ],
+    [
+     -406.53,
+     19.113,
+     -44.08
+    ],
+    [
+     -402.61,
+     18.966,
+     -43.89
+    ],
+    [
+     -398.65,
+     18.821,
+     -43.8
+    ],
+    [
+     -394.66,
+     18.681,
+     -43.77
+    ],
+    [
+     -390.67,
+     18.547,
+     -43.76
+    ],
+    [
+     -386.67,
+     18.42,
+     -43.77
+    ],
+    [
+     -382.69,
+     18.3,
+     -43.8
+    ],
+    [
+     -378.73,
+     18.187,
+     -43.87
+    ],
+    [
+     -374.82,
+     18.082,
+     -44.03
+    ],
+    [
+     -371.0,
+     17.991,
+     -44.3
+    ],
+    [
+     -367.31,
+     17.916,
+     -44.67
+    ],
+    [
+     -363.8,
+     17.855,
+     -45.07
+    ],
+    [
+     -360.46,
+     17.806,
+     -45.33
+    ],
+    [
+     -357.28,
+     17.762,
+     -45.26
+    ],
+    [
+     -354.2,
+     17.718,
+     -44.72
+    ],
+    [
+     -351.16,
+     17.671,
+     -43.71
+    ],
+    [
+     -348.05,
+     17.615,
+     -42.38
+    ],
+    [
+     -344.83,
+     17.548,
+     -40.98
+    ],
+    [
+     -341.45,
+     17.469,
+     -39.74
+    ],
+    [
+     -337.88,
+     17.383,
+     -38.79
+    ],
+    [
+     -334.15,
+     17.295,
+     -38.16
+    ],
+    [
+     -330.31,
+     17.215,
+     -37.8
+    ],
+    [
+     -326.38,
+     17.147,
+     -37.62
+    ],
+    [
+     -322.42,
+     17.092,
+     -37.54
+    ],
+    [
+     -318.43,
+     17.047,
+     -37.51
+    ],
+    [
+     -314.44,
+     17.007,
+     -37.5
+    ],
+    [
+     -310.44,
+     16.967,
+     -37.47
+    ],
+    [
+     -306.47,
+     16.926,
+     -37.42
+    ],
+    [
+     -302.52,
+     16.885,
+     -37.29
+    ],
+    [
+     -298.64,
+     16.846,
+     -37.0
+    ],
+    [
+     -294.86,
+     16.813,
+     -36.47
+    ],
+    [
+     -291.23,
+     16.783,
+     -35.59
+    ],
+    [
+     -287.77,
+     16.751,
+     -34.28
+    ],
+    [
+     -284.49,
+     16.712,
+     -32.53
+    ],
+    [
+     -281.38,
+     16.666,
+     -30.39
+    ],
+    [
+     -278.38,
+     16.609,
+     -27.97
+    ],
+    [
+     -275.45,
+     16.544,
+     -25.39
+    ],
+    [
+     -272.54,
+     16.47,
+     -22.76
+    ],
+    [
+     -269.6,
+     16.389,
+     -20.2
+    ],
+    [
+     -266.6,
+     16.304,
+     -17.78
+    ],
+    [
+     -263.52,
+     16.215,
+     -15.56
+    ],
+    [
+     -260.37,
+     16.12,
+     -13.52
+    ],
+    [
+     -257.15,
+     16.014,
+     -11.64
+    ],
+    [
+     -253.89,
+     15.889,
+     -9.84
+    ],
+    [
+     -250.62,
+     15.739,
+     -8.07
+    ],
+    [
+     -247.37,
+     15.564,
+     -6.26
+    ],
+    [
+     -244.16,
+     15.37,
+     -4.36
+    ],
+    [
+     -240.99,
+     15.163,
+     -2.35
+    ],
+    [
+     -237.86,
+     14.944,
+     -0.26
+    ],
+    [
+     -234.73,
+     14.71,
+     1.85
+    ],
+    [
+     -231.6,
+     14.455,
+     3.94
+    ],
+    [
+     -228.45,
+     14.173,
+     5.99
+    ],
+    [
+     -225.29,
+     13.861,
+     8.03
+    ],
+    [
+     -222.14,
+     13.518,
+     10.07
+    ],
+    [
+     -218.97,
+     13.144,
+     12.08
+    ],
+    [
+     -215.75,
+     12.742,
+     13.96
+    ],
+    [
+     -212.42,
+     12.317,
+     15.57
+    ],
+    [
+     -208.94,
+     11.873,
+     16.83
+    ],
+    [
+     -205.3,
+     11.416,
+     17.7
+    ],
+    [
+     -201.52,
+     10.949,
+     18.24
+    ],
+    [
+     -197.64,
+     10.479,
+     18.53
+    ],
+    [
+     -193.7,
+     10.014,
+     18.68
+    ],
+    [
+     -189.74,
+     9.562,
+     18.77
+    ],
+    [
+     -185.78,
+     9.13,
+     18.87
+    ],
+    [
+     -181.87,
+     8.721,
+     19.07
+    ],
+    [
+     -178.03,
+     8.337,
+     19.46
+    ],
+    [
+     -174.32,
+     7.977,
+     20.15
+    ],
+    [
+     -170.77,
+     7.643,
+     21.24
+    ],
+    [
+     -167.42,
+     7.333,
+     22.78
+    ],
+    [
+     -164.28,
+     7.05,
+     24.75
+    ],
+    [
+     -161.34,
+     6.794,
+     27.1
+    ],
+    [
+     -158.65,
+     6.562,
+     29.73
+    ],
+    [
+     -156.25,
+     6.35,
+     32.58
+    ],
+    [
+     -154.23,
+     6.15,
+     35.56
+    ],
+    [
+     -152.64,
+     5.942,
+     38.56
+    ],
+    [
+     -151.5,
+     5.713,
+     41.46
+    ],
+    [
+     -150.77,
+     5.463,
+     44.06
+    ],
+    [
+     -150.0,
+     4.314,
+     50.0
+    ]
+   ],
+   "width": 2.6,
+   "water": [
+    [
+     [
+      -722.56,
+      38.585,
+      -146.19,
+      1.15
+     ],
+     [
+      -717.96,
+      38.47,
+      -150.17,
+      1.15
+     ],
+     [
+      -715.73,
+      38.313,
+      -151.82,
+      1.15
+     ],
+     [
+      -713.1,
+      38.125,
+      -153.6,
+      1.15
+     ],
+     [
+      -710.16,
+      37.917,
+      -155.41,
+      1.15
+     ],
+     [
+      -707.04,
+      37.706,
+      -157.18,
+      1.15
+     ],
+     [
+      -703.81,
+      37.505,
+      -158.89,
+      1.15
+     ],
+     [
+      -700.53,
+      37.317,
+      -160.55,
+      1.15
+     ],
+     [
+      -697.23,
+      37.144,
+      -162.12,
+      1.15
+     ],
+     [
+      -693.92,
+      36.985,
+      -163.54,
+      1.15
+     ],
+     [
+      -690.62,
+      36.843,
+      -164.69,
+      1.15
+     ],
+     [
+      -687.31,
+      36.712,
+      -165.43,
+      1.15
+     ],
+     [
+      -684.01,
+      36.584,
+      -165.63,
+      1.15
+     ],
+     [
+      -680.72,
+      36.45,
+      -165.26,
+      1.15
+     ],
+     [
+      -677.48,
+      36.308,
+      -164.34,
+      1.15
+     ],
+     [
+      -674.32,
+      36.161,
+      -162.96,
+      1.15
+     ],
+     [
+      -671.32,
+      36.013,
+      -161.2,
+      1.15
+     ],
+     [
+      -668.52,
+      35.862,
+      -159.1,
+      1.15
+     ],
+     [
+      -665.96,
+      35.703,
+      -156.69,
+      1.15
+     ],
+     [
+      -663.61,
+      35.534,
+      -154.01,
+      1.15
+     ],
+     [
+      -661.37,
+      35.354,
+      -151.13,
+      1.15
+     ],
+     [
+      -659.12,
+      35.166,
+      -148.17,
+      1.15
+     ],
+     [
+      -656.76,
+      34.972,
+      -145.19,
+      1.15
+     ],
+     [
+      -654.26,
+      34.777,
+      -142.24,
+      1.15
+     ],
+     [
+      -651.62,
+      34.583,
+      -139.34,
+      1.15
+     ],
+     [
+      -648.89,
+      34.388,
+      -136.47,
+      1.15
+     ],
+     [
+      -646.1,
+      34.182,
+      -133.63,
+      1.15
+     ],
+     [
+      -643.3,
+      33.958,
+      -130.79,
+      1.15
+     ],
+     [
+      -640.5,
+      33.711,
+      -127.95,
+      1.15
+     ],
+     [
+      -637.74,
+      33.449,
+      -125.09,
+      1.15
+     ],
+     [
+      -635.07,
+      33.187,
+      -122.21,
+      1.15
+     ],
+     [
+      -632.55,
+      32.942,
+      -119.26,
+      1.15
+     ],
+     [
+      -630.25,
+      32.724,
+      -116.26,
+      1.15
+     ],
+     [
+      -628.22,
+      32.541,
+      -113.2,
+      1.15
+     ],
+     [
+      -626.42,
+      32.39,
+      -110.13,
+      1.15
+     ],
+     [
+      -624.72,
+      32.264,
+      -107.14,
+      1.15
+     ],
+     [
+      -622.96,
+      32.145,
+      -104.31,
+      1.15
+     ],
+     [
+      -620.99,
+      32.015,
+      -101.67,
+      1.15
+     ],
+     [
+      -618.73,
+      31.86,
+      -99.18,
+      1.15
+     ],
+     [
+      -616.21,
+      31.682,
+      -96.75,
+      1.15
+     ],
+     [
+      -613.49,
+      31.49,
+      -94.31,
+      1.15
+     ],
+     [
+      -610.65,
+      31.3,
+      -91.86,
+      1.15
+     ],
+     [
+      -607.71,
+      31.121,
+      -89.44,
+      1.15
+     ],
+     [
+      -604.67,
+      30.954,
+      -87.17,
+      1.15
+     ],
+     [
+      -601.53,
+      30.793,
+      -85.12,
+      1.15
+     ],
+     [
+      -598.26,
+      30.64,
+      -83.35,
+      1.15
+     ],
+     [
+      -594.91,
+      30.498,
+      -81.78,
+      1.15
+     ],
+     [
+      -591.54,
+      30.364,
+      -80.28,
+      1.15
+     ],
+     [
+      -588.21,
+      30.225,
+      -78.66,
+      1.15
+     ],
+     [
+      -584.98,
+      30.059,
+      -76.81,
+      1.15
+     ],
+     [
+      -581.85,
+      29.849,
+      -74.7,
+      1.15
+     ],
+     [
+      -578.79,
+      29.596,
+      -72.42,
+      1.15
+     ],
+     [
+      -575.74,
+      29.313,
+      -70.12,
+      1.15
+     ],
+     [
+      -572.63,
+      29.018,
+      -67.98,
+      1.15
+     ],
+     [
+      -569.39,
+      28.715,
+      -66.15,
+      1.15
+     ],
+     [
+      -565.98,
+      28.402,
+      -64.73,
+      1.15
+     ],
+     [
+      -562.39,
+      28.077,
+      -63.74,
+      1.15
+     ],
+     [
+      -558.65,
+      27.743,
+      -63.12,
+      1.15
+     ],
+     [
+      -554.79,
+      27.404,
+      -62.77,
+      1.15
+     ],
+     [
+      -550.86,
+      27.061,
+      -62.61,
+      1.15
+     ],
+     [
+      -546.89,
+      26.713,
+      -62.54,
+      1.15
+     ],
+     [
+      -542.9,
+      26.368,
+      -62.51,
+      1.15
+     ],
+     [
+      -538.9,
+      26.039,
+      -62.5,
+      1.15
+     ],
+     [
+      -534.9,
+      25.737,
+      -62.5,
+      1.15
+     ],
+     [
+      -530.9,
+      25.46,
+      -62.5,
+      1.15
+     ],
+     [
+      -526.9,
+      25.198,
+      -62.5,
+      1.15
+     ],
+     [
+      -522.9,
+      24.94,
+      -62.5,
+      1.15
+     ],
+     [
+      -518.91,
+      24.682,
+      -62.49,
+      1.15
+     ],
+     [
+      -514.92,
+      24.428,
+      -62.46,
+      1.15
+     ],
+     [
+      -510.95,
+      24.187,
+      -62.38,
+      1.15
+     ],
+     [
+      -507.02,
+      23.962,
+      -62.22,
+      1.15
+     ],
+     [
+      -503.15,
+      23.75,
+      -61.89,
+      1.15
+     ],
+     [
+      -499.38,
+      23.543,
+      -61.35,
+      1.15
+     ],
+     [
+      -495.72,
+      23.334,
+      -60.53,
+      1.15
+     ],
+     [
+      -492.17,
+      23.121,
+      -59.44,
+      1.15
+     ],
+     [
+      -488.71,
+      22.912,
+      -58.14,
+      1.15
+     ],
+     [
+      -485.3,
+      22.717,
+      -56.7,
+      1.15
+     ],
+     [
+      -481.91,
+      22.542,
+      -55.23,
+      1.15
+     ],
+     [
+      -478.49,
+      22.384,
+      -53.83,
+      1.15
+     ],
+     [
+      -475.0,
+      22.235,
+      -52.59,
+      1.15
+     ],
+     [
+      -471.41,
+      22.08,
+      -51.61,
+      1.15
+     ],
+     [
+      -467.71,
+      21.914,
+      -50.9,
+      1.15
+     ],
+     [
+      -463.89,
+      21.735,
+      -50.45,
+      1.15
+     ],
+     [
+      -460.0,
+      21.546,
+      -50.2,
+      1.15
+     ],
+     [
+      -456.05,
+      21.355,
+      -50.08,
+      1.15
+     ],
+     [
+      -452.07,
+      21.166,
+      -50.02,
+      1.15
+     ],
+     [
+      -448.09,
+      20.983,
+      -49.98,
+      1.15
+     ],
+     [
+      -444.11,
+      20.808,
+      -49.93,
+      1.15
+     ],
+     [
+      -440.16,
+      20.64,
+      -49.81,
+      1.15
+     ],
+     [
+      -436.25,
+      20.477,
+      -49.58,
+      1.15
+     ],
+     [
+      -432.43,
+      20.322,
+      -49.16,
+      1.15
+     ],
+     [
+      -428.69,
+      20.177,
+      -48.52,
+      1.15
+     ],
+     [
+      -425.04,
+      20.043,
+      -47.68,
+      1.15
+     ],
+     [
+      -421.44,
+      19.915,
+      -46.72,
+      1.15
+     ],
+     [
+      -417.82,
+      19.784,
+      -45.79,
+      1.15
+     ],
+     [
+      -414.15,
+      19.646,
+      -45.0,
+      1.15
+     ],
+     [
+      -410.38,
+      19.501,
+      -44.43,
+      1.15
+     ],
+     [
+      -406.53,
+      19.353,
+      -44.08,
+      1.15
+     ],
+     [
+      -402.61,
+      19.206,
+      -43.89,
+      1.15
+     ],
+     [
+      -398.65,
+      19.061,
+      -43.8,
+      1.15
+     ],
+     [
+      -394.66,
+      18.921,
+      -43.77,
+      1.15
+     ],
+     [
+      -390.67,
+      18.787,
+      -43.76,
+      1.15
+     ],
+     [
+      -386.67,
+      18.66,
+      -43.77,
+      1.15
+     ],
+     [
+      -382.69,
+      18.54,
+      -43.8,
+      1.15
+     ],
+     [
+      -378.73,
+      18.427,
+      -43.87,
+      1.15
+     ],
+     [
+      -374.82,
+      18.322,
+      -44.03,
+      1.15
+     ],
+     [
+      -371.0,
+      18.231,
+      -44.3,
+      1.15
+     ],
+     [
+      -367.31,
+      18.156,
+      -44.67,
+      1.15
+     ],
+     [
+      -363.8,
+      18.095,
+      -45.07,
+      1.15
+     ],
+     [
+      -360.46,
+      18.046,
+      -45.33,
+      1.15
+     ],
+     [
+      -357.28,
+      18.002,
+      -45.26,
+      1.15
+     ],
+     [
+      -354.2,
+      17.958,
+      -44.72,
+      1.15
+     ],
+     [
+      -351.16,
+      17.911,
+      -43.71,
+      1.15
+     ],
+     [
+      -348.05,
+      17.855,
+      -42.38,
+      1.15
+     ],
+     [
+      -344.83,
+      17.788,
+      -40.98,
+      1.15
+     ],
+     [
+      -341.45,
+      17.709,
+      -39.74,
+      1.15
+     ],
+     [
+      -337.88,
+      17.623,
+      -38.79,
+      1.15
+     ],
+     [
+      -334.15,
+      17.535,
+      -38.16,
+      1.15
+     ],
+     [
+      -330.31,
+      17.455,
+      -37.8,
+      1.15
+     ],
+     [
+      -326.38,
+      17.387,
+      -37.62,
+      1.15
+     ],
+     [
+      -322.42,
+      17.332,
+      -37.54,
+      1.15
+     ],
+     [
+      -318.43,
+      17.287,
+      -37.51,
+      1.15
+     ],
+     [
+      -314.44,
+      17.247,
+      -37.5,
+      1.15
+     ],
+     [
+      -310.44,
+      17.207,
+      -37.47,
+      1.15
+     ],
+     [
+      -306.47,
+      17.166,
+      -37.42,
+      1.15
+     ],
+     [
+      -302.52,
+      17.125,
+      -37.29,
+      1.15
+     ],
+     [
+      -298.64,
+      17.086,
+      -37.0,
+      1.15
+     ],
+     [
+      -294.86,
+      17.053,
+      -36.47,
+      1.15
+     ],
+     [
+      -291.23,
+      17.023,
+      -35.59,
+      1.15
+     ],
+     [
+      -287.77,
+      16.991,
+      -34.28,
+      1.15
+     ],
+     [
+      -284.49,
+      16.952,
+      -32.53,
+      1.15
+     ],
+     [
+      -281.38,
+      16.906,
+      -30.39,
+      1.15
+     ],
+     [
+      -278.38,
+      16.849,
+      -27.97,
+      1.15
+     ],
+     [
+      -275.45,
+      16.784,
+      -25.39,
+      1.15
+     ],
+     [
+      -272.54,
+      16.71,
+      -22.76,
+      1.15
+     ],
+     [
+      -269.6,
+      16.629,
+      -20.2,
+      1.15
+     ],
+     [
+      -266.6,
+      16.544,
+      -17.78,
+      1.15
+     ],
+     [
+      -263.52,
+      16.455,
+      -15.56,
+      1.15
+     ],
+     [
+      -260.37,
+      16.36,
+      -13.52,
+      1.15
+     ],
+     [
+      -257.15,
+      16.254,
+      -11.64,
+      1.15
+     ],
+     [
+      -253.89,
+      16.129,
+      -9.84,
+      1.15
+     ],
+     [
+      -250.62,
+      15.979,
+      -8.07,
+      1.15
+     ],
+     [
+      -247.37,
+      15.804,
+      -6.26,
+      1.15
+     ],
+     [
+      -244.16,
+      15.61,
+      -4.36,
+      1.15
+     ],
+     [
+      -240.99,
+      15.403,
+      -2.35,
+      1.15
+     ],
+     [
+      -237.86,
+      15.184,
+      -0.26,
+      1.15
+     ],
+     [
+      -234.73,
+      14.95,
+      1.85,
+      1.15
+     ],
+     [
+      -231.6,
+      14.695,
+      3.94,
+      1.15
+     ],
+     [
+      -228.45,
+      14.413,
+      5.99,
+      1.15
+     ],
+     [
+      -225.29,
+      14.101,
+      8.03,
+      1.15
+     ],
+     [
+      -222.14,
+      13.758,
+      10.07,
+      1.15
+     ],
+     [
+      -218.97,
+      13.384,
+      12.08,
+      1.15
+     ],
+     [
+      -215.75,
+      12.982,
+      13.96,
+      1.15
+     ],
+     [
+      -212.42,
+      12.557,
+      15.57,
+      1.15
+     ],
+     [
+      -208.94,
+      12.113,
+      16.83,
+      1.15
+     ],
+     [
+      -205.3,
+      11.656,
+      17.7,
+      1.15
+     ],
+     [
+      -201.52,
+      11.189,
+      18.24,
+      1.15
+     ],
+     [
+      -197.64,
+      10.719,
+      18.53,
+      1.15
+     ],
+     [
+      -193.7,
+      10.254,
+      18.68,
+      1.15
+     ],
+     [
+      -189.74,
+      9.802,
+      18.77,
+      1.15
+     ],
+     [
+      -185.78,
+      9.37,
+      18.87,
+      1.15
+     ],
+     [
+      -181.87,
+      8.961,
+      19.07,
+      1.15
+     ],
+     [
+      -178.03,
+      8.577,
+      19.46,
+      1.15
+     ],
+     [
+      -174.32,
+      8.217,
+      20.15,
+      1.15
+     ],
+     [
+      -170.77,
+      7.883,
+      21.24,
+      1.15
+     ],
+     [
+      -167.42,
+      7.573,
+      22.78,
+      1.15
+     ],
+     [
+      -164.28,
+      7.29,
+      24.75,
+      1.15
+     ],
+     [
+      -161.34,
+      7.034,
+      27.1,
+      1.15
+     ],
+     [
+      -158.65,
+      6.802,
+      29.73,
+      1.15
+     ],
+     [
+      -156.25,
+      6.59,
+      32.58,
+      1.15
+     ],
+     [
+      -154.23,
+      6.39,
+      35.56,
+      1.15
+     ],
+     [
+      -152.64,
+      6.182,
+      38.56,
+      1.15
+     ],
+     [
+      -151.5,
+      5.953,
+      41.46,
+      1.15
+     ],
+     [
+      -150.77,
+      5.703,
+      44.06,
+      1.15
+     ],
+     [
+      -150.0,
+      4.554,
+      50.0,
+      1.15
      ]
     ]
    ]
@@ -89380,6 +93612,3107 @@
      1.89
     ]
    }
+  },
+  {
+   "name": "kawamuko-yosui",
+   "from": "nishizawa",
+   "width": 0.9,
+   "depth": 0.5,
+   "wallTop": 0.2,
+   "contour": true,
+   "points": [
+    [
+     -668.52,
+     35.922,
+     -159.103,
+     0.9,
+     0
+    ],
+    [
+     -670.179,
+     35.914,
+     -156.988,
+     0.9,
+     0
+    ],
+    [
+     -670.946,
+     35.909,
+     -155.74,
+     0.9,
+     0
+    ],
+    [
+     -671.666,
+     35.904,
+     -154.235,
+     0.9,
+     0
+    ],
+    [
+     -672.256,
+     35.899,
+     -152.55,
+     0.9,
+     0
+    ],
+    [
+     -672.736,
+     35.893,
+     -150.769,
+     0.9,
+     0
+    ],
+    [
+     -673.184,
+     35.887,
+     -148.959,
+     0.9,
+     0
+    ],
+    [
+     -673.652,
+     35.881,
+     -147.154,
+     0.9,
+     0
+    ],
+    [
+     -674.114,
+     35.876,
+     -145.345,
+     0.9,
+     0
+    ],
+    [
+     -674.501,
+     35.87,
+     -143.506,
+     0.9,
+     0
+    ],
+    [
+     -674.762,
+     35.864,
+     -141.617,
+     0.9,
+     0
+    ],
+    [
+     -674.892,
+     35.858,
+     -139.682,
+     0.9,
+     0
+    ],
+    [
+     -674.909,
+     35.852,
+     -137.726,
+     0.9,
+     0
+    ],
+    [
+     -674.807,
+     35.846,
+     -135.786,
+     0.9,
+     0
+    ],
+    [
+     -674.544,
+     35.84,
+     -133.9,
+     0.9,
+     0
+    ],
+    [
+     -674.063,
+     35.834,
+     -132.1,
+     0.9,
+     0
+    ],
+    [
+     -673.352,
+     35.829,
+     -130.395,
+     0.9,
+     0
+    ],
+    [
+     -672.467,
+     35.823,
+     -128.761,
+     0.9,
+     0
+    ],
+    [
+     -671.515,
+     35.817,
+     -127.156,
+     0.9,
+     0
+    ],
+    [
+     -670.595,
+     35.811,
+     -125.537,
+     0.9,
+     0
+    ],
+    [
+     -669.773,
+     35.806,
+     -123.877,
+     0.9,
+     0
+    ],
+    [
+     -669.091,
+     35.8,
+     -122.16,
+     0.9,
+     0
+    ],
+    [
+     -668.571,
+     35.794,
+     -120.375,
+     0.9,
+     0
+    ],
+    [
+     -668.199,
+     35.789,
+     -118.53,
+     0.9,
+     0
+    ],
+    [
+     -667.903,
+     35.783,
+     -116.652,
+     0.9,
+     0
+    ],
+    [
+     -667.58,
+     35.777,
+     -114.786,
+     0.9,
+     0
+    ],
+    [
+     -667.141,
+     35.771,
+     -112.968,
+     0.9,
+     0
+    ],
+    [
+     -666.557,
+     35.765,
+     -111.21,
+     0.9,
+     0
+    ],
+    [
+     -665.865,
+     35.76,
+     -109.496,
+     0.9,
+     0
+    ],
+    [
+     -665.134,
+     35.754,
+     -107.799,
+     0.9,
+     0
+    ],
+    [
+     -664.424,
+     35.748,
+     -106.093,
+     0.9,
+     0
+    ],
+    [
+     -663.768,
+     35.743,
+     -104.365,
+     0.9,
+     0
+    ],
+    [
+     -663.158,
+     35.737,
+     -102.617,
+     0.9,
+     0
+    ],
+    [
+     -662.565,
+     35.731,
+     -100.863,
+     0.9,
+     0
+    ],
+    [
+     -661.97,
+     35.726,
+     -99.109,
+     0.9,
+     0
+    ],
+    [
+     -661.376,
+     35.72,
+     -97.355,
+     0.9,
+     0
+    ],
+    [
+     -660.776,
+     35.714,
+     -95.604,
+     0.9,
+     0
+    ],
+    [
+     -660.14,
+     35.709,
+     -93.868,
+     0.9,
+     0
+    ],
+    [
+     -659.441,
+     35.703,
+     -92.157,
+     0.9,
+     0
+    ],
+    [
+     -658.676,
+     35.697,
+     -90.474,
+     0.9,
+     0
+    ],
+    [
+     -657.861,
+     35.691,
+     -88.812,
+     0.9,
+     0
+    ],
+    [
+     -657.0,
+     35.686,
+     -87.168,
+     0.9,
+     0
+    ],
+    [
+     -656.077,
+     35.68,
+     -85.55,
+     0.9,
+     0
+    ],
+    [
+     -655.06,
+     35.674,
+     -83.972,
+     0.9,
+     0
+    ],
+    [
+     -653.923,
+     35.668,
+     -82.443,
+     0.9,
+     0
+    ],
+    [
+     -652.67,
+     35.662,
+     -80.961,
+     0.9,
+     0
+    ],
+    [
+     -651.333,
+     35.656,
+     -79.515,
+     0.9,
+     0
+    ],
+    [
+     -649.948,
+     35.65,
+     -78.089,
+     0.9,
+     0
+    ],
+    [
+     -648.543,
+     35.644,
+     -76.671,
+     0.9,
+     0
+    ],
+    [
+     -647.131,
+     35.638,
+     -75.256,
+     0.9,
+     0
+    ],
+    [
+     -645.717,
+     35.632,
+     -73.842,
+     0.9,
+     0
+    ],
+    [
+     -644.303,
+     35.626,
+     -72.428,
+     0.9,
+     0
+    ],
+    [
+     -642.888,
+     35.619,
+     -71.013,
+     0.9,
+     0
+    ],
+    [
+     -641.474,
+     35.613,
+     -69.599,
+     0.9,
+     0
+    ],
+    [
+     -640.06,
+     35.607,
+     -68.185,
+     0.9,
+     0
+    ],
+    [
+     -638.646,
+     35.601,
+     -66.771,
+     0.9,
+     0
+    ],
+    [
+     -637.231,
+     35.595,
+     -65.356,
+     0.9,
+     0
+    ],
+    [
+     -635.817,
+     35.589,
+     -63.942,
+     0.9,
+     0
+    ],
+    [
+     -634.403,
+     35.582,
+     -62.528,
+     0.9,
+     0
+    ],
+    [
+     -632.989,
+     35.576,
+     -61.114,
+     0.9,
+     0
+    ],
+    [
+     -631.575,
+     35.57,
+     -59.7,
+     0.9,
+     0
+    ],
+    [
+     -630.16,
+     35.564,
+     -58.285,
+     0.9,
+     0
+    ],
+    [
+     -628.746,
+     35.558,
+     -56.871,
+     0.9,
+     0
+    ],
+    [
+     -627.332,
+     35.552,
+     -55.457,
+     0.9,
+     0
+    ],
+    [
+     -625.918,
+     35.546,
+     -54.043,
+     0.9,
+     0
+    ],
+    [
+     -624.504,
+     35.539,
+     -52.629,
+     0.9,
+     0
+    ],
+    [
+     -623.089,
+     35.533,
+     -51.215,
+     0.9,
+     0
+    ],
+    [
+     -621.674,
+     35.527,
+     -49.803,
+     0.9,
+     0
+    ],
+    [
+     -620.256,
+     35.521,
+     -48.398,
+     0.9,
+     0
+    ],
+    [
+     -618.829,
+     35.515,
+     -47.014,
+     0.9,
+     0
+    ],
+    [
+     -617.383,
+     35.509,
+     -45.678,
+     0.9,
+     0
+    ],
+    [
+     -615.903,
+     35.503,
+     -44.421,
+     0.9,
+     0
+    ],
+    [
+     -614.384,
+     35.497,
+     -43.26,
+     0.9,
+     0
+    ],
+    [
+     -612.833,
+     35.491,
+     -42.176,
+     0.9,
+     0
+    ],
+    [
+     -611.269,
+     35.485,
+     -41.124,
+     0.9,
+     0
+    ],
+    [
+     -609.703,
+     35.479,
+     -40.076,
+     0.9,
+     0
+    ],
+    [
+     -608.131,
+     35.474,
+     -39.043,
+     0.9,
+     0
+    ],
+    [
+     -606.538,
+     35.468,
+     -38.059,
+     0.9,
+     0
+    ],
+    [
+     -604.919,
+     35.462,
+     -37.139,
+     0.9,
+     0
+    ],
+    [
+     -603.278,
+     35.456,
+     -36.274,
+     0.9,
+     0
+    ],
+    [
+     -601.619,
+     35.451,
+     -35.45,
+     0.9,
+     0
+    ],
+    [
+     -599.943,
+     35.445,
+     -34.668,
+     0.9,
+     0
+    ],
+    [
+     -598.244,
+     35.439,
+     -33.942,
+     0.9,
+     0
+    ],
+    [
+     -596.519,
+     35.434,
+     -33.277,
+     0.9,
+     0
+    ],
+    [
+     -594.78,
+     35.428,
+     -32.647,
+     0.9,
+     0
+    ],
+    [
+     -593.047,
+     35.422,
+     -32.002,
+     0.9,
+     0
+    ],
+    [
+     -591.335,
+     35.417,
+     -31.308,
+     0.9,
+     0
+    ],
+    [
+     -589.641,
+     35.411,
+     -30.569,
+     0.9,
+     0
+    ],
+    [
+     -587.949,
+     35.405,
+     -29.825,
+     0.9,
+     0
+    ],
+    [
+     -586.241,
+     35.4,
+     -29.12,
+     0.9,
+     0
+    ],
+    [
+     -584.51,
+     35.394,
+     -28.472,
+     0.9,
+     0
+    ],
+    [
+     -582.761,
+     35.388,
+     -27.866,
+     0.9,
+     0
+    ],
+    [
+     -581.006,
+     35.382,
+     -27.273,
+     0.9,
+     0
+    ],
+    [
+     -579.252,
+     35.377,
+     -26.68,
+     0.9,
+     0
+    ],
+    [
+     -577.495,
+     35.371,
+     -26.093,
+     0.9,
+     0
+    ],
+    [
+     -575.735,
+     35.365,
+     -25.512,
+     0.9,
+     0
+    ],
+    [
+     -573.978,
+     35.36,
+     -24.927,
+     0.9,
+     0
+    ],
+    [
+     -572.224,
+     35.354,
+     -24.334,
+     0.9,
+     0
+    ],
+    [
+     -570.469,
+     35.348,
+     -23.74,
+     0.9,
+     0
+    ],
+    [
+     -568.72,
+     35.343,
+     -23.136,
+     0.9,
+     0
+    ],
+    [
+     -566.987,
+     35.337,
+     -22.492,
+     0.9,
+     0
+    ],
+    [
+     -565.277,
+     35.331,
+     -21.79,
+     0.9,
+     0
+    ],
+    [
+     -563.585,
+     35.325,
+     -21.048,
+     0.9,
+     0
+    ],
+    [
+     -561.891,
+     35.32,
+     -20.308,
+     0.9,
+     0
+    ],
+    [
+     -560.18,
+     35.314,
+     -19.612,
+     0.9,
+     0
+    ],
+    [
+     -558.444,
+     35.308,
+     -18.973,
+     0.9,
+     0
+    ],
+    [
+     -556.693,
+     35.303,
+     -18.371,
+     0.9,
+     0
+    ],
+    [
+     -554.94,
+     35.297,
+     -17.777,
+     0.9,
+     0
+    ],
+    [
+     -553.186,
+     35.291,
+     -17.182,
+     0.9,
+     0
+    ],
+    [
+     -551.432,
+     35.286,
+     -16.589,
+     0.9,
+     0
+    ],
+    [
+     -549.684,
+     35.28,
+     -15.98,
+     0.9,
+     0
+    ],
+    [
+     -547.956,
+     35.274,
+     -15.324,
+     0.9,
+     0
+    ],
+    [
+     -546.255,
+     35.269,
+     -14.602,
+     0.9,
+     0
+    ],
+    [
+     -544.577,
+     35.263,
+     -13.825,
+     0.9,
+     0
+    ],
+    [
+     -542.912,
+     35.257,
+     -13.016,
+     0.9,
+     0
+    ],
+    [
+     -541.251,
+     35.251,
+     -12.196,
+     0.9,
+     0
+    ],
+    [
+     -539.59,
+     35.246,
+     -11.377,
+     0.9,
+     0
+    ],
+    [
+     -537.928,
+     35.24,
+     -10.561,
+     0.9,
+     0
+    ],
+    [
+     -536.266,
+     35.234,
+     -9.746,
+     0.9,
+     0
+    ],
+    [
+     -534.605,
+     35.229,
+     -8.927,
+     0.9,
+     0
+    ],
+    [
+     -532.946,
+     35.223,
+     -8.104,
+     0.9,
+     0
+    ],
+    [
+     -531.289,
+     35.217,
+     -7.275,
+     0.9,
+     0
+    ],
+    [
+     -529.634,
+     35.212,
+     -6.444,
+     0.9,
+     0
+    ],
+    [
+     -527.979,
+     35.206,
+     -5.611,
+     0.9,
+     0
+    ],
+    [
+     -526.325,
+     35.2,
+     -4.777,
+     0.9,
+     0
+    ],
+    [
+     -524.67,
+     35.194,
+     -3.942,
+     0.9,
+     0
+    ],
+    [
+     -523.016,
+     35.189,
+     -3.107,
+     0.9,
+     0
+    ],
+    [
+     -521.362,
+     35.183,
+     -2.273,
+     0.9,
+     0
+    ],
+    [
+     -519.706,
+     35.177,
+     -1.441,
+     0.9,
+     0
+    ],
+    [
+     -518.046,
+     35.172,
+     -0.62,
+     0.9,
+     0
+    ],
+    [
+     -516.374,
+     35.166,
+     0.17,
+     0.9,
+     0
+    ],
+    [
+     -514.671,
+     35.16,
+     0.889,
+     0.9,
+     0
+    ],
+    [
+     -512.917,
+     35.155,
+     1.481,
+     0.9,
+     0
+    ],
+    [
+     -511.092,
+     35.149,
+     1.904,
+     0.9,
+     0
+    ],
+    [
+     -509.196,
+     35.143,
+     2.155,
+     0.9,
+     0
+    ],
+    [
+     -507.246,
+     35.137,
+     2.277,
+     0.9,
+     0
+    ],
+    [
+     -505.266,
+     35.131,
+     2.325,
+     0.9,
+     0
+    ],
+    [
+     -503.272,
+     35.125,
+     2.339,
+     0.9,
+     0
+    ],
+    [
+     -501.274,
+     35.118,
+     2.343,
+     0.9,
+     0
+    ],
+    [
+     -499.274,
+     35.112,
+     2.344,
+     0.9,
+     0
+    ],
+    [
+     -497.274,
+     35.106,
+     2.344,
+     0.9,
+     0
+    ],
+    [
+     -495.274,
+     35.1,
+     2.344,
+     0.9,
+     0
+    ],
+    [
+     -493.274,
+     35.094,
+     2.344,
+     0.9,
+     0
+    ],
+    [
+     -491.274,
+     35.088,
+     2.344,
+     0.9,
+     0
+    ],
+    [
+     -489.274,
+     35.082,
+     2.344,
+     0.9,
+     0
+    ],
+    [
+     -487.274,
+     35.075,
+     2.344,
+     0.9,
+     0
+    ],
+    [
+     -485.274,
+     35.069,
+     2.344,
+     0.9,
+     0
+    ],
+    [
+     -483.274,
+     35.063,
+     2.344,
+     0.9,
+     0
+    ],
+    [
+     -481.274,
+     35.057,
+     2.344,
+     0.9,
+     0
+    ],
+    [
+     -479.274,
+     35.051,
+     2.344,
+     0.9,
+     0
+    ],
+    [
+     -477.275,
+     35.045,
+     2.347,
+     0.9,
+     0
+    ],
+    [
+     -475.279,
+     35.038,
+     2.357,
+     0.9,
+     0
+    ],
+    [
+     -473.293,
+     35.032,
+     2.391,
+     0.9,
+     0
+    ],
+    [
+     -471.331,
+     35.026,
+     2.482,
+     0.9,
+     0
+    ],
+    [
+     -469.411,
+     35.02,
+     2.674,
+     0.9,
+     0
+    ],
+    [
+     -467.543,
+     35.015,
+     2.995,
+     0.9,
+     0
+    ],
+    [
+     -465.719,
+     35.009,
+     3.419,
+     0.9,
+     0
+    ],
+    [
+     -463.904,
+     35.003,
+     3.866,
+     0.9,
+     0
+    ],
+    [
+     -462.06,
+     34.997,
+     4.241,
+     0.9,
+     0
+    ],
+    [
+     -460.168,
+     34.991,
+     4.503,
+     0.9,
+     0
+    ],
+    [
+     -458.242,
+     34.985,
+     4.682,
+     0.9,
+     0
+    ],
+    [
+     -456.316,
+     34.979,
+     4.859,
+     0.9,
+     0
+    ],
+    [
+     -454.422,
+     34.974,
+     5.116,
+     0.9,
+     0
+    ],
+    [
+     -452.578,
+     34.968,
+     5.491,
+     0.9,
+     0
+    ],
+    [
+     -450.768,
+     34.962,
+     5.951,
+     0.9,
+     0
+    ],
+    [
+     -448.964,
+     34.956,
+     6.423,
+     0.9,
+     0
+    ],
+    [
+     -447.145,
+     34.95,
+     6.86,
+     0.9,
+     0
+    ],
+    [
+     -445.318,
+     34.945,
+     7.279,
+     0.9,
+     0
+    ],
+    [
+     -443.503,
+     34.939,
+     7.726,
+     0.9,
+     0
+    ],
+    [
+     -441.702,
+     34.933,
+     8.206,
+     0.9,
+     0
+    ],
+    [
+     -439.892,
+     34.927,
+     8.665,
+     0.9,
+     0
+    ],
+    [
+     -438.049,
+     34.922,
+     9.045,
+     0.9,
+     0
+    ],
+    [
+     -436.175,
+     34.916,
+     9.347,
+     0.9,
+     0
+    ],
+    [
+     -434.296,
+     34.91,
+     9.64,
+     0.9,
+     0
+    ],
+    [
+     -432.444,
+     34.904,
+     9.998,
+     0.9,
+     0
+    ],
+    [
+     -430.627,
+     34.898,
+     10.438,
+     0.9,
+     0
+    ],
+    [
+     -428.824,
+     34.893,
+     10.914,
+     0.9,
+     0
+    ],
+    [
+     -427.011,
+     34.887,
+     11.365,
+     0.9,
+     0
+    ],
+    [
+     -425.183,
+     34.881,
+     11.782,
+     0.9,
+     0
+    ],
+    [
+     -423.361,
+     34.875,
+     12.211,
+     0.9,
+     0
+    ],
+    [
+     -421.562,
+     34.87,
+     12.696,
+     0.9,
+     0
+    ],
+    [
+     -419.785,
+     34.864,
+     13.235,
+     0.9,
+     0
+    ],
+    [
+     -418.02,
+     34.858,
+     13.801,
+     0.9,
+     0
+    ],
+    [
+     -416.258,
+     34.853,
+     14.375,
+     0.9,
+     0
+    ],
+    [
+     -414.5,
+     34.847,
+     14.96,
+     0.9,
+     0
+    ],
+    [
+     -412.744,
+     34.841,
+     15.551,
+     0.9,
+     0
+    ],
+    [
+     -410.987,
+     34.835,
+     16.136,
+     0.9,
+     0
+    ],
+    [
+     -409.228,
+     34.83,
+     16.717,
+     0.9,
+     0
+    ],
+    [
+     -407.472,
+     34.824,
+     17.306,
+     0.9,
+     0
+    ],
+    [
+     -405.721,
+     34.818,
+     17.909,
+     0.9,
+     0
+    ],
+    [
+     -403.981,
+     34.813,
+     18.536,
+     0.9,
+     0
+    ],
+    [
+     -402.267,
+     34.807,
+     19.227,
+     0.9,
+     0
+    ],
+    [
+     -400.609,
+     34.801,
+     20.052,
+     0.9,
+     0
+    ],
+    [
+     -399.026,
+     34.795,
+     21.059,
+     0.9,
+     0
+    ],
+    [
+     -397.516,
+     34.79,
+     22.242,
+     0.9,
+     0
+    ],
+    [
+     -396.058,
+     34.784,
+     23.55,
+     0.9,
+     0
+    ],
+    [
+     -394.63,
+     34.777,
+     24.926,
+     0.9,
+     0
+    ],
+    [
+     -393.22,
+     34.771,
+     26.332,
+     0.9,
+     0
+    ],
+    [
+     -391.836,
+     34.765,
+     27.757,
+     0.9,
+     0
+    ],
+    [
+     -390.514,
+     34.759,
+     29.209,
+     0.9,
+     0
+    ],
+    [
+     -389.316,
+     34.753,
+     30.713,
+     0.9,
+     0
+    ],
+    [
+     -388.322,
+     34.747,
+     32.301,
+     0.9,
+     0
+    ],
+    [
+     -387.593,
+     34.742,
+     33.996,
+     0.9,
+     0
+    ],
+    [
+     -387.139,
+     34.736,
+     35.8,
+     0.9,
+     0
+    ],
+    [
+     -386.927,
+     34.73,
+     37.684,
+     0.9,
+     0
+    ],
+    [
+     -386.909,
+     34.724,
+     39.602,
+     0.9,
+     0
+    ],
+    [
+     -387.063,
+     34.718,
+     41.506,
+     0.9,
+     0
+    ],
+    [
+     -387.38,
+     34.713,
+     43.365,
+     0.9,
+     0
+    ],
+    [
+     -387.834,
+     34.707,
+     45.175,
+     0.9,
+     0
+    ],
+    [
+     -388.37,
+     34.701,
+     46.953,
+     0.9,
+     0
+    ],
+    [
+     -388.935,
+     34.695,
+     48.719,
+     0.9,
+     0
+    ],
+    [
+     -389.511,
+     34.69,
+     50.48,
+     0.9,
+     0
+    ],
+    [
+     -390.098,
+     34.684,
+     52.237,
+     0.9,
+     0
+    ],
+    [
+     -390.689,
+     34.678,
+     53.992,
+     0.9,
+     0
+    ],
+    [
+     -391.272,
+     34.673,
+     55.751,
+     0.9,
+     0
+    ],
+    [
+     -391.853,
+     34.667,
+     57.51,
+     0.9,
+     0
+    ],
+    [
+     -392.441,
+     34.661,
+     59.266,
+     0.9,
+     0
+    ],
+    [
+     -393.035,
+     34.656,
+     61.021,
+     0.9,
+     0
+    ],
+    [
+     -393.628,
+     34.65,
+     62.775,
+     0.9,
+     0
+    ],
+    [
+     -394.238,
+     34.644,
+     64.522,
+     0.9,
+     0
+    ],
+    [
+     -394.897,
+     34.638,
+     66.249,
+     0.9,
+     0
+    ],
+    [
+     -395.621,
+     34.633,
+     67.949,
+     0.9,
+     0
+    ],
+    [
+     -396.396,
+     34.627,
+     69.628,
+     0.9,
+     0
+    ],
+    [
+     -397.201,
+     34.621,
+     71.295,
+     0.9,
+     0
+    ],
+    [
+     -398.016,
+     34.616,
+     72.957,
+     0.9,
+     0
+    ],
+    [
+     -398.832,
+     34.61,
+     74.62,
+     0.9,
+     0
+    ],
+    [
+     -399.643,
+     34.604,
+     76.283,
+     0.9,
+     0
+    ],
+    [
+     -400.44,
+     34.599,
+     77.952,
+     0.9,
+     0
+    ],
+    [
+     -401.196,
+     34.593,
+     79.633,
+     0.9,
+     0
+    ],
+    [
+     -401.865,
+     34.587,
+     81.331,
+     0.9,
+     0
+    ],
+    [
+     -402.393,
+     34.582,
+     83.033,
+     0.9,
+     0
+    ],
+    [
+     -402.745,
+     34.577,
+     84.674,
+     0.9,
+     0
+    ],
+    [
+     -402.934,
+     34.572,
+     86.139,
+     0.9,
+     0
+    ],
+    [
+     -402.954,
+     34.564,
+     90.0,
+     0.9,
+     0
+    ],
+    [
+     -403.857,
+     34.564,
+     92.0,
+     0.9,
+     0
+    ],
+    [
+     -404.689,
+     34.564,
+     94.0,
+     0.9,
+     0
+    ],
+    [
+     -405.471,
+     34.564,
+     96.0,
+     0.9,
+     0
+    ],
+    [
+     -406.21,
+     34.564,
+     98.0,
+     0.9,
+     0
+    ],
+    [
+     -406.905,
+     34.564,
+     100.0,
+     0.9,
+     0
+    ],
+    [
+     -407.553,
+     34.564,
+     102.0,
+     0.9,
+     0
+    ],
+    [
+     -408.152,
+     34.564,
+     104.0,
+     0.9,
+     0
+    ],
+    [
+     -408.708,
+     34.564,
+     106.0,
+     0.9,
+     0
+    ],
+    [
+     -409.242,
+     34.564,
+     108.0,
+     0.9,
+     0
+    ],
+    [
+     -409.78,
+     34.564,
+     110.0,
+     0.9,
+     0
+    ],
+    [
+     -410.358,
+     34.564,
+     112.0,
+     0.9,
+     0
+    ],
+    [
+     -411.008,
+     34.564,
+     114.0,
+     0.9,
+     0
+    ],
+    [
+     -411.752,
+     34.564,
+     116.0,
+     0.9,
+     0
+    ],
+    [
+     -412.592,
+     34.564,
+     118.0,
+     0.9,
+     0
+    ],
+    [
+     -413.509,
+     34.564,
+     120.0,
+     0.9,
+     0
+    ],
+    [
+     -414.466,
+     34.564,
+     122.0,
+     0.9,
+     0
+    ],
+    [
+     -415.414,
+     34.564,
+     124.0,
+     0.9,
+     0
+    ],
+    [
+     -416.306,
+     34.564,
+     126.0,
+     0.9,
+     0
+    ],
+    [
+     -417.107,
+     34.564,
+     128.0,
+     0.9,
+     0
+    ],
+    [
+     -417.796,
+     34.564,
+     130.0,
+     0.9,
+     0
+    ],
+    [
+     -418.374,
+     34.564,
+     132.0,
+     0.9,
+     0
+    ],
+    [
+     -418.851,
+     34.564,
+     134.0,
+     0.9,
+     0
+    ],
+    [
+     -419.248,
+     34.564,
+     136.0,
+     0.9,
+     0
+    ],
+    [
+     -419.585,
+     34.564,
+     138.0,
+     0.9,
+     0
+    ],
+    [
+     -419.881,
+     34.564,
+     140.0,
+     0.9,
+     0
+    ],
+    [
+     -420.15,
+     34.564,
+     142.0,
+     0.9,
+     0
+    ],
+    [
+     -420.403,
+     34.564,
+     144.0,
+     0.9,
+     0
+    ],
+    [
+     -420.646,
+     34.564,
+     146.0,
+     0.9,
+     0
+    ],
+    [
+     -420.883,
+     34.564,
+     148.0,
+     0.9,
+     0
+    ],
+    [
+     -421.116,
+     34.564,
+     150.0,
+     0.9,
+     0
+    ],
+    [
+     -421.344,
+     34.564,
+     152.0,
+     0.9,
+     0
+    ],
+    [
+     -421.568,
+     34.564,
+     154.0,
+     0.9,
+     0
+    ],
+    [
+     -421.786,
+     34.564,
+     156.0,
+     0.9,
+     0
+    ],
+    [
+     -422.002,
+     34.564,
+     158.0,
+     0.9,
+     0
+    ],
+    [
+     -422.218,
+     34.564,
+     160.0,
+     0.9,
+     0
+    ],
+    [
+     -422.443,
+     34.564,
+     162.0,
+     0.9,
+     0
+    ],
+    [
+     -422.686,
+     34.564,
+     164.0,
+     0.9,
+     0
+    ],
+    [
+     -422.957,
+     34.564,
+     166.0,
+     0.9,
+     0
+    ],
+    [
+     -423.263,
+     34.564,
+     168.0,
+     0.9,
+     0
+    ],
+    [
+     -423.607,
+     34.564,
+     170.0,
+     0.9,
+     0
+    ],
+    [
+     -423.983,
+     34.564,
+     172.0,
+     0.9,
+     0
+    ],
+    [
+     -424.378,
+     34.564,
+     174.0,
+     0.9,
+     0
+    ],
+    [
+     -424.778,
+     34.564,
+     176.0,
+     0.9,
+     0
+    ],
+    [
+     -425.173,
+     34.564,
+     178.0,
+     0.9,
+     0
+    ],
+    [
+     -425.556,
+     34.564,
+     180.0,
+     0.9,
+     0
+    ],
+    [
+     -425.933,
+     34.564,
+     182.0,
+     0.9,
+     0
+    ],
+    [
+     -426.312,
+     34.564,
+     184.0,
+     0.9,
+     0
+    ],
+    [
+     -426.707,
+     34.564,
+     186.0,
+     0.9,
+     0
+    ],
+    [
+     -427.126,
+     34.564,
+     188.0,
+     0.9,
+     0
+    ],
+    [
+     -427.571,
+     34.564,
+     190.0,
+     0.9,
+     0
+    ],
+    [
+     -428.035,
+     34.564,
+     192.0,
+     0.9,
+     0
+    ],
+    [
+     -428.502,
+     34.564,
+     194.0,
+     0.9,
+     0
+    ],
+    [
+     -428.954,
+     34.564,
+     196.0,
+     0.9,
+     0
+    ],
+    [
+     -429.369,
+     34.564,
+     198.0,
+     0.9,
+     0
+    ],
+    [
+     -429.732,
+     34.564,
+     200.0,
+     0.9,
+     0
+    ],
+    [
+     -430.035,
+     34.564,
+     202.0,
+     0.9,
+     0
+    ],
+    [
+     -430.275,
+     34.564,
+     204.0,
+     0.9,
+     0
+    ],
+    [
+     -430.461,
+     34.564,
+     206.0,
+     0.9,
+     0
+    ],
+    [
+     -430.606,
+     34.564,
+     208.0,
+     0.9,
+     0
+    ],
+    [
+     -430.728,
+     34.564,
+     210.0,
+     0.9,
+     0
+    ],
+    [
+     -430.845,
+     34.564,
+     212.0,
+     0.9,
+     0
+    ],
+    [
+     -430.976,
+     34.564,
+     214.0,
+     0.9,
+     0
+    ],
+    [
+     -431.135,
+     34.564,
+     216.0,
+     0.9,
+     0
+    ],
+    [
+     -431.329,
+     34.564,
+     218.0,
+     0.9,
+     0
+    ],
+    [
+     -431.561,
+     33.051,
+     220.0,
+     0.9,
+     0
+    ],
+    [
+     -431.824,
+     33.051,
+     222.0,
+     0.9,
+     0
+    ],
+    [
+     -432.109,
+     33.051,
+     224.0,
+     0.9,
+     0
+    ],
+    [
+     -432.406,
+     33.051,
+     226.0,
+     0.9,
+     0
+    ],
+    [
+     -432.703,
+     33.051,
+     228.0,
+     0.9,
+     0
+    ],
+    [
+     -432.996,
+     33.051,
+     230.0,
+     0.9,
+     0
+    ],
+    [
+     -433.281,
+     33.051,
+     232.0,
+     0.9,
+     0
+    ],
+    [
+     -433.558,
+     33.051,
+     234.0,
+     0.9,
+     0
+    ],
+    [
+     -433.827,
+     33.051,
+     236.0,
+     0.9,
+     0
+    ],
+    [
+     -434.087,
+     33.051,
+     238.0,
+     0.9,
+     0
+    ],
+    [
+     -434.334,
+     33.051,
+     240.0,
+     0.9,
+     0
+    ],
+    [
+     -434.563,
+     33.051,
+     242.0,
+     0.9,
+     0
+    ],
+    [
+     -434.766,
+     33.051,
+     244.0,
+     0.9,
+     0
+    ],
+    [
+     -434.934,
+     33.051,
+     246.0,
+     0.9,
+     0
+    ],
+    [
+     -435.057,
+     33.051,
+     248.0,
+     0.9,
+     0
+    ],
+    [
+     -435.124,
+     33.051,
+     250.0,
+     0.9,
+     0
+    ],
+    [
+     -435.12,
+     33.051,
+     252.0,
+     0.9,
+     0
+    ],
+    [
+     -435.023,
+     33.051,
+     254.0,
+     0.9,
+     0
+    ],
+    [
+     -434.81,
+     33.051,
+     256.0,
+     0.9,
+     0
+    ],
+    [
+     -434.454,
+     33.051,
+     258.0,
+     0.9,
+     0
+    ],
+    [
+     -433.937,
+     33.051,
+     260.0,
+     0.9,
+     0
+    ],
+    [
+     -433.259,
+     33.051,
+     262.0,
+     0.9,
+     0
+    ],
+    [
+     -432.443,
+     33.051,
+     264.0,
+     0.9,
+     0
+    ],
+    [
+     -431.537,
+     33.051,
+     266.0,
+     0.9,
+     0
+    ],
+    [
+     -430.612,
+     31.516,
+     268.0,
+     0.9,
+     0
+    ],
+    [
+     -429.739,
+     31.516,
+     270.0,
+     0.9,
+     0
+    ],
+    [
+     -428.98,
+     31.516,
+     272.0,
+     0.9,
+     0
+    ],
+    [
+     -428.372,
+     31.516,
+     274.0,
+     0.9,
+     0
+    ],
+    [
+     -427.926,
+     31.516,
+     276.0,
+     0.9,
+     0
+    ],
+    [
+     -427.628,
+     31.516,
+     278.0,
+     0.9,
+     0
+    ],
+    [
+     -427.452,
+     31.516,
+     280.0,
+     0.9,
+     0
+    ],
+    [
+     -427.37,
+     31.516,
+     282.0,
+     0.9,
+     0
+    ],
+    [
+     -427.357,
+     31.516,
+     284.0,
+     0.9,
+     0
+    ],
+    [
+     -427.4,
+     31.516,
+     286.0,
+     0.9,
+     0
+    ],
+    [
+     -427.492,
+     31.516,
+     288.0,
+     0.9,
+     0
+    ],
+    [
+     -427.629,
+     31.516,
+     290.0,
+     0.9,
+     0
+    ],
+    [
+     -427.809,
+     31.516,
+     292.0,
+     0.9,
+     0
+    ],
+    [
+     -428.026,
+     31.516,
+     294.0,
+     0.9,
+     0
+    ],
+    [
+     -428.268,
+     31.516,
+     296.0,
+     0.9,
+     0
+    ],
+    [
+     -428.52,
+     31.516,
+     298.0,
+     0.9,
+     0
+    ],
+    [
+     -428.767,
+     31.516,
+     300.0,
+     0.9,
+     0
+    ],
+    [
+     -428.994,
+     31.516,
+     302.0,
+     0.9,
+     0
+    ],
+    [
+     -429.195,
+     31.516,
+     304.0,
+     0.9,
+     0
+    ],
+    [
+     -429.369,
+     31.516,
+     306.0,
+     0.9,
+     0
+    ],
+    [
+     -429.521,
+     31.516,
+     308.0,
+     0.9,
+     0
+    ],
+    [
+     -429.661,
+     31.516,
+     310.0,
+     0.9,
+     0
+    ],
+    [
+     -429.796,
+     31.516,
+     312.0,
+     0.9,
+     0
+    ],
+    [
+     -429.932,
+     31.516,
+     314.0,
+     0.9,
+     0
+    ],
+    [
+     -430.07,
+     31.516,
+     316.0,
+     0.9,
+     0
+    ],
+    [
+     -430.205,
+     31.516,
+     318.0,
+     0.9,
+     0
+    ],
+    [
+     -430.33,
+     31.516,
+     320.0,
+     0.9,
+     0
+    ],
+    [
+     -430.435,
+     31.516,
+     322.0,
+     0.9,
+     0
+    ],
+    [
+     -430.513,
+     31.516,
+     324.0,
+     0.9,
+     0
+    ],
+    [
+     -430.557,
+     31.516,
+     326.0,
+     0.9,
+     0
+    ],
+    [
+     -430.559,
+     31.516,
+     328.0,
+     0.9,
+     0
+    ],
+    [
+     -430.515,
+     31.516,
+     330.0,
+     0.9,
+     0
+    ],
+    [
+     -430.417,
+     31.516,
+     332.0,
+     0.9,
+     0
+    ],
+    [
+     -430.259,
+     31.516,
+     334.0,
+     0.9,
+     0
+    ],
+    [
+     -430.034,
+     31.516,
+     336.0,
+     0.9,
+     0
+    ],
+    [
+     -429.739,
+     31.516,
+     338.0,
+     0.9,
+     0
+    ],
+    [
+     -429.376,
+     31.516,
+     340.0,
+     0.9,
+     0
+    ],
+    [
+     -428.949,
+     31.516,
+     342.0,
+     0.9,
+     0
+    ],
+    [
+     -428.471,
+     31.516,
+     344.0,
+     0.9,
+     0
+    ],
+    [
+     -427.953,
+     31.516,
+     346.0,
+     0.9,
+     0
+    ],
+    [
+     -427.412,
+     31.516,
+     348.0,
+     0.9,
+     0
+    ],
+    [
+     -426.862,
+     31.516,
+     350.0,
+     0.9,
+     0
+    ],
+    [
+     -426.316,
+     31.516,
+     352.0,
+     0.9,
+     0
+    ],
+    [
+     -425.779,
+     31.516,
+     354.0,
+     0.9,
+     0
+    ],
+    [
+     -425.253,
+     31.516,
+     356.0,
+     0.9,
+     0
+    ],
+    [
+     -424.732,
+     31.516,
+     358.0,
+     0.9,
+     0
+    ],
+    [
+     -424.207,
+     31.516,
+     360.0,
+     0.9,
+     0
+    ],
+    [
+     -423.665,
+     31.516,
+     362.0,
+     0.9,
+     0
+    ],
+    [
+     -423.094,
+     31.516,
+     364.0,
+     0.9,
+     0
+    ],
+    [
+     -422.487,
+     31.516,
+     366.0,
+     0.9,
+     0
+    ],
+    [
+     -421.84,
+     31.516,
+     368.0,
+     0.9,
+     0
+    ],
+    [
+     -421.15,
+     31.516,
+     370.0,
+     0.9,
+     0
+    ],
+    [
+     -420.419,
+     31.516,
+     372.0,
+     0.9,
+     0
+    ],
+    [
+     -419.646,
+     31.516,
+     374.0,
+     0.9,
+     0
+    ],
+    [
+     -418.831,
+     31.516,
+     376.0,
+     0.9,
+     0
+    ],
+    [
+     -417.971,
+     31.516,
+     378.0,
+     0.9,
+     0
+    ],
+    [
+     -417.061,
+     31.516,
+     380.0,
+     0.9,
+     0
+    ],
+    [
+     -416.096,
+     31.516,
+     382.0,
+     0.9,
+     0
+    ],
+    [
+     -415.07,
+     31.516,
+     384.0,
+     0.9,
+     0
+    ],
+    [
+     -413.976,
+     31.516,
+     386.0,
+     0.9,
+     0
+    ],
+    [
+     -412.809,
+     31.516,
+     388.0,
+     0.9,
+     0
+    ],
+    [
+     -411.559,
+     31.516,
+     390.0,
+     0.9,
+     0
+    ],
+    [
+     -410.218,
+     30.464,
+     392.0,
+     0.9,
+     0
+    ],
+    [
+     -408.778,
+     30.464,
+     394.0,
+     0.9,
+     0
+    ],
+    [
+     -407.233,
+     30.464,
+     396.0,
+     0.9,
+     0
+    ],
+    [
+     -405.583,
+     30.464,
+     398.0,
+     0.9,
+     0
+    ],
+    [
+     -403.832,
+     30.464,
+     400.0,
+     0.9,
+     0
+    ],
+    [
+     -401.986,
+     30.464,
+     402.0,
+     0.9,
+     0
+    ],
+    [
+     -400.053,
+     27.673,
+     404.0,
+     0.9,
+     0
+    ],
+    [
+     -398.038,
+     27.673,
+     406.0,
+     0.9,
+     0
+    ],
+    [
+     -395.947,
+     27.673,
+     408.0,
+     0.9,
+     0
+    ],
+    [
+     -393.791,
+     26.532,
+     410.0,
+     0.9,
+     0
+    ],
+    [
+     -391.605,
+     26.532,
+     412.0,
+     0.9,
+     0
+    ],
+    [
+     -389.458,
+     26.532,
+     414.0,
+     0.9,
+     0
+    ],
+    [
+     -387.46,
+     25.151,
+     416.0,
+     0.9,
+     0
+    ],
+    [
+     -385.757,
+     23.72,
+     418.0,
+     0.9,
+     0
+    ],
+    [
+     -384.505,
+     23.72,
+     420.0,
+     0.9,
+     0
+    ],
+    [
+     -383.839,
+     21.004,
+     422.0,
+     0.9,
+     0
+    ]
+   ],
+   "format": "[x, waterY, z, width, cover]",
+   "covers": "0 open, 1 pipe under the prefectural road, 2 slab where a lane or farm road crosses",
+   "intake": {
+    "x": -668.52,
+    "z": -159.1,
+    "bedY": 35.622,
+    "crestY": 35.942,
+    "dir": [
+     10.711,
+     8.957
+    ]
+   }
+  },
+  {
+   "name": "kawamuko-yosui-kita",
+   "from": "nishizawa",
+   "width": 0.9,
+   "depth": 0.5,
+   "wallTop": 0.2,
+   "contour": true,
+   "points": [
+    [
+     -402.954,
+     34.564,
+     90.0,
+     0.9,
+     0
+    ],
+    [
+     -401.946,
+     34.34,
+     88.0,
+     0.9,
+     0
+    ],
+    [
+     -400.79,
+     34.109,
+     86.0,
+     0.9,
+     0
+    ],
+    [
+     -399.439,
+     33.867,
+     84.0,
+     0.9,
+     0
+    ],
+    [
+     -397.855,
+     33.612,
+     82.0,
+     0.9,
+     0
+    ],
+    [
+     -396.014,
+     33.341,
+     80.0,
+     0.9,
+     0
+    ],
+    [
+     -393.917,
+     33.051,
+     78.0,
+     0.9,
+     0
+    ],
+    [
+     -391.587,
+     32.911,
+     76.0,
+     0.9,
+     0
+    ],
+    [
+     -389.069,
+     32.422,
+     74.0,
+     0.9,
+     0
+    ],
+    [
+     -386.417,
+     32.09,
+     72.0,
+     0.9,
+     0
+    ],
+    [
+     -383.695,
+     31.752,
+     70.0,
+     0.9,
+     0
+    ],
+    [
+     -380.965,
+     31.414,
+     68.0,
+     0.9,
+     0
+    ],
+    [
+     -378.284,
+     31.079,
+     66.0,
+     0.9,
+     0
+    ],
+    [
+     -375.701,
+     30.753,
+     64.0,
+     0.9,
+     0
+    ],
+    [
+     -373.25,
+     30.436,
+     62.0,
+     0.9,
+     0
+    ],
+    [
+     -370.943,
+     30.131,
+     60.0,
+     0.9,
+     0
+    ],
+    [
+     -368.764,
+     29.835,
+     58.0,
+     0.9,
+     0
+    ],
+    [
+     -366.679,
+     29.546,
+     56.0,
+     0.9,
+     0
+    ],
+    [
+     -364.641,
+     29.261,
+     54.0,
+     0.9,
+     0
+    ],
+    [
+     -362.608,
+     28.975,
+     52.0,
+     0.9,
+     0
+    ],
+    [
+     -360.55,
+     28.898,
+     50.0,
+     0.9,
+     0
+    ],
+    [
+     -358.456,
+     28.898,
+     48.0,
+     0.9,
+     0
+    ],
+    [
+     -356.326,
+     28.107,
+     46.0,
+     0.9,
+     0
+    ],
+    [
+     -354.159,
+     27.812,
+     44.0,
+     0.9,
+     0
+    ],
+    [
+     -351.944,
+     27.6,
+     42.0,
+     0.9,
+     0
+    ],
+    [
+     -349.661,
+     27.6,
+     40.0,
+     0.9,
+     0
+    ],
+    [
+     -347.278,
+     27.6,
+     38.0,
+     0.9,
+     0
+    ],
+    [
+     -344.766,
+     27.6,
+     36.0,
+     0.9,
+     0
+    ],
+    [
+     -342.103,
+     27.6,
+     34.0,
+     0.9,
+     0
+    ],
+    [
+     -339.277,
+     26.525,
+     32.0,
+     0.9,
+     0
+    ],
+    [
+     -336.29,
+     26.525,
+     30.0,
+     0.9,
+     0
+    ],
+    [
+     -333.159,
+     25.253,
+     28.0,
+     0.9,
+     0
+    ],
+    [
+     -329.935,
+     25.253,
+     26.0,
+     0.9,
+     0
+    ],
+    [
+     -326.718,
+     25.253,
+     24.0,
+     0.9,
+     0
+    ],
+    [
+     -323.677,
+     25.253,
+     22.0,
+     0.9,
+     0
+    ],
+    [
+     -321.046,
+     25.253,
+     20.0,
+     0.9,
+     0
+    ],
+    [
+     -319.089,
+     23.435,
+     18.0,
+     0.9,
+     0
+    ],
+    [
+     -318.041,
+     23.209,
+     16.0,
+     0.9,
+     0
+    ]
+   ],
+   "format": "[x, waterY, z, width, cover]",
+   "covers": "0 open, 1 pipe under the prefectural road, 2 slab where a lane or farm road crosses",
+   "branchOf": "kawamuko-yosui"
   }
  ],
  "ditch": {

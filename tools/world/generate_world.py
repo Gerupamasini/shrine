@@ -885,10 +885,25 @@ for _name, _zm in (("okusawa", -394.0), ("miyazawa", 212.0)):
                         # the larger brook (Miyazawa) passes under the road on a short bridge, the smaller in a box culvert
                         covers=[("bridge" if _name == "miyazawa" else "road", _x_out, _x_in), ("farm", _xm - 2.5, _xm + 2.5), ("levee", _x_riv, _x_levee)]))
     ditch_crossings.append(_zc)
+# Nishizawa: the largest valley on the west side opens at the north end of Kawamuko. Its brook
+# runs down to the river over cobbles (no road to cross on this side); a little way up the valley
+# an intake lifts water into the canal that runs along the top of the Kawamuko terraces.
+west_brooks = []
+_wc = [st for st in region_streams() if st[0, 0] < float(river_base_x(st[0, 1])) and abs(st[0, 1] - 50.0) < 70]
+if _wc:
+    _st = max(_wc, key=lambda a_: a_[1, 3])
+    _hill = [(float(x_), float(z_)) for x_, z_, *_ in _st
+             if x_ < float(river_x(z_) - bed_half(z_)) - 4.0 and abs(x_) < HALF - 24 and abs(z_) < HALF - 24]
+    if len(_hill) >= 8:
+        _hp = _smooth_path(_hill)[::-1]                    # upstream -> downstream
+        west_brooks.append(dict(name="nishizawa", hill=_hp, z=round(float(_hp[-1, 1]), 2)))
 
 def stream_dist(x, z):
     """Distance from (x, z) to the nearest side stream (brook or lined channel)."""
     best = 1e9
+    for st in west_brooks:
+        d2 = (st["hill"][:, 0] - x) ** 2 + (st["hill"][:, 1] - z) ** 2
+        best = min(best, float(np.sqrt(d2.min())))
     for st in streams:
         if st["x_riv"] <= x <= st["x_in"]:
             best = min(best, abs(z - st["z"]))
@@ -1243,6 +1258,10 @@ def _line_dist(arr, ax_, az_, bx_, bz_, reach=12.0):
     arr[i0:i1, j0:j1] = np.minimum(arr[i0:i1, j0:j1], d_)
     return (i0, i1, j0, j1), d_, t_
 brook_d = np.full_like(h, 1e9)
+for st in west_brooks:
+    hp_ = st["hill"]
+    for k_ in range(len(hp_) - 1):
+        _line_dist(brook_d, hp_[k_, 0], hp_[k_, 1], hp_[k_ + 1, 0], hp_[k_ + 1, 1])
 for st in streams:
     hp_ = st["hill"]
     for k_ in range(len(hp_) - 1):
@@ -1335,7 +1354,7 @@ for _c in canals:
 irr_ditches = []
 for _zc in irr_ditch_z:
     _zd = _zc - 2.7                                               # on the north side of the farm road
-    _c = next(c_ for c_ in canals if c_["pts"][0, 1] - 40 < _zd < c_["pts"][-1, 1] + 5)
+    _c = next(c_ for c_ in canals if not c_.get("contour") and c_["pts"][0, 1] - 40 < _zd < c_["pts"][-1, 1] + 5)
     _x0 = _xw(_zd) - CANAL2_W / 2 - 0.16                         # leaves the canal's west wall
     _into_canal = WEIR_Z - 8 < _zc < 375
     _x1 = (canal_x_(_zd) + 0.9) if _into_canal else float(levee_path_x(_zd)) + PATH_W / 2 + 0.6
@@ -1831,6 +1850,153 @@ for st in streams:
     st["tops"] = [[round(float(x_), 2), round(at(ground, x_, zc_) + 0.06, 3)] for x_ in xs_]
 
 # ---- Irrigation canals and branch ditches: channels ------------------------------
+# Nishizawa's bed: cobbles down the valley, falling steadily to the river, which it joins just above
+# the water.
+for st in west_brooks:
+    hp_ = st["hill"]
+    gy_ = ndimage.gaussian_filter1d(np.array([at(h, x_, z_) for x_, z_ in hp_]), 2.0, mode="nearest")
+    bed_ = np.minimum.accumulate(gy_ - 0.55)
+    bed_[-1] = min(float(bed_[-1]), float(water_level(hp_[-1, 1])) + 0.15)
+    bed_ = np.minimum.accumulate(bed_)
+    st["bed"] = bed_
+    for k_ in range(len(hp_) - 1):
+        (i0, i1, j0, j1), d_, t_ = _line_dist(stream_d, hp_[k_, 0], hp_[k_, 1], hp_[k_ + 1, 0], hp_[k_ + 1, 1], reach=9.0)
+        tgt = bed_[k_] + (bed_[k_ + 1] - bed_[k_]) * t_ + np.maximum(d_ - STREAM_NAT, 0) * 0.85
+        h[i0:i1, j0:j1] = np.minimum(h[i0:i1, j0:j1], tgt)
+
+# The Kawamuko canal: from an intake on Nishizawa it runs south along the top of the terraces, a
+# little above the highest bench of each stretch, falling gently with the valley; every bench below
+# it then takes its water from the bench above (tagoshi). Built after the fields are levelled.
+_kz_rows = []
+_terr = is_paddy & (label >= TERRACE0) & (X < rx - 10.0) & (_aw > 0.5)       # the Kawamuko apron only
+for _z in np.arange(-HALF + 30.0, HALF - 30.0, 2.0):
+    _i = int(round((_z / EXTENT + 0.5) * (N - 1)))
+    _cols = np.nonzero(_terr[_i])[0]
+    if len(_cols) < 3:
+        continue
+    _kz_rows.append((_z, float(axis[_cols.min()]), float(np.nanmax(paddy_level[_i, _cols]))))
+if west_brooks and len(_kz_rows) > 40:
+    from scipy.ndimage import minimum_filter1d as _minf1, maximum_filter1d as _maxf1b
+    _kr = np.array(_kz_rows)
+    _zs = np.arange(_kr[0, 0], _kr[-1, 0] + 0.01, 2.0)
+    _xt = np.interp(_zs, _kr[:, 0], _kr[:, 1])
+    _lt = np.interp(_zs, _kr[:, 0], _kr[:, 2])
+    _xc = _g1d(_minf1(_xt, 9), 3.0) - 3.0                              # just above the top benches
+    _wq = _maxf1b(_lt, 9) + 0.3
+    _wc = np.maximum.accumulate(_wq[::-1])[::-1]                       # never rises downstream (south)
+    # keep clear of the Kawamuko houses: pass above (west of) their yards
+    for _k in range(len(_zs)):
+        for hs_ in houses:
+            if hs_["group"] == "kawamuko" and abs(hs_["z"] - _zs[_k]) < hs_["d"] / 2 + 8 and _xc[_k] > hs_["x"] - hs_["w"] / 2 - 9:
+                _xc[_k] = min(_xc[_k], hs_["x"] - hs_["w"] / 2 - 9)
+    _xc = _g1d(_xc, 2.0)
+
+    def _contour_route(x0_, z0_, w0_, tx_, tz_, w1_, pen_, step=2):
+        import heapq
+        hs_g = ndimage.gaussian_filter(h, 2.0)
+        m_ = 110.0
+        x1_, z1_ = float(tx_[0]), float(tz_[0])
+        j0_ = max(0, int((min(x0_, *tx_) - m_) / CELL + (N - 1) / 2))
+        j1_ = min(N - 1, int((max(x0_, *tx_) + m_) / CELL + (N - 1) / 2))
+        i0_ = max(0, int((min(z0_, *tz_) - m_) / CELL + (N - 1) / 2))
+        i1_ = min(N - 1, int((max(z0_, *tz_) + m_) / CELL + (N - 1) / 2))
+        I_ = np.arange(i0_, i1_ + 1, step)
+        J_ = np.arange(j0_, j1_ + 1, step)
+        gx, gz = axis[J_][None, :], axis[I_][:, None]
+        d0_ = np.hypot(gx - x0_, gz - z0_)
+        d1_ = np.hypot(gx - x1_, gz - z1_)
+        wt_ = w0_ + (w1_ - w0_) * d0_ / np.maximum(d0_ + d1_, 1e-6)
+        dev_ = hs_g[np.ix_(I_, J_)] - (wt_ + 0.25)                   # >0: cut, <0: the channel on a bank
+        c_ = 1.0 + 40.0 * np.minimum(-dev_, 3.0).clip(0) ** 2 + 4.0 * np.clip(dev_ - 0.4, 0, 4.0) ** 2
+        c_ += np.where((brook_d[np.ix_(I_, J_)] < 7.0) & (d0_ > 14.0), 60.0, 0.0)
+        for hs_ in houses:
+            c_ += np.where(np.hypot(gx - hs_["x"], gz - hs_["z"]) < max(hs_["w"], hs_["d"]) / 2 + 6, 80.0, 0.0)
+        a0 = (int(np.argmin(np.abs(axis[I_] - z0_))), int(np.argmin(np.abs(axis[J_] - x0_))))
+        tgt = {}
+        for t_, (x_, z_) in enumerate(zip(tx_, tz_)):
+            tgt.setdefault((int(np.argmin(np.abs(axis[I_] - z_))), int(np.argmin(np.abs(axis[J_] - x_)))), t_)
+        best, a1 = np.inf, None
+        dist = np.full(c_.shape, np.inf)
+        prev = -np.ones(c_.shape + (2,), dtype=np.int32)
+        dist[a0] = 0.0
+        q = [(0.0, a0)]
+        nb = [(di, dj, math.hypot(di, dj)) for di in (-1, 0, 1) for dj in (-1, 0, 1) if di or dj]
+        while q:
+            d_, (a, b) = heapq.heappop(q)
+            if d_ > dist[a, b]:
+                continue
+            if d_ >= best:
+                break
+            if (a, b) in tgt and d_ + pen_[tgt[(a, b)]] < best:
+                best, a1 = d_ + pen_[tgt[(a, b)]], (a, b)
+            for di, dj, ln in nb:
+                a2, b2 = a + di, b + dj
+                if 0 <= a2 < c_.shape[0] and 0 <= b2 < c_.shape[1]:
+                    nd = d_ + ln * 0.5 * (c_[a, b] + c_[a2, b2])
+                    if nd < dist[a2, b2]:
+                        dist[a2, b2] = nd
+                        prev[a2, b2] = (a, b)
+                        heapq.heappush(q, (nd, (a2, b2)))
+        path, cur = [], a1
+        while cur != a0 and cur[0] >= 0:
+            path.append((float(axis[J_[cur[1]]]), float(axis[I_[cur[0]]])))
+            cur = tuple(int(v_) for v_ in prev[cur])
+        t1 = tgt[a1]
+        path = [(float(tx_[t1]), float(tz_[t1]))] + path[1:] + [(x0_, z0_)]
+        return _smooth_path(path[::-1], step=2.0, sigma=2.0), t1
+
+    _brk = west_brooks[0]
+    _hp, _bed = _brk["hill"], _brk["bed"]
+    _k = None
+    for _i in range(len(_hp) - 1, -1, -1):
+        _L = math.hypot(_hp[_i, 0] - _xc[0], _hp[_i, 1] - _zs[0])
+        if _L > 20.0 and _bed[_i] + 0.3 >= _wc[0] + _L / 300.0:
+            _k = _i
+            break
+    if _k is not None:
+        _xi, _zi = float(_hp[_k, 0]), float(_hp[_k, 1])
+        _w0 = float(_bed[_k]) + 0.3
+        _rpts = [p_ for r_ in rural_roads for p_ in r_["pts"]]
+        _rkd = _KDi(np.array(_rpts)) if _rpts else None
+        def _crossing(x_, z_):
+            near_road = _rkd is not None and _rkd.query((x_, z_))[0] < 2.8
+            return near_road or at(town_d, x_, z_) < 2.6 or at(lane_d, x_, z_) < 2.4 or at(farm_d, x_, z_) < 2.6
+        # The head reach from the intake to the top of the terraces follows the hillside: the cheapest
+        # path on a 2.3 m grid where the ground stands a little above the falling water, so the
+        # channel sits in a shallow cut and winds in and out of the gullies (a straight line would
+        # cross them on a bank). Fill costs more than cut; the brook and houses are kept clear of.
+        # It joins the terrace stretch where it meets it rather than run on to the northern tip and
+        # double back beside itself (what it skips is charged at a little over half the channel
+        # saved); a diversion box there splits off a short branch north along the tip benches.
+        _arc = np.concatenate([[0.0], np.cumsum(np.hypot(np.diff(_xc), np.diff(_zs)))])
+        _nt = int(np.searchsorted(_arc, 160.0))
+        _hd, _j = _contour_route(_xi, _zi, _w0, _xc[:_nt], _zs[:_nt], float(_wc[0]), 0.6 * _arc[:_nt])
+        _sl = np.concatenate([[0.0], np.cumsum(np.hypot(np.diff(_hd[:, 0]), np.diff(_hd[:, 1])))])
+        _wb = np.maximum.accumulate(_wq[:_j + 1])                     # the branch, falling north to the tip
+        _wj = min(max(float(_wc[_j]), float(_wb[-1])), _w0)
+        _pts = []
+        for (_x, _z), _s in zip(_hd[:-1], _sl[:-1]):
+            _pts.append([float(_x), float(_z), _w0 + (_wj - _w0) * _s / _sl[-1], 2 if _crossing(_x, _z) else 0])
+        print("kawamuko head reach", round(float(_sl[-1])), "m, joins the terraces", round(float(_arc[_j])), "m below their tip")
+        for _x, _z, _w in zip(_xc[_j:], _zs[_j:], _wc[_j:]):
+            _pts.append([float(_x), float(_z), float(_w), 2 if _crossing(_x, _z) else 0])
+        _pts = np.array(_pts)
+        _pts[:, 2] = np.minimum(_pts[:, 2], _w0)
+        _pts[:, 2] = np.minimum.accumulate(_pts[:, 2])
+        canals.append(dict(name="kawamuko-yosui", pts=_pts, intake=(_xi, _zi, float(_bed[_k])), stream="nishizawa", contour=True))
+        if _j >= 4:
+            # it leaves the diversion box at the canal's level and falls with the benches it serves
+            # (never below what they need), steeply where the tip of the terraces drops away
+            _sb = _arc[_j] - _arc[_j::-1]
+            _bp = np.array([[float(_xc[i_]), float(_zs[i_]), min(max(float(_wb[i_]), _wj - 0.1 * float(s_)), _wj), 2 if _crossing(_xc[i_], _zs[i_]) else 0]
+                            for i_, s_ in zip(range(_j, -1, -1), _sb)])
+            _bp[:, 2] = np.minimum.accumulate(_bp[:, 2])
+            canals.append(dict(name="kawamuko-yosui-kita", pts=_bp, branch_of="kawamuko-yosui", stream="nishizawa", contour=True))
+        print("kawamuko canal", len(_pts), "points, z", round(_zs[0]), "-", round(_zs[-1]), "intake bed", round(float(_bed[_k]), 2), "top water", round(float(_wc[0]), 2))
+for _c in canals:
+    if _c.get("contour"):
+        for _i in range(len(_c["pts"]) - 1):
+            _line_dist(irr_d, _c["pts"][_i, 0], _c["pts"][_i, 1], _c["pts"][_i + 1, 0], _c["pts"][_i + 1, 1], reach=8.0)
 _tick('Irrigation canals and ditches')
 # Now that the fields are levelled, set each canal's water against the ground it serves (6-12 m west
 # of it, house yards and the temple bench left out) + 0.12 m; every point carries the needs of those
@@ -1846,10 +2012,11 @@ for _c in canals:
             continue
         _p[_i, 2] = max(_p[_i, 2], max(at(h, _x - d_, _z) for d_ in (6.0, 8.0, 10.0, 12.0)) + 0.12)
     _p[:, 2] = np.maximum.accumulate(_p[::-1, 2])[::-1]
-    _xi, _zi, _by = _c["intake"]
-    _c["intake"] = (_xi, _zi, _by, max(_by + 0.32, float(_p[0, 2]) + 0.02))
+    if "intake" in _c:
+        _xi, _zi, _by = _c["intake"]
+        _c["intake"] = (_xi, _zi, _by, max(_by + 0.32, float(_p[0, 2]) + 0.02))
 for _dt in irr_ditches:
-    _c = next(c_ for c_ in canals if c_["pts"][0, 1] - 40 < _dt["z"] < c_["pts"][-1, 1] + 5)
+    _c = next(c_ for c_ in canals if not c_.get("contour") and c_["pts"][0, 1] - 40 < _dt["z"] < c_["pts"][-1, 1] + 5)
     _dt["water0"] = float(np.interp(_dt["z"], _c["pts"][:, 1], _c["pts"][:, 2])) - 0.08
 # Canals: precast concrete U-channel; the ground meets the wall tops on short 1:1.5 fill or 1:1
 # cut slopes. Each cell takes the nearest stretch of canal (so overlapping stretches agree).
@@ -1867,10 +2034,15 @@ for _c in canals:
         _cw[i0:i1, j0:j1] = np.where(closer, _p[_i, 2] + (_p[_i + 1, 2] - _p[_i, 2]) * t_, _cw[i0:i1, j0:j1])
 _ctop = _cw + CANAL2_TOP
 _dl = np.maximum(_cd - (CANAL2_W / 2 + 0.2), 0)
-_graded = np.clip(h, _ctop - 0.04 - _dl / 1.5, _ctop - 0.04 + _dl * 1.0)
+# below the canal the ground falls away on 1:1.5 fill (the U-channel may stand a little proud);
+# above it a level berm 2.2 m out, then a 1:1 cut, so no ground stands over the wall tops where
+# the terrain shader opens the channel
+_graded = np.clip(h, _ctop - 0.04 - _dl / 1.5, _ctop - 0.04 + np.maximum(_cd - 2.2, 0) * 1.0)
 _keep_road = road_d < W_FLAT + 0.3
-h = np.where(_keep_road, h, np.where(_cd < CANAL2_W / 2, _cw - CANAL2_D - 0.1,
-             np.where(_cd < CANAL2_W / 2 + 0.2, _ctop - 0.04, np.where(_dl < 5.0, _graded, h))))
+# The channel is narrower than a terrain cell: carved into the heightfield it left a sawtooth of dips
+# beside the walls wherever the canal runs across the grid. So the ground closes over it at the wall
+# tops and the terrain shader opens the channel from a finer distance map (channels.png).
+h = np.where(_keep_road, h, np.where(_cd < CANAL2_W / 2 + 0.2, _ctop - 0.04, np.where(_cd < 7.2, _graded, h)))
 # Branch ditches: concrete-lined, 0.6 m wide, beside the farm roads; the bed falls from the canal to
 # the river (or into the weir canal); slab covers where a road or the levee path crosses.
 _ground_i = ndimage.uniform_filter(h, 5)
@@ -1912,7 +2084,7 @@ for _dt in irr_ditches:
 # Connect real water sources to parcel edges, including short field-to-field drops.
 from irrigation import connect as connect_irrigation
 _water_sources = [(c['name'], [[float(x),float(y),float(z)] for x,z,y,cover in c['pts']]) for c in canals]
-for st in streams:
+for st in streams + west_brooks:
     _water_sources.append((st['name'], [[float(x),float(y+.12),float(z)] for (x,z),y in zip(st['hill'],st['bed'])]))
 _water_sources.append(('weir-canal', [p[:3] for p in canal_pts]))
 for ki,dt in enumerate(irr_ditches):
@@ -2148,7 +2320,7 @@ grass_density = np.clip(wgt["grass"] * (1 - 0.6 * forest_density) + wgt["forest"
                         + is_paddy * (1 - smoothstep(0.5, 1.2, d_fld)) * np.where(_mown, 0.36, 0.85), 0, 1)
 # nothing grows through the revetments, the canal or the wet margin; sparse tufts on the dry gravel
 grass_density = grass_density * (1 - wall_band) * (1 - riverbed) * (1 - 0.8 * wgt["bar"]) * ~(in_canal & (cdx < CANAL_W / 2 + 0.3))
-grass_density = grass_density * (stream_d > STREAM_W / 2 + 0.3) * (1 - 0.9 * (temple_d < 0))
+grass_density = grass_density * (stream_d > STREAM_W / 2 + 0.3) * (1 - 0.9 * (temple_d < 0)) * (_cd > CANAL2_W / 2 + 0.35)
 # road verges: a strip mown short beside the ditch; the cut and fill banks beyond left long
 _onroad = Z > ROAD_Z0 - 0.6
 grass_density = np.where(_onroad & (road_d > DITCH_OFF + 0.3) & (road_d < DITCH_OFF + 1.9), grass_density * 0.45, grass_density)
@@ -2158,6 +2330,43 @@ pid = np.where(is_paddy, (label * 2654435761 % 251 + 3), 0) % 255
 rice_sdf = np.where(is_paddy & (field_type == 1), np.clip(0.5 + (d_fld - RICE_EDGE) / 4.0, 0, 1), 0.0)
 aux = np.stack([forest_density, pid / 255.0, rice_sdf, grass_density], -1)
 Image.fromarray(np.uint8(np.rint(np.clip(aux, 0, 1) * 255)), "RGBA").save(OUT / "vegetation-mask.png")
+# Openings of the brook-fed canals in the ground: distance (m) from each 0.5 m texel centre to the
+# nearest open stretch of canal, 0-2 m in 0-255. The ends stop short of the intake and the end wall;
+# the inside of each diversion box is open too.
+CHAN_RES, CHAN_RANGE = 3000, 2.0
+_chd = np.full((CHAN_RES, CHAN_RES), CHAN_RANGE, np.float32)
+_tc = -EXTENT / 2 + (np.arange(CHAN_RES) + 0.5) * EXTENT / CHAN_RES
+def _chan_seg(ax_, az_, bx_, bz_, trim0=0.0, trim1=0.0):
+    L_ = math.hypot(bx_ - ax_, bz_ - az_)
+    if L_ < 1e-6 or trim0 + trim1 >= L_:
+        return
+    ux_, uz_ = (bx_ - ax_) / L_, (bz_ - az_) / L_
+    ax_, az_, bx_, bz_ = ax_ + ux_ * trim0, az_ + uz_ * trim0, bx_ - ux_ * trim1, bz_ - uz_ * trim1
+    r_ = CHAN_RANGE + 0.5
+    j0_ = max(int((min(ax_, bx_) - r_ + EXTENT / 2) / EXTENT * CHAN_RES), 0); j1_ = min(int((max(ax_, bx_) + r_ + EXTENT / 2) / EXTENT * CHAN_RES) + 1, CHAN_RES)
+    i0_ = max(int((min(az_, bz_) - r_ + EXTENT / 2) / EXTENT * CHAN_RES), 0); i1_ = min(int((max(az_, bz_) + r_ + EXTENT / 2) / EXTENT * CHAN_RES) + 1, CHAN_RES)
+    gx_, gz_ = _tc[None, j0_:j1_], _tc[i0_:i1_, None]
+    t_ = np.clip(((gx_ - ax_) * (bx_ - ax_) + (gz_ - az_) * (bz_ - az_)) / max((bx_ - ax_) ** 2 + (bz_ - az_) ** 2, 1e-9), 0, 1)
+    d_ = np.hypot(gx_ - (ax_ + t_ * (bx_ - ax_)), gz_ - (az_ + t_ * (bz_ - az_)))
+    _chd[i0_:i1_, j0_:j1_] = np.minimum(_chd[i0_:i1_, j0_:j1_], d_)
+for _c in canals:
+    _p = _c["pts"]
+    _n = len(_p)
+    for _i in range(_n - 1):
+        if _p[_i, 3] > 0.5 or _p[_i + 1, 3] > 0.5:
+            continue
+        _chan_seg(_p[_i, 0], _p[_i, 1], _p[_i + 1, 0], _p[_i + 1, 1],
+                  0.6 if (_i == 0 and "intake" in _c) else 0.0, CANAL2_W / 2 + 0.1 if _i == _n - 2 else 0.0)
+    if "branch_of" in _c:                                          # the diversion box: 1.8 m square inside its walls
+        _gx, _gz = _p[1, 0] - _p[0, 0], _p[1, 1] - _p[0, 1]
+        _gl = math.hypot(_gx, _gz) or 1.0
+        _gx, _gz = _gx / _gl, _gz / _gl
+        _r = (CANAL2_W + 0.9) / 2 - 0.07
+        _i0 = int((_p[0, 1] - 2 + EXTENT / 2) / EXTENT * CHAN_RES); _j0 = int((_p[0, 0] - 2 + EXTENT / 2) / EXTENT * CHAN_RES)
+        _sx, _sz = _tc[None, _j0:_j0 + 9] - _p[0, 0], _tc[_i0:_i0 + 9, None] - _p[0, 1]
+        _in = (np.abs(_sx * _gx + _sz * _gz) < _r) & (np.abs(-_sx * _gz + _sz * _gx) < _r)
+        _chd[_i0:_i0 + 9, _j0:_j0 + 9] = np.where(_in, 0.0, _chd[_i0:_i0 + 9, _j0:_j0 + 9])
+Image.fromarray(np.uint8(np.rint(np.clip(_chd / CHAN_RANGE, 0, 1) * 255)), "L").save(OUT / "channels.png", optimize=True)
 # Paddy level map (float -> uint16 heights in same encoding), used for rice canopy.
 # (the level runs on two cells beyond each rice field so the canopy sheet stays flat across its
 # edge; the distance field in the vegetation mask cuts the rice off, not the grid)
@@ -3060,18 +3269,27 @@ for _k, _dt in enumerate(irr_ditches):
                         "channel": {"x0": round(_dt["x0"], 2), "x1": round(_dt["x1"], 2), "xRiver": round(_dt["xr"], 2), "bed0": _dt["bed0"], "bed1": _dt["bed1"], "tops": _dt["tops"]},
                         "covers": [{"kind": k_, "x0": round(a_, 2), "x1": round(b_, 2)} for k_, a_, b_ in _dt["covers"]],
                         "intoCanal": bool(_dt["into_canal"]), "water": runs})
+for st in west_brooks:
+    brook = [[round(float(x_), 2), round(float(b_), 3), round(float(z_), 2)] for (x_, z_), b_ in zip(st["hill"], st["bed"])]
+    stream_meta.append({"name": st["name"], "kind": "brook", "z": st["z"], "brook": brook, "width": STREAM_NAT * 2,
+                        "water": [[[p_[0], round(p_[1] + 0.24, 3), p_[2], 1.15] for p_ in brook]]})
 canal_meta = []
 for _c in canals:
     _p = _c["pts"]
-    _xi, _zi, _by, _crest = _c["intake"]
-    _hp = next(s_ for s_ in streams if s_["name"] == _c["stream"])["hill"]
-    _j = int(np.argmin(np.hypot(_hp[:, 0] - _xi, _hp[:, 1] - _zi)))
-    _a, _b = _hp[max(_j - 2, 0)], _hp[min(_j + 2, len(_hp) - 1)]
-    canal_meta.append({"name": _c["name"], "from": _c["stream"], "width": CANAL2_W, "depth": CANAL2_D, "wallTop": CANAL2_TOP,
-                       "points": [[round(float(q[0]), 3), round(float(q[2]), 3), round(float(q[1]), 3), CANAL2_W, int(q[3])] for q in _p],
-                       "format": "[x, waterY, z, width, cover]", "covers": "0 open, 1 pipe under the prefectural road, 2 slab where a lane or farm road crosses",
-                       "intake": {"x": round(_xi, 2), "z": round(_zi, 2), "bedY": round(_by, 3), "crestY": round(_crest, 3),
-                                  "dir": [round(float(_b[0] - _a[0]), 3), round(float(_b[1] - _a[1]), 3)]}})
+    _meta = {"name": _c["name"], "from": _c["stream"], "width": CANAL2_W, "depth": CANAL2_D, "wallTop": CANAL2_TOP,
+             **({"contour": True} if _c.get("contour") else {}),
+             "points": [[round(float(q[0]), 3), round(float(q[2]), 3), round(float(q[1]), 3), CANAL2_W, int(q[3])] for q in _p],
+             "format": "[x, waterY, z, width, cover]", "covers": "0 open, 1 pipe under the prefectural road, 2 slab where a lane or farm road crosses"}
+    if "intake" in _c:
+        _xi, _zi, _by, _crest = _c["intake"]
+        _hp = next(s_ for s_ in streams + west_brooks if s_["name"] == _c["stream"])["hill"]
+        _j = int(np.argmin(np.hypot(_hp[:, 0] - _xi, _hp[:, 1] - _zi)))
+        _a, _b = _hp[max(_j - 2, 0)], _hp[min(_j + 2, len(_hp) - 1)]
+        _meta["intake"] = {"x": round(_xi, 2), "z": round(_zi, 2), "bedY": round(_by, 3), "crestY": round(_crest, 3),
+                           "dir": [round(float(_b[0] - _a[0]), 3), round(float(_b[1] - _a[1]), 3)]}
+    else:
+        _meta["branchOf"] = _c["branch_of"]                         # split off another canal at a diversion box
+    canal_meta.append(_meta)
 
 landmarks = {
     "foot": [104.0, FOOT_Y + 1.62, STAIR_Z, 90.0, -2.0],            # x,y,z, yaw(deg), pitch(deg)
@@ -3110,6 +3328,8 @@ meta = {
                             "paddy": "brown_mud_leaves_01", "riverbed": "river_small_rocks", "gravel": "gravel_floor_02", "asphalt": "asphalt_01", "furrows": "farm_furrows", "bar": "ganges_river_pebbles", "concrete": "asphalt_06"}},
     "vegetationMask": {"file": "vegetation-mask.png", "channels": ["forestDensity", "paddyIdHash", "riceEdgeDistance (0.5 = edge of the rice, +-2 m)", "grassDensity"]},
     "paddyLevel": {"file": "paddy-level.png", "encoding": "same as heightEncoding, uint16 PNG"},
+    "channelMask": {"file": "channels.png", "range": CHAN_RANGE, "openBelow": round(CANAL2_W / 2 + 0.02, 3),
+                    "encoding": "distance (m) from each texel centre to the nearest open stretch of a brook-fed canal = value/255*range; row 0 is z=-750, texel 0.5 m; the ground is drawn open where the distance is below openBelow (the heightfield closes over the channel at the wall tops)"},
     "environment": {"date": "1994-08-08", "latitude": 38.32, "longitude": 141.02, "timezone": 9, "defaultTime": 18.0,
                     "timeRange": [17.0, 19.0], "sky": "assets/sky/kloppenheim_06_puresky", "notes": "Sun position from a standard solar position algorithm (NOAA approximation)."},
     "landmarks": landmarks,

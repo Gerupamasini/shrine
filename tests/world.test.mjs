@@ -139,8 +139,40 @@ test("the weir intake feeds a canal that runs gently downhill above the river", 
 });
 
 test("irrigation: brook-fed canals along the high side of the floor, branch ditches to the river", () => {
-  const canals = data.canals ?? [];
+  const all = data.canals ?? [];
+  const canals = all.filter((c) => !c.contour);
+  for (const c of all) assert.ok(c.intake || all.some((o) => o.name === c.branchOf && o.intake), `${c.name} has an intake or leaves a canal that has one`);
   assert.ok(canals.length >= 2, "two canals from the side brooks");
+  // the Kawamuko canal: from Nishizawa along the top of the west terraces, above the benches below it
+  const kc = all.find((c) => c.contour && !c.branchOf);
+  assert.ok(kc && kc.from === "nishizawa", "the Kawamuko canal is fed from Nishizawa");
+  for (let i = 1; i < kc.points.length; i++) assert.ok(kc.points[i][1] <= kc.points[i - 1][1] + 1e-6, "the Kawamuko canal runs downhill");
+  assert.ok(kc.intake.crestY >= kc.points[0][1] - 0.05);
+  // a branch to the northern tip of the terraces leaves it at a diversion box, lower than the canal there
+  const kb = all.find((c) => c.branchOf === kc.name);
+  let ji = kc.points.length >> 1;
+  if (kb) {
+    const b0 = kb.points[0];
+    ji = kc.points.reduce((bi, p, i) => (Math.hypot(p[0] - b0[0], p[2] - b0[2]) < Math.hypot(kc.points[bi][0] - b0[0], kc.points[bi][2] - b0[2]) ? i : bi), 0);
+    assert.ok(Math.hypot(kc.points[ji][0] - b0[0], kc.points[ji][2] - b0[2]) < 3 && b0[1] <= kc.points[ji][1] + 0.02, "the branch leaves the canal");
+    for (let i = 1; i < kb.points.length; i++) assert.ok(kb.points[i][1] <= kb.points[i - 1][1] + 1e-6, "the branch runs downhill");
+  }
+  // the head reach keeps to the hillside (in a shallow cut, not on a long bank) ...
+  let cut = 0, m = 0;
+  for (const [x, y, z, , cov] of kc.points.slice(0, ji)) {
+    if (cov) continue;
+    m++;
+    if (Math.max(H(x - 2, z), H(x + 2, z), H(x, z - 2), H(x, z + 2)) > y - 0.3) cut++;
+  }
+  assert.ok(m > 40 && cut / m > 0.85, `Kawamuko head reach on the hillside at ${cut}/${m} points`);
+  // ... and along the terraces the water stands above the benches below it
+  let over = 0, n = 0;
+  for (const [x, y, z, , cov] of [...kc.points.slice(ji), ...(kb ? kb.points : [])]) {
+    if (cov) continue;
+    n++;
+    if (y > H(x + 8, z) + 0.05) over++;
+  }
+  assert.ok(n > 100 && over / n > 0.85, `Kawamuko canal above the benches below it at ${over}/${n} points`);
   const road = data.roads.find((r) => r.class === "prefectural").points;
   const roadAt = (z) => road.reduce((b, p) => (Math.abs(p[2] - z) < Math.abs(b[2] - z) ? p : b));
   for (const c of canals) {
@@ -285,7 +317,11 @@ test("hills and valley: eroded relief, a winding floor, side streams, temple and
   const rx = data.river.points.map((p) => p[0]);
   assert.ok(Math.max(...rx) - Math.min(...rx) > 60);
   // side streams: a brook that never runs uphill, a culvert under the prefectural road, water to draw
-  const brooks = data.streams.filter((st) => st.kind !== "ditch");
+  const brooks = data.streams.filter((st) => st.kind !== "ditch" && st.kind !== "brook");
+  // Nishizawa, the west valley's brook: falls steadily and joins the river just above its water
+  const west = data.streams.find((st) => st.name === "nishizawa");
+  assert.ok(west && west.kind === "brook" && west.brook.length > 20, "Nishizawa runs down the west valley");
+  for (let i = 1; i < west.brook.length; i++) assert.ok(west.brook[i][1] <= west.brook[i - 1][1] + 1e-6, "Nishizawa falls downstream");
   assert.ok(brooks.length >= 2, "two side streams");
   for (const st of brooks) {
     for (let i = 1; i < st.brook.length; i++) assert.ok(st.brook[i][1] <= st.brook[i - 1][1] + 1e-6, `${st.name} falls downstream`);
