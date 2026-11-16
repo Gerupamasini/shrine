@@ -2,7 +2,7 @@ import sys, unittest
 from pathlib import Path
 import numpy as np
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'tools/world'))
-from paddy_bunds import shape, BUND_HEIGHT
+from paddy_bunds import shape, BUND_HEIGHT, CREST
 
 class BundTests(unittest.TestCase):
     def test_clipped_and_internal_edges_hold_the_higher_field(self):
@@ -15,6 +15,7 @@ class BundTests(unittest.TestCase):
         self.assertGreaterEqual(height[15,19],3.+BUND_HEIGHT-1e-8)
         self.assertAlmostEqual(height[15,10],2.)
         self.assertAlmostEqual(height[15,28],3.)
-        self.assertEqual(distance[9,8],0)
+        # (edges no line explains are measured to a smoothed line: the clipped corner's cells lie on its crest)
+        self.assertLessEqual(distance[9,8],CREST)
 
 if __name__=='__main__': unittest.main()

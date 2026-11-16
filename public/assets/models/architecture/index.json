@@ -103,7 +103,7 @@
  },
  "assets": {
   "road-ditch": {
-   "triangles": 41496,
+   "triangles": 40344,
    "min": [
     -84.092,
     1.901,
@@ -115,9 +115,8 @@
     689.14
    ],
    "materials": [
-    "concrete_old",
-    "concrete_dark",
-    "concrete"
+    "concrete",
+    "concrete_old"
    ]
   },
   "tunnel": {
@@ -373,16 +372,16 @@
    ]
   },
   "stream-works": {
-   "triangles": 57348,
+   "triangles": 67776,
    "min": [
-    -675.501,
-    1.105,
-    -412.529
+    -674.384,
+    -1.846,
+    -428.619
    ],
    "max": [
-    61.51,
-    37.622,
-    558.05
+    332.036,
+    37.353,
+    558.2
    ],
    "materials": [
     "concrete_dark",
@@ -1607,12 +1606,12 @@
    "triangles": 16590,
    "min": [
     -189.279,
-    0.405,
+    -2.688,
     -289.616
    ],
    "max": [
     -103.064,
-    8.271,
+    5.123,
     595.516
    ],
    "materials": [
