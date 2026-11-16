@@ -179,7 +179,7 @@ POOL_Z0 = WEIR_Z - 135.0  # the weir backs the water up to the head of the walle
 WL_NAT = 1.45             # natural reaches: water this far below the river's own floor
 WL_CHAN = 1.25            # walled reach: held higher by the drop structures
 # The river has cut below the valley floor the paddies stand on: its own floodplain (the low
-# terrace, kasen-dankyu) lies 2.2-3.3 m lower - deeper in some reaches than others - between terrace
+# terrace, kasen-dankyu) lies 4.5-6 m lower - deeper in some reaches than others - between terrace
 # scarps (dankyu-gai) that follow the outer edge of its meander belt; where the belt is wide, an older
 # floodplain is left part way down as a middle terrace with its own lower scarp. Everything of the
 # river - bed, banks, walls, weir, levee path, the weir canal and the low fields it waters - is laid out
@@ -188,7 +188,9 @@ def river_drop(z):
     """How far the river's floor lies below the paddy floor (it changes slowly down the valley, never
     so fast that the water would rise downstream)."""
     z = np.asarray(z, dtype=np.float64)
-    return 2.75 + 0.45 * np.sin(z * 0.0019 + 0.6) + 0.15 * np.sin(z * 0.0061 + 2.0)
+    # (a step a walker reads as a terrace from the fields: about a two-storey house; a cut of 2-3 m read
+    # as a grassy bank)
+    return 5.3 + 0.6 * np.sin(z * 0.0019 + 0.6) + 0.2 * np.sin(z * 0.0061 + 2.0)
 
 
 def river_floor(z):
@@ -422,8 +424,8 @@ _wid_e, _wid_w = _toe_e - _base_e, _base_w - _toe_w
 # (the inner toe never comes nearer the levee than 5 m, whatever the smoothing of the envelope did)
 _toe2_e = np.maximum(_gf1(_base_e + 3.0 + 0.32 * np.maximum(_wid_e - 3.0, 0), 8.0), _reach_e + 5.0)
 _toe2_w = np.minimum(_gf1(_base_w - 2.0 - 0.32 * np.maximum(_wid_w - 2.0, 0), 8.0), _reach_w - 4.0)
-_mh_e = (1.05 + 0.25 * np.sin(_lt_z * 0.013)) * smoothstep(12.0, 18.0, _wid_e) * smoothstep(-0.65, -0.25, np.sin(_lt_z * 0.0071 + 1.1))
-_mh_w = (0.95 + 0.2 * np.sin(_lt_z * 0.017 + 1.0)) * smoothstep(7.0, 10.0, _wid_w) * smoothstep(-0.65, -0.25, np.sin(_lt_z * 0.0083 + 2.6))
+_mh_e = (1.8 + 0.35 * np.sin(_lt_z * 0.013)) * smoothstep(12.0, 18.0, _wid_e) * smoothstep(-0.65, -0.25, np.sin(_lt_z * 0.0071 + 1.1))
+_mh_w = (1.6 + 0.3 * np.sin(_lt_z * 0.017 + 1.0)) * smoothstep(7.0, 10.0, _wid_w) * smoothstep(-0.65, -0.25, np.sin(_lt_z * 0.0083 + 2.6))
 # (and the bench is left only where it has room between the two scarps)
 _mh_e = _gf1(_mh_e * smoothstep(6.0, 10.0, _toe_e - _toe2_e - _mh_e / SCARP_RISE), 10.0)
 _mh_w = _gf1(_mh_w * smoothstep(6.0, 10.0, _toe2_w - _toe_w - _mh_w / SCARP_RISE), 10.0)
@@ -1356,6 +1358,10 @@ for k_, fr in enumerate(farm_roads):
         x_, z_, _ = _pts[e_]
         if abs(x_ - float(road_x(z_))) < ROAD_HALF + 1.0:
             _pts[e_] = (x_, z_, road_level(z_))
+        elif abs(x_ - float(levee_path_x(z_))) < PATH_W:
+            # (it ends on the levee path, at the path's own level: the river's bank, cut later, would
+            # otherwise leave the end of the ramp standing over the path)
+            _pts[e_] = (x_, z_, float(bank_top(z_)))
         elif farm_profiles:
             _sp = farm_profiles[0]
             _j = int(np.argmin([math.hypot(q_[0] - x_, q_[1] - z_) for q_ in _sp]))
@@ -1617,7 +1623,15 @@ def rural_leg(name, cls, a, b, avoid=None, east_of=None):
     ys = np.interp(chainage, uniform, gaussian_filter1d(np.interp(uniform, chainage, ground), 3., mode='nearest'))
     on_main = np.array([at(road_d, x, z) < W_FLAT+.2 for x, z in pts])
     ground[on_main] = np.array([road_level(z) for x, z in pts])[on_main]
-    fixed = on_main | np.array([at(town_d, x, z) < .8 for x, z in pts])
+    _td = np.array([at(town_d, x, z) for x, z in pts])
+    fixed = on_main | (_td < .8)
+    # (a point on a paved road's shoulder can stand on its cut or fill: where two pinned points are too
+    # far apart in height to ramp between, the one off the carriageway is left to the grade envelope)
+    for k in range(1, len(pts)):
+        if fixed[k] and fixed[k - 1] and abs(ground[k] - ground[k - 1]) > .16 * lengths[k - 1]:
+            j = k if _td[k] > _td[k - 1] else k - 1
+            if not on_main[j] and _td[j] > 0:
+                fixed[j] = False
     # Shared rural junctions get a short level turnout. Separate vertical
     # alignments must agree where their shoulders overlap at the fork.
     for end, distances in [(0, chainage), (-1, chainage[-1]-chainage)]:
@@ -2608,15 +2622,18 @@ def sample(x, z):
 (ROOT / '.cache' / 'rural-profiles.json').write_text(json.dumps(rural_roads))
 # Fail before expensive vegetation generation if encoded road benches have a step.
 for _r in rural_roads:
-    _max_grade = 0.
+    _max_grade, _at = 0., None
     for (ax, az), (bx, bz) in zip(_r['pts'], _r['pts'][1:]):
         length = math.hypot(bx-ax, bz-az)
         samples = max(1, math.ceil(length))
         heights = [sample(ax+(bx-ax)*t, az+(bz-az)*t) for t in np.linspace(0, 1, samples+1)]
-        _max_grade = max(_max_grade, max(abs(b-a) for a,b in zip(heights, heights[1:]))/(length/samples))
+        _g = max(abs(b-a) for a,b in zip(heights, heights[1:]))/(length/samples)
+        if _g > _max_grade:
+            _max_grade, _at = _g, (round(ax, 1), round(az, 1))
     _tick(f"Rural grade {_r['id']}: {_max_grade:.3f}")
     if _max_grade >= .35:
-        raise ValueError(f"Unwalkable rural road {_r['id']}: grade {_max_grade:.3f}")
+        np.save(ROOT / '.cache' / 'hq-failed.npy', hq)
+        raise ValueError(f"Unwalkable rural road {_r['id']}: grade {_max_grade:.3f} at {_at}")
 
 # ---- Surface masks ---------------------------------------------------------------
 _tick('Surface masks')
@@ -3936,8 +3953,10 @@ for _c in canals:
 # half way up each face, where the face stands at least 1.2 m.
 def _scarp_lines():
     out = []
-    for side, toe, level, rise_len, min_h in ((1.0, _toe_e, "main", 6.0, 1.0), (-1.0, _toe_w, "main", 6.0, 1.0),
-                                              (1.0, _toe2_e, "middle", 3.5, 0.55), (-1.0, _toe2_w, "middle", 3.5, 0.55)):
+    # (rise_len: the run of the face to look across; max_h: a bigger rise than this is the hillside, not
+    # a terrace scarp)
+    for side, toe, level, rise_len, min_h, max_h in ((1.0, _toe_e, "main", 8.5, 2.0, 10.0), (-1.0, _toe_w, "main", 8.5, 2.0, 10.0),
+                                                     (1.0, _toe2_e, "middle", 3.5, 0.55, 4.0), (-1.0, _toe2_w, "middle", 3.5, 0.55, 4.0)):
         mh_ = _mh_e if side > 0 else _mh_w
         cur = []
         def _flush():
@@ -3954,7 +3973,7 @@ def _scarp_lines():
             ys_ = np.array([sample(x_, z_) for x_ in xs_])
             top_ = float(ys_[-5:].max())
             mid_ = np.nonzero(ys_ > low_ + 0.5 * (top_ - low_))[0]
-            if min_h < top_ - low_ < 6.0 and len(mid_):
+            if min_h < top_ - low_ < max_h and len(mid_):
                 cur.append([round(float(xs_[mid_[0]]), 2), round(float(z_), 2)])
             else:
                 _flush()
@@ -4100,10 +4119,22 @@ def far_field(x, z):
 _edge = np.maximum(np.abs(RX), np.abs(RZ))
 _wb = smoothstep(REGION_EXTENT / 2 - 620, REGION_EXTENT / 2 - 40, _edge)
 mid = (floor_base(RZ) + REGION["M"]) * (1 - _wb) + far_field(RX, RZ) * _wb
+# the river's trench runs on beyond the map, up into the gorge and on down the valley: at its own
+# low terrace level with the scarps rising beside it, so the cut does not end against a wall of
+# valley floor at the edge of the map
+_beyond = smoothstep(HALF - 40.0, HALF + 10.0, np.abs(RZ))
+_tdu = np.abs(RX - river_x(RZ))
+_trench = river_floor(RZ) - 0.6 + np.maximum(_tdu - 16.0, 0.0) * SCARP_RISE
+_in_trench = (_beyond > 0) & (_trench < mid)
+mid = np.where(_in_trench, mid + (_trench - mid) * _beyond, mid)
 MID_MIN, MID_RANGE = -40.0, 1000.0
 Image.fromarray(np.rint(np.clip((mid - MID_MIN) / MID_RANGE, 0, 1) * 65535).astype(np.uint16)).save(OUT / "mid-heightmap.png")
 # land cover of the ring: R = wooded hillside, G = open valley floor (fields beyond the map)
 _cover = np.stack([smoothstep(0.6, 2.5, REGION["M"]), 1 - smoothstep(0.2, 1.2, REGION["M"]), np.zeros_like(mid)], -1)
+# (no wood on the bottom of the river's trench beyond the map: open ground, like its floodplain)
+_tb = _in_trench & (_tdu < 22.0)
+_cover[..., 0] = np.where(_tb, 0.0, _cover[..., 0])
+_cover[..., 1] = np.where(_tb, 1.0, _cover[..., 1])
 Image.fromarray(np.uint8(np.rint(_cover * 255)), "RGB").save(OUT / "mid-cover.png")
 fa = np.linspace(-FEXT / 2, FEXT / 2, FN)
 FX, FZ = np.meshgrid(fa, fa)

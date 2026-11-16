@@ -165,8 +165,10 @@ export class Terrain {
               if (abs(d - uDitch.x) < uDitch.y) discard;
             }
             if (texture2D(tChannels, vTW.xz / uExtent + 0.5).r * uChannel.x < uChannel.y) discard;
+            // the bore: a box from just under its road to its crown (with no floor it cut a slot through
+            // any lower ground along its line - the river's terrace below the hill it runs through)
             float dz = uTunnel.y - vTW.z;
-            if (dz > 0.04 && dz < 220.0 && vTW.y < uTunnel.w + uTunnelSize.y && abs(vTW.x - (uTunnel.x - uTunnel.z * dz)) < uTunnelSize.x) discard;
+            if (dz > 0.04 && dz < 220.0 && vTW.y < uTunnel.w + uTunnelSize.y && vTW.y > uTunnel.w - 1.5 && abs(vTW.x - (uTunnel.x - uTunnel.z * dz)) < uTunnelSize.x) discard;
           }
           vec3 tAlb; vec3 tNrm; vec3 tArmV; vec3 tWorldN;
           float hash12(vec2 p){ vec3 p3 = fract(vec3(p.xyx) * .1031); p3 += dot(p3, p3.yzx + 33.33); return fract((p3.x + p3.y) * p3.z); }

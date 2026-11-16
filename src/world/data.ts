@@ -80,19 +80,68 @@ async function json<T>(path: string): Promise<T> {
   if (!r.ok) throw Error(`${path}: ${r.status}`);
   return r.json();
 }
-export async function loadImageData(path: string): Promise<ImageData> {
-  const img = await new Promise<HTMLImageElement>((res, rej) => {
-    const im = new Image();
-    im.onload = () => res(im);
-    im.onerror = () => rej(Error(path));
-    im.src = publicUrl(path);
-  });
-  const c = document.createElement("canvas");
-  c.width = img.width;
-  c.height = img.height;
-  const g = c.getContext("2d", { willReadFrequently: true })!;
-  g.drawImage(img, 0, 0);
-  return g.getImageData(0, 0, img.width, img.height);
+export type Raster = { width: number; height: number; data: Uint8ClampedArray };
+
+/** The pixels of a world raster (PNG), RGBA, exactly as written. Not through a 2D canvas: a canvas
+ *  premultiplies by alpha, and these rasters keep data in their alpha channel (the grass density of the
+ *  vegetation mask, the fourth layer of a splat map) - wherever it is 0 the other three channels read
+ *  back as 0 (inside every rice field the rice mask read as "no rice"). */
+export async function loadImageData(path: string): Promise<Raster> {
+  const r = await fetch(publicUrl(path));
+  if (!r.ok) throw Error(`${path}: ${r.status}`);
+  return decodePng(await r.arrayBuffer());
+}
+
+/** Decode a non-interlaced 8-bit PNG (grey, grey + alpha, RGB or RGBA) to straight RGBA. */
+export async function decodePng(buf: ArrayBuffer): Promise<Raster> {
+  const u8 = new Uint8Array(buf);
+  const dv = new DataView(buf);
+  let off = 8, w = 0, h = 0, depth = 0, type = 0, interlace = 0;
+  const idat: Uint8Array[] = [];
+  while (off < u8.length) {
+    const len = dv.getUint32(off), name = String.fromCharCode(...u8.subarray(off + 4, off + 8));
+    if (name === "IHDR") {
+      w = dv.getUint32(off + 8);
+      h = dv.getUint32(off + 12);
+      depth = u8[off + 16];
+      type = u8[off + 17];
+      interlace = u8[off + 20];
+    }
+    if (name === "IDAT") idat.push(u8.subarray(off + 8, off + 8 + len));
+    off += 12 + len;
+  }
+  const ch = ({ 0: 1, 2: 3, 4: 2, 6: 4 } as Record<number, number>)[type];
+  if (depth !== 8 || !ch || interlace) throw Error(`PNG: unsupported format (depth ${depth}, colour type ${type}, interlace ${interlace})`);
+  const joined = new Uint8Array(idat.reduce((s, a) => s + a.length, 0));
+  let p = 0;
+  for (const a of idat) joined.set(a, p), (p += a.length);
+  const raw = new Uint8Array(await new Response(new Blob([joined]).stream().pipeThrough(new DecompressionStream("deflate"))).arrayBuffer());
+  const stride = w * ch;
+  const out = new Uint8ClampedArray(w * h * 4);
+  let prev = new Uint8Array(stride), cur = new Uint8Array(stride);
+  for (let y = 0; y < h; y++) {
+    const ft = raw[y * (stride + 1)];
+    const line = raw.subarray(y * (stride + 1) + 1, (y + 1) * (stride + 1));
+    for (let i = 0; i < stride; i++) {
+      const a = i >= ch ? cur[i - ch] : 0, b = prev[i], c = i >= ch ? prev[i - ch] : 0;
+      let v = line[i];
+      if (ft === 1) v += a;
+      else if (ft === 2) v += b;
+      else if (ft === 3) v += (a + b) >> 1;
+      else if (ft === 4) {
+        const pp = a + b - c, pa = Math.abs(pp - a), pb = Math.abs(pp - b), pc = Math.abs(pp - c);
+        v += pa <= pb && pa <= pc ? a : pb <= pc ? b : c;
+      }
+      cur[i] = v & 255;
+    }
+    for (let x = 0; x < w; x++) {
+      const o = (y * w + x) * 4, q = x * ch;
+      if (ch >= 3) (out[o] = cur[q]), (out[o + 1] = cur[q + 1]), (out[o + 2] = cur[q + 2]), (out[o + 3] = ch === 4 ? cur[q + 3] : 255);
+      else (out[o] = out[o + 1] = out[o + 2] = cur[q]), (out[o + 3] = ch === 2 ? cur[q + 1] : 255);
+    }
+    [prev, cur] = [cur, prev];
+  }
+  return { width: w, height: h, data: out };
 }
 
 export async function loadWorld() {
