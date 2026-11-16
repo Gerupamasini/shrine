@@ -59,9 +59,10 @@ def shape(labels, levels, analytic_distance, cell, families=()):
     # grid edges no line explains: smoothed distance, and the field across the nearest of them
     unexplained = boundary & (analytic > 1.25)
     pd, (pi, pj) = ndimage.distance_transform_edt(~unexplained, return_indices=True)
-    # (smoothed over a cell and a half, so a staircase of grid steps becomes a rounded line; the
-    # offset keeps the crest on the boundary cells)
-    pd = np.maximum(ndimage.gaussian_filter(pd * cell, 1.5) - 0.45, 0.0)
+    # (smoothed over a cell, so a staircase of grid steps becomes a rounded line; smoothing lifts the
+    # bottom of the distance's V to about 0.8 cell, and the offset brings every boundary cell back
+    # under the crest half width, so the levee stands on them all)
+    pd = np.maximum(ndimage.gaussian_filter(pd * cell, 1.0) - 0.47 * cell, 0.0)
     risers.append((pd, nb_level[pi, pj]))
     distance = np.where(cultivated, np.minimum(analytic, pd), 0.0)
     if analytic_distance is not None and not len(families):

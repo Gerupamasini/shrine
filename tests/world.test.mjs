@@ -590,27 +590,29 @@ test('valley farm branches terminate at staggered junctions and have no open-cha
 
 test("river terraces: the river and its floodplain lie one terrace step below the paddy floor", () => {
   const T = data.terrace;
-  assert.ok(T && T.drop >= 2 && T.drop <= 4, "the river cut one step down");
-  const scarps = T.scarps;
+  assert.ok(T && T.drop[0] >= 2 && T.drop[1] <= 3.6 && T.drop[1] - T.drop[0] > 0.5, "the river cut down 2-3.6 m, more in some reaches than others");
+  const scarps = T.scarps, main = scarps.filter((s) => s.level === "main"), middle = scarps.filter((s) => s.level === "middle");
   const len = (pts) => pts.slice(1).reduce((s, p, i) => s + Math.hypot(p[0] - pts[i][0], p[1] - pts[i][1]), 0);
   for (const side of ["east", "west"]) {
-    const total = scarps.filter((s) => s.side === side).reduce((s, sc) => s + len(sc.points), 0);
+    const total = main.filter((s) => s.side === side).reduce((s, sc) => s + len(sc.points), 0);
     assert.ok(total > (side === "east" ? 700 : 250), `${side} scarps run ${total.toFixed(0)} m`);
   }
-  // across every scarp the ground steps up 1.5 m or more from the floodplain to the floor beyond
+  // and here and there a middle terrace between the floodplain and the floor, with its own scarp
+  assert.ok(middle.reduce((s, sc) => s + len(sc.points), 0) > 150, "middle terraces");
+  // across every scarp the ground steps up: the main scarp at least 1 m, the middle one 0.5 m
   let ok = 0, n = 0;
   for (const sc of scarps) {
-    const away = sc.side === "east" ? 1 : -1;
+    const away = sc.side === "east" ? 1 : -1, r = sc.level === "main" ? 6 : 3.5;
     for (const [x, z] of sc.points) {
       n++;
-      if (H(x + away * 7, z) - H(x - away * 7, z) > 1.5) ok++;
+      if (H(x + away * r, z) - H(x - away * r, z) > (sc.level === "main" ? 1.0 : 0.5)) ok++;
     }
   }
-  assert.ok(ok / n > 0.85, `${ok}/${n} scarp points step up 1.5 m`);
+  assert.ok(ok / n > 0.85, `${ok}/${n} scarp points step up`);
   // the paddy floor stands well above the river: the water is 3-5.5 m below the fields beside the scarp
   const R = data.river.points;
   let deep = 0, m = 0;
-  for (const sc of scarps.filter((s) => s.side === "east")) {
+  for (const sc of main.filter((s) => s.side === "east")) {
     for (const [x, z] of sc.points.filter((_, i) => i % 4 === 0)) {
       const w = R.reduce((b, p) => (Math.abs(p[2] - z) < Math.abs(b[2] - z) ? p : b))[1];
       m++;
@@ -657,13 +659,21 @@ test("side streams fall in steps: boulder steps and plunge pools, check dams, co
     }
     assert.ok(pool > 0.6 * big, `${st.name}: plunge pools below ${pool}/${big} steps`);
   }
-  // the lined channels and the field ditches take the terrace scarp in concrete drops, none higher
-  // than 0.8 m, and their bed only falls
+  // the lined channels and the field ditches take small falls in concrete drops no higher than
+  // 0.8 m and the terrace scarp on an inclined chute (no steeper than 1 in 1.8); their bed only falls,
+  // and those that reach the river leave it through the wall or down a chute on the bank
   const built = data.streams.filter((st) => st.channel);
   for (const st of built) {
-    const pr = st.channel.profile, dr = st.channel.drops;
+    const pr = st.channel.profile, dr = st.channel.drops, ch = st.channel.chutes;
     for (let i = 1; i < pr.length; i++) assert.ok(pr[i][0] <= pr[i - 1][0] + 1e-6 && pr[i][1] <= pr[i - 1][1] + 1e-6, `${st.name} bed falls westward`);
     assert.ok(dr.every((d) => d[1] - d[2] <= 0.8 + 1e-6), `${st.name} drops at most 0.8 m`);
-    assert.ok(dr.filter((d) => d[1] - d[2] > 0.3).length >= 3, `${st.name} steps down the scarp`);
+    assert.ok(ch.length >= 1 && ch.some((c) => c[1] - c[3] > 1.5), `${st.name} takes the scarp on a chute`);
+    assert.ok(ch.every((c) => (c[1] - c[3]) / (c[0] - c[2]) < 0.56), `${st.name} chute slope`);
+    if (!st.intoCanal) {
+      const o = st.channel.outlet;
+      assert.ok(o && (o.kind === "wall" || o.kind === "chute") && o.bed > o.river + 0.3, `${st.name} outlet falls to the river`);
+      const last = st.water[st.water.length - 1];
+      assert.ok(Math.abs(last[last.length - 1][1] - o.river) < 0.05, `${st.name} water reaches the river`);
+    }
   }
 });

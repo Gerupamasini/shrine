@@ -54,8 +54,8 @@
 | `scene.json` の `river.drops` | 落差工と固定堰 | 位置・天端高・上下流の水位・水叩きの長さ |
 | `scene.json` の `river.canal`・`intake`・`washSteps` | 堰の用水路・取水口・洗い場 | 用水路は `[x, waterY, z, width]`、管渠の区間 |
 | `scene.json` の `canals` | 沢から取水する用水路（県道沿いの幹線2本、川向用水と北の枝線） | 各点 `[x, waterY, z, width, cover]`（cover：0 開水路、1 県道の下の管、2 蓋掛け）。`intake` は沢の取水堰（位置・河床高・天端高・沢の向き）。`contour: true` は山腹を等高線沿いに通る川向用水。`branchOf` のある枝線は取水堰を持たず、本線の分水桝（枝線の最初の点）から出る。模型は `architecture/stream-works.glb` に入っている |
-| `scene.json` の `streams` | 沢と、田の中の三面張り水路・支線水路 | `kind: "ditch"` は支線水路（沢の上流部 `brook` はない）。`covers` の `kind`：`road` 暗渠、`bridge` 県道の橋の下、`farm`・`levee` 蓋掛け。`water` は水面の帯（各点 `[x, waterY, z, halfWidth, fall, foam]`。`fall: 1` は落ち口の縁と足の行で、その間が落ちる水の膜、`foam` は落ち口の下の泡）。沢の `drops` は落ち口 `[x, z, 上の河床, 下の河床, "step"\|"dam"]`、`dams` は砂防えん堤（位置・流れの向き・天端・水叩きの高さ・両岸へ入る長さ）。`channel.profile` は三面張り・支線水路の河床（`[x, y]`、西へ下がる。落差工の所は同じxで2点）、`channel.drops` は落差工 `[x, 上, 下]`。三面張り・支線水路の開口も `channels.png` で開ける |
-| `scene.json` の `terrace` | 河岸段丘 | `drop`（川とその氾濫原が谷底より低い量）、`scarps`（段丘崖の中ほどの線、`side` は東西） |
+| `scene.json` の `streams` | 沢と、田の中の三面張り水路・支線水路 | `kind: "ditch"` は支線水路（沢の上流部 `brook` はない）。`covers` の `kind`：`road` 暗渠、`bridge` 県道の橋の下、`farm`・`levee` 蓋掛け。`water` は水面の帯（各点 `[x, waterY, z, halfWidth, fall, foam]`。`fall: 1` は落ち口の縁と足の行で、その間が落ちる水の膜、`foam` は落ち口の下の泡）。沢の `drops` は落ち口 `[x, z, 上の河床, 下の河床, "step"\|"dam"]`、`dams` は砂防えん堤（位置・流れの向き・天端・水叩きの高さ・両岸へ入る長さ）。`channel.profile` は三面張り・支線水路の河床（`[x, y]`、西へ下がる。落差工の所は同じxで2点）、`channel.drops` は落差工 `[x, 上, 下]`、`channel.chutes` は斜めの急流工 `[上端のx, 上端の河床, 足のx, 足の河床]`、`channel.outlet` は川への吐口（`kind: "wall"` は護岸に開けた箱型の吐口で、`x`・`z`・吐口の河床 `bed`・川の水面 `river`・流れの向き `dir`。`kind: "chute"` は土の岸を下り河原を横切る斜路で、さらに `xFoot`（水際の端）、`topY`（岸の天端）、`tops`（側壁の天端 `[x, y]`、約1mおき））。堰の用水路に落ちる支線水路（`intoCanal`）は `outlet` が `null`。三面張り・支線水路の開口も `channels.png` で開ける |
+| `scene.json` の `terrace` | 河岸段丘 | `drop`（川とその氾濫原が谷底より低い量の範囲 `[最小, 最大]`。谷に沿って変わる）、`scarps`（段丘崖の中ほどの線、`side` は東西、`level` は `main`（谷底と氾濫原の間）か `middle`（中位の段丘面の崖）） |
 | `scene.json` の `roads` | 道。`lane-*` は家から道路への小道（未舗装） | 各点 `[x, y, z]` |
 | `scene.json` の `hamlets` | 集落の名前と範囲 | 中心z・道沿いの半長 |
 | `scene.json` の `objects` の `smoke: true` | 煙を出す家 | 煙の出る位置は `architecture/index.json` の各モデルの `smoke`（ローカル座標） |
@@ -76,7 +76,7 @@
 - `architecture/stairs.glb`：石段・石畳・境内の石垣
 - `architecture/road-ditch.glb`：道の側溝と蓋
 - `architecture/river-works.glb`：川の護岸・天端・落差工・堰・取水口・用水路・洗い場
-- `architecture/stream-works.glb`：沢と支線水路の三面張り・暗渠・蓋、沢から取水する幹線用水路と取水堰
+- `architecture/stream-works.glb`：沢と支線水路の三面張り（落差工・急流工・川への吐口と岸の斜路を含む）・暗渠・蓋、沢の砂防えん堤、沢から取水する幹線用水路と取水堰
 
 県道が宮沢を渡る短い橋は、`objects` の `road-bridge`（`span`・`width`・`skew`）です。床版の両端は沢に平行（斜橋）で、`road-bridge.glb` は生成時にせん断変形してあります。
 

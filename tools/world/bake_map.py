@@ -238,7 +238,7 @@ for c_ in scene.get("canals", []):
 # down the face towards the floodplain
 for sc_ in scene.get("terrace", {}).get("scarps", []):
     pts_ = sc_["points"]
-    dr.line([P(x_, z_) for x_, z_ in pts_], fill=(150, 104, 66, 255), width=3)
+    dr.line([P(x_, z_) for x_, z_ in pts_], fill=(150, 104, 66, 255), width=3 if sc_.get("level", "main") == "main" else 2)
     down_ = -1.0 if sc_["side"] == "east" else 1.0                # towards the river
     for k_ in range(1, len(pts_) - 1, 2):
         (ax_, az_), (bx_, bz_) = pts_[k_ - 1], pts_[k_ + 1]
