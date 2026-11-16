@@ -4,6 +4,7 @@ import { addHook } from "../engine/hooks";
 import type { Landscape, System } from "./landscape";
 import type { Quality } from "../engine/lighting";
 import { windUniforms } from "./vegetation";
+import { loadImageData, type Raster } from "./data";
 
 /** GPU-side copies of the world rasters, shared by grass, rice and water. */
 export class WorldTextures {
@@ -13,6 +14,8 @@ export class WorldTextures {
   splat1!: T.Texture;
   splat2!: T.Texture;
   paddy!: T.DataTexture;
+  /** the vegetation mask as written (for the CPU: the GPU copy above is sampled in the shaders) */
+  vegRaster!: Raster;
   constructor(public land: Landscape) {
     const h = land.world.height;
     this.height = new T.DataTexture(h.data, h.n, h.n, T.RedFormat, T.FloatType);
@@ -27,7 +30,8 @@ export class WorldTextures {
         i.onerror = rej;
         i.src = publicUrl(p);
       });
-    const [veg, s0, s1, s2] = await Promise.all([img("world/vegetation-mask.png"), img("world/splat0.png"), img("world/splat1.png"), img("world/splat2.png")]);
+    const [veg, s0, s1, s2, vegRaster] = await Promise.all([img("world/vegetation-mask.png"), img("world/splat0.png"), img("world/splat1.png"), img("world/splat2.png"), loadImageData("world/vegetation-mask.png")]);
+    this.vegRaster = vegRaster;
     const tex = (i: HTMLImageElement) => {
       const t = new T.Texture(i);
       t.flipY = false;
@@ -499,15 +503,11 @@ export class RiceCanopy implements System {
     const lv = wt.paddy.image.data as Float32Array;
     const n = land.world.height.n, sp = land.world.height.spacing, E = land.world.data.extent, half = E / 2;
     // rice edge field: blue channel of the vegetation mask, 0.5 at the edge of the rice; the GPU samples
-    // it with texel centres at (i + 0.5) / n, so the contour is traced on those same centres
-    const img = wt.veg.image as HTMLImageElement;
-    const cv = document.createElement("canvas");
-    cv.width = img.width;
-    cv.height = img.height;
-    const ctx = cv.getContext("2d", { willReadFrequently: true })!;
-    ctx.drawImage(img, 0, 0);
-    const px = ctx.getImageData(0, 0, img.width, img.height).data;
-    const W = img.width;
+    // it with texel centres at (i + 0.5) / n, so the contour is traced on those same centres. (Read as
+    // written: through a 2D canvas the mask came back premultiplied by its alpha - the grass density,
+    // 0 inside the fields - so the rice read as "no rice" and almost no edge was drawn.)
+    const px = wt.vegRaster.data;
+    const W = wt.vegRaster.width;
     const f = (i: number, j: number) => px[(j * W + i) * 4 + 2] / 255 - 0.5;
     const tx = (i: number) => ((i + 0.5) / W) * E - half;
     const level = (x: number, z: number) => {

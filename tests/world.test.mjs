@@ -590,7 +590,7 @@ test('valley farm branches terminate at staggered junctions and have no open-cha
 
 test("river terraces: the river and its floodplain lie one terrace step below the paddy floor", () => {
   const T = data.terrace;
-  assert.ok(T && T.drop[0] >= 2 && T.drop[1] <= 3.6 && T.drop[1] - T.drop[0] > 0.5, "the river cut down 2-3.6 m, more in some reaches than others");
+  assert.ok(T && T.drop[0] >= 4 && T.drop[1] <= 7 && T.drop[1] - T.drop[0] > 0.8, `the river cut down 4-7 m, more in some reaches than others (${T.drop})`);
   const scarps = T.scarps, main = scarps.filter((s) => s.level === "main"), middle = scarps.filter((s) => s.level === "middle");
   const len = (pts) => pts.slice(1).reduce((s, p, i) => s + Math.hypot(p[0] - pts[i][0], p[1] - pts[i][1]), 0);
   for (const side of ["east", "west"]) {
@@ -599,17 +599,18 @@ test("river terraces: the river and its floodplain lie one terrace step below th
   }
   // and here and there a middle terrace between the floodplain and the floor, with its own scarp
   assert.ok(middle.reduce((s, sc) => s + len(sc.points), 0) > 150, "middle terraces");
-  // across every scarp the ground steps up: the main scarp at least 1 m, the middle one 0.5 m
+  // across every scarp the ground steps up: the main scarp at least 2.5 m (a step that reads as a
+  // terrace from the fields, not a grassy bank), the middle one 0.8 m
   let ok = 0, n = 0;
   for (const sc of scarps) {
     const away = sc.side === "east" ? 1 : -1, r = sc.level === "main" ? 6 : 3.5;
     for (const [x, z] of sc.points) {
       n++;
-      if (H(x + away * r, z) - H(x - away * r, z) > (sc.level === "main" ? 1.0 : 0.5)) ok++;
+      if (H(x + away * r, z) - H(x - away * r, z) > (sc.level === "main" ? 2.5 : 0.8)) ok++;
     }
   }
   assert.ok(ok / n > 0.85, `${ok}/${n} scarp points step up`);
-  // the paddy floor stands well above the river: the water is 3-5.5 m below the fields beside the scarp
+  // the paddy floor stands well above the river: the water is 5.5-9 m below the fields beside the scarp
   const R = data.river.points;
   let deep = 0, m = 0;
   for (const sc of main.filter((s) => s.side === "east")) {
@@ -617,10 +618,10 @@ test("river terraces: the river and its floodplain lie one terrace step below th
       const w = R.reduce((b, p) => (Math.abs(p[2] - z) < Math.abs(b[2] - z) ? p : b))[1];
       m++;
       const d = H(x + 9, z) - w;
-      if (d > 3.0 && d < 5.5) deep++;
+      if (d > 5.5 && d < 9.0) deep++;
     }
   }
-  assert.ok(deep / m > 0.8, `river ${deep}/${m} cut 3-5.5 m below the floor`);
+  assert.ok(deep / m > 0.8, `river ${deep}/${m} cut 5.5-9 m below the floor`);
   // fields on both levels: the low fields of the floodplain are watered from the weir canal
   const banks = data.river.bed.points;
   const bankAt = (z) => banks.reduce((b, p) => (Math.abs(p[1] - z) < Math.abs(b[1] - z) ? p : b))[3];
