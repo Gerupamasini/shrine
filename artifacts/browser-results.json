@@ -131,12 +131,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 682,
+                  "duration": 366,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-11-16T02:28:21.375Z",
+                  "startTime": "2026-11-16T18:47:57.392Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -173,12 +173,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 79762,
+                  "duration": 98720,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-11-16T02:28:22.231Z",
+                  "startTime": "2026-11-16T18:47:58.008Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -215,12 +215,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 194251,
+                  "duration": 233174,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-11-16T02:29:42.025Z",
+                  "startTime": "2026-11-16T18:49:36.754Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -249,12 +249,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 38716,
+                  "duration": 45217,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-11-16T02:32:56.300Z",
+                  "startTime": "2026-11-16T18:53:29.953Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -291,7 +291,7 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 416390,
+                  "duration": 476342,
                   "errors": [],
                   "stdout": [
                     {
@@ -346,24 +346,24 @@
                       "text": "route-progress kawamuko-north-farm 0 38\n"
                     },
                     {
-                      "text": "{\"id\":\"kawamuko-north-farm\",\"index\":37,\"total\":38,\"frames\":1076,\"position\":[-284.95821137610335,14.666307173319245,116.12079815730986],\"speed\":0.023504379277903806,\"target\":[-282.25,14.44,116.41],\"rotation\":[0.042112797498703,0.6894291043281555,-0.032776083797216415,0.7223848104476929],\"ok\":true}\n"
+                      "text": "{\"id\":\"kawamuko-north-farm\",\"index\":37,\"total\":38,\"frames\":1076,\"position\":[-284.9644835846204,14.663591307123722,116.10471382476925],\"speed\":0.02290748182017356,\"target\":[-282.26,14.442,116.38],\"rotation\":[0.04090164974331856,0.6913533806800842,-0.03212364390492439,0.7206425070762634],\"ok\":true}\n"
                     },
                     {
-                      "text": "route-progress kawamuko-contour-farm 0 134\n"
+                      "text": "route-progress kawamuko-contour-farm 0 123\n"
                     },
                     {
-                      "text": "{\"id\":\"kawamuko-contour-farm\",\"index\":133,\"total\":134,\"frames\":3491,\"position\":[-264.1245910957325,9.275485040673976,283.702005235844],\"speed\":-0.0058727629533461955,\"target\":[-266.4,9.426,285.28],\"rotation\":[-0.01536574773490429,-0.4385632574558258,-0.008848165161907673,0.8985254168510437],\"ok\":true}\n"
+                      "text": "{\"id\":\"kawamuko-contour-farm\",\"index\":122,\"total\":123,\"frames\":3423,\"position\":[-267.6731997969712,9.72039436605045,281.54911380719255],\"speed\":-0.0004952264991801341,\"target\":[-269.68,9.81,283.51],\"rotation\":[-0.0040253279730677605,-0.3577527105808258,-0.003017134265974164,0.9338028430938721],\"ok\":true}\n"
                     },
                     {
-                      "text": "route-progress kawamuko-south-farm 0 91\n"
+                      "text": "route-progress kawamuko-south-farm 0 93\n"
                     },
                     {
-                      "text": "{\"id\":\"kawamuko-south-farm\",\"index\":90,\"total\":91,\"frames\":2199,\"position\":[-350.96839427160086,19.012042703918794,223.86950536475143],\"speed\":-0.03284405290507824,\"target\":[-353.81,19.287,224],\"rotation\":[-0.06541581451892853,-0.6935374140739441,-0.042946312576532364,0.7161580324172974],\"ok\":true}\n"
+                      "text": "{\"id\":\"kawamuko-south-farm\",\"index\":92,\"total\":93,\"frames\":2165,\"position\":[-351.0438810541346,18.29425217021115,223.4625089092013],\"speed\":-0.02653163858091652,\"target\":[-353.81,18.556,224],\"rotation\":[-0.05029132962226868,-0.6406645774841309,-0.04045050963759422,0.7651035189628601],\"ok\":true}\n"
                     }
                   ],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-11-16T02:33:35.066Z",
+                  "startTime": "2026-11-16T18:54:15.197Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -400,12 +400,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 106071,
+                  "duration": 124435,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-11-16T02:40:31.471Z",
+                  "startTime": "2026-11-16T19:02:11.560Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -442,7 +442,7 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 456961,
+                  "duration": 533793,
                   "errors": [],
                   "stdout": [
                     {
@@ -469,7 +469,7 @@
                   ],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-11-16T02:42:17.561Z",
+                  "startTime": "2026-11-16T19:04:16.044Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -506,12 +506,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 104124,
+                  "duration": 132349,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-11-16T02:49:54.540Z",
+                  "startTime": "2026-11-16T19:13:09.877Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -548,12 +548,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 191988,
+                  "duration": 229387,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-11-16T02:51:38.679Z",
+                  "startTime": "2026-11-16T19:15:22.255Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -571,8 +571,8 @@
   ],
   "errors": [],
   "stats": {
-    "startTime": "2026-11-16T02:28:20.454Z",
-    "duration": 1590453.707,
+    "startTime": "2026-11-16T18:47:56.012Z",
+    "duration": 1875872.639,
     "expected": 9,
     "skipped": 0,
     "unexpected": 0,
