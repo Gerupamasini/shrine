@@ -20,7 +20,7 @@ export function hipRoof(model, mat, o) {
   const { W, D, over, eaveY, ridgeY, sori = 0, thick = 0.3, gable = 1, uv = 1, edgeMat = mat, sag = 0.12 } = o;
   const ex = W / 2 + over, ez = D / 2 + over;
   const rh = o.ridgeHalf ?? Math.max(0.2, ex - ez);
-  const N = 10, M = 14;
+  const N = Math.max(4, Math.round(10 * (o.res ?? 1))), M = Math.max(6, Math.round(14 * (o.res ?? 1)));
   const yAt = (v) => eaveY + (ridgeY - eaveY) * (v - sag * Math.sin(Math.PI * v) * (1 - v));
   const cutV = gable;
   const xg = ex + (rh - ex) * cutV; // half-width where the irimoya gable stands
@@ -71,10 +71,64 @@ export function hipRoof(model, mat, o) {
       model.add(o.gableMat ?? "wood_old", g);
     }
   }
+  // exposed rafters (taruki) under the eaves of the long faces, parallel, every o.rafters.step
+  if (o.rafters) {
+    const { step = 0.45, size = 0.065, mat: rm = "wood_frame", wallZ = D / 2, wallX = W / 2, target = model } = o.rafters;
+    const surf = (x, v, side) => {
+      const half = v < cutV ? ex + (rh - ex) * v : xg;
+      const u = Math.max(-1, Math.min(1, x / half));
+      return V(x, yAt(v) + sori * Math.pow(Math.abs(u), 3) * (1 - v) * (1 - v), side * ez * (1 - v));
+    };
+    for (const side of [1, -1]) {
+      const v1 = 1 - (wallZ - 0.12) / ez, v0 = 0.04;
+      const half1 = v1 < cutV ? ex + (rh - ex) * v1 : xg;
+      for (let x = -Math.floor((half1 - 0.35) / step) * step; x <= half1 - 0.35 + 1e-6; x += step) {
+        const a = surf(x, v0, side), b = surf(x, v1, side);
+        const dir = b.clone().sub(a), cos = Math.abs(dir.z) / dir.length();
+        const drop = thick / Math.max(0.3, cos) + size * 0.55;
+        a.y -= drop; b.y -= drop;
+        strutBox(target, rm, a, b, size, size * 1.25);
+      }
+    }
+    // hip ends: rafters run along X
+    if (o.rafters.ends !== false) for (const side of [1, -1]) {
+      const v1 = 1 - (wallX - 0.12) / ex, v0 = 0.04;
+      if (v1 <= v0) continue;
+      const zl = ez * (1 - v1) - 0.35;
+      for (let z = -Math.floor(zl / step) * step; z <= zl + 1e-6; z += step) {
+        const pt = (v) => {
+          const u = Math.max(-1, Math.min(1, z / (ez * (1 - v))));
+          return V(side * (ex + (rh - ex) * v), yAt(v) + sori * Math.pow(Math.abs(u), 3) * (1 - v) * (1 - v), z);
+        };
+        const a = pt(v0), b = pt(v1);
+        const dir = b.clone().sub(a), cos = Math.abs(dir.x) / dir.length();
+        const drop = thick / Math.max(0.3, cos) + size * 0.55;
+        a.y -= drop; b.y -= drop;
+        strutBox(target, rm, a, b, size, size * 1.25);
+      }
+    }
+  }
   // ridge
   const ridgeLen = 2 * (cutV < 1 ? xg : rh) + 0.4;
   model.box(o.ridgeMat ?? mat, ridgeLen, o.ridgeH ?? 0.35, o.ridgeW ?? 0.45, 0, ridgeY + (o.ridgeH ?? 0.35) / 2 - 0.05, 0);
-  return { ex, ez, rh, xg };
+  // height of the roof's underside above a wall line `t` metres in from the eave edge
+  const under = (t, run) => {
+    const v = Math.min(1, t / run), e = 0.02;
+    const dy = (yAt(Math.min(1, v + e)) - yAt(Math.max(0, v - e))) / (2 * e * run);
+    return yAt(v) - thick * Math.sqrt(1 + dy * dy);
+  };
+  return { ex, ez, rh, xg, underFront: under(ez - D / 2, ez), underSide: under(ex - W / 2, ex - rh) };
+}
+
+/** A beam of w x h cross-section from a to b (h measured in the vertical plane through the beam). */
+export function strutBox(model, mat, a, b, w, h) {
+  const d = b.clone().sub(a), len = d.length();
+  const g = new THREE.BoxGeometry(w, h, len);
+  const z = d.clone().normalize();
+  const x = new THREE.Vector3(0, 1, 0).cross(z).normalize();
+  const y = z.clone().cross(x).normalize();
+  const m = new THREE.Matrix4().makeBasis(x, y, z).setPosition(a.clone().add(b).multiplyScalar(0.5));
+  model.add(mat, g, { matrix: m });
 }
 
 /** Plain or asymmetric gable roof. front/back run can differ (nagare-zukuri). */

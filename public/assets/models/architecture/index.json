@@ -155,7 +155,7 @@
    ]
   },
   "monohoshi": {
-   "triangles": 248,
+   "triangles": 244,
    "min": [
     -1.7,
     0,
@@ -174,7 +174,7 @@
    ]
   },
   "shinryojo": {
-   "triangles": 3424,
+   "triangles": 3672,
    "min": [
     -8.2,
     0,
@@ -213,7 +213,7 @@
    ]
   },
   "tera-hondo": {
-   "triangles": 5984,
+   "triangles": 6640,
    "min": [
     -8.432,
     0,
@@ -238,7 +238,7 @@
    ]
   },
   "tera-sanmon": {
-   "triangles": 1008,
+   "triangles": 1221,
    "min": [
     -5.35,
     0,
@@ -270,7 +270,7 @@
    ]
   },
   "tera-shoro": {
-   "triangles": 3172,
+   "triangles": 3193,
    "min": [
     -2.418,
     0,
@@ -294,7 +294,7 @@
    ]
   },
   "haka_0": {
-   "triangles": 460,
+   "triangles": 468,
    "min": [
     -1.704,
     -0.03,
@@ -313,7 +313,7 @@
    ]
   },
   "haka_1": {
-   "triangles": 424,
+   "triangles": 433,
    "min": [
     -1.72,
     -0.047,
@@ -332,7 +332,7 @@
    ]
   },
   "haka_2": {
-   "triangles": 460,
+   "triangles": 474,
    "min": [
     -1.673,
     -0.03,
@@ -351,7 +351,7 @@
    ]
   },
   "rokujizo": {
-   "triangles": 1240,
+   "triangles": 1247,
    "min": [
     -2.05,
     0,
@@ -397,7 +397,7 @@
    ]
   },
   "torii-stone": {
-   "triangles": 1188,
+   "triangles": 1108,
    "min": [
     -3.11,
     -0.007,
@@ -413,7 +413,7 @@
    ]
   },
   "torii-wood": {
-   "triangles": 1188,
+   "triangles": 1104,
    "min": [
     -2.96,
     -0.006,
@@ -431,7 +431,7 @@
    ]
   },
   "toro": {
-   "triangles": 784,
+   "triangles": 776,
    "min": [
     -0.5,
     0,
@@ -448,7 +448,7 @@
    ]
   },
   "toro_1": {
-   "triangles": 784,
+   "triangles": 776,
    "min": [
     -0.5,
     0,
@@ -466,7 +466,7 @@
    ]
   },
   "komainu-a": {
-   "triangles": 31324,
+   "triangles": 30771,
    "min": [
     -0.525,
     0,
@@ -484,7 +484,7 @@
    ]
   },
   "komainu-un": {
-   "triangles": 31252,
+   "triangles": 30699,
    "min": [
     -0.525,
     0,
@@ -502,7 +502,7 @@
    ]
   },
   "haiden": {
-   "triangles": 6774,
+   "triangles": 7186,
    "min": [
     -7.343,
     -0.003,
@@ -528,7 +528,7 @@
    ]
   },
   "honden": {
-   "triangles": 1204,
+   "triangles": 1373,
    "min": [
     -3.15,
     0,
@@ -551,7 +551,7 @@
    ]
   },
   "saisen": {
-   "triangles": 156,
+   "triangles": 158,
    "min": [
     -0.73,
     0,
@@ -568,7 +568,7 @@
    ]
   },
   "temizuya": {
-   "triangles": 1024,
+   "triangles": 1031,
    "min": [
     -1.95,
     0,
@@ -591,7 +591,7 @@
    ]
   },
   "shamusho": {
-   "triangles": 2650,
+   "triangles": 3280,
    "min": [
     -6.411,
     -0.005,
@@ -616,7 +616,7 @@
    ]
   },
   "ema": {
-   "triangles": 988,
+   "triangles": 989,
    "min": [
     -1.95,
     0,
@@ -635,7 +635,7 @@
    ]
   },
   "shimenawa-tree": {
-   "triangles": 1096,
+   "triangles": 1088,
    "min": [
     -0.575,
     2.205,
@@ -652,7 +652,7 @@
    ]
   },
   "bench": {
-   "triangles": 36,
+   "triangles": 32,
    "min": [
     -0.9,
     0,
@@ -668,7 +668,7 @@
    ]
   },
   "fence-lookout": {
-   "triangles": 280,
+   "triangles": 248,
    "min": [
     -7.1,
     0,
@@ -701,7 +701,7 @@
    ]
   },
   "jizo": {
-   "triangles": 4432,
+   "triangles": 4430,
    "min": [
     -0.25,
     0,
@@ -719,7 +719,7 @@
    ]
   },
   "minka-kayabuki_0": {
-   "triangles": 4542,
+   "triangles": 8803,
    "min": [
     -7.9,
     0,
@@ -731,15 +731,17 @@
     5.65
    ],
    "materials": [
-    "stone_granite",
+    "stone_old",
     "wood_frame",
     "wood_siding",
     "plaster_clay",
-    "wood_dark",
-    "wood_old",
+    "room_dark",
     "paper",
-    "interior_dark",
-    "wood_planks",
+    "wood_old",
+    "stone_granite",
+    "glass",
+    "room_lit",
+    "wood_dark",
     "roof_thatch",
     "roof_soffit",
     "roof_kawara_ridge",
@@ -749,6 +751,7 @@
     "metal_dark",
     "brass"
    ],
+   "lod1": true,
    "footprint": [
     13.5,
     9
@@ -761,7 +764,7 @@
    "storeys": 1
   },
   "minka-kayabuki_1": {
-   "triangles": 4878,
+   "triangles": 8908,
    "min": [
     -8.6,
     0,
@@ -773,15 +776,17 @@
     5.4
    ],
    "materials": [
-    "stone_granite",
+    "stone_old",
     "wood_frame",
     "wood_siding",
     "plaster_white",
-    "wood_dark",
-    "wood_old",
+    "room_dark",
     "paper",
-    "interior_dark",
-    "wood_planks",
+    "wood_old",
+    "stone_granite",
+    "glass",
+    "room_lit",
+    "wood_dark",
     "roof_thatch",
     "roof_soffit",
     "roof_kawara_ridge",
@@ -793,6 +798,7 @@
     "brass",
     "tank_cream"
    ],
+   "lod1": true,
    "footprint": [
     12,
     8.5
@@ -805,7 +811,7 @@
    "storeys": 1
   },
   "minka-kayabuki_2": {
-   "triangles": 5434,
+   "triangles": 10519,
    "min": [
     -9.85,
     0,
@@ -817,15 +823,16 @@
     11.1
    ],
    "materials": [
-    "stone_granite",
+    "stone_old",
     "wood_frame",
     "wood_siding",
     "plaster_clay",
-    "wood_dark",
-    "wood_old",
+    "room_dark",
     "paper",
-    "interior_dark",
-    "wood_planks",
+    "wood_old",
+    "stone_granite",
+    "glass",
+    "wood_dark",
     "roof_thatch",
     "roof_soffit",
     "roof_kawara_ridge",
@@ -836,6 +843,7 @@
     "lpg_grey",
     "brass"
    ],
+   "lod1": true,
    "footprint": [
     14.5,
     9.5
@@ -848,7 +856,7 @@
    "storeys": 1
   },
   "minka-kayabuki_3": {
-   "triangles": 4494,
+   "triangles": 8445,
    "min": [
     -8.35,
     0,
@@ -860,15 +868,17 @@
     5.15
    ],
    "materials": [
-    "stone_granite",
+    "stone_old",
     "wood_frame",
     "wood_siding",
     "plaster_white",
-    "wood_dark",
-    "wood_old",
+    "room_dark",
     "paper",
-    "interior_dark",
-    "wood_planks",
+    "wood_old",
+    "stone_granite",
+    "glass",
+    "room_lit",
+    "wood_dark",
     "roof_thatch",
     "roof_soffit",
     "roof_kawara_ridge",
@@ -880,6 +890,7 @@
     "tank_cream",
     "metal_grey"
    ],
+   "lod1": true,
    "footprint": [
     11.5,
     8
@@ -892,7 +903,7 @@
    "storeys": 1
   },
   "minka-kawara_0": {
-   "triangles": 5108,
+   "triangles": 9950,
    "min": [
     -7.011,
     0,
@@ -901,30 +912,35 @@
    "max": [
     8.6,
     9.679,
-    5.33
+    5.35
    ],
    "materials": [
-    "stone_granite",
+    "concrete",
+    "metal_grey",
+    "metal_dark",
     "wood_frame",
     "wood_siding",
     "plaster_white",
-    "wood_dark",
-    "wood_old",
-    "interior_dark",
-    "glass",
+    "room_dark",
     "aluminium",
-    "wood_planks",
+    "glass",
+    "glass_frosted",
+    "porcelain",
+    "glass_dark",
+    "stone_granite",
+    "room_lit",
+    "lamp_bulb",
+    "wood_light",
     "roof_kawara",
     "roof_soffit",
     "roof_kawara_ridge",
-    "metal_grey",
-    "metal_dark",
     "roof_tin",
     "concrete_old",
     "lpg_grey",
     "brass",
     "tank_cream"
    ],
+   "lod1": true,
    "footprint": [
     12,
     8.5
@@ -937,7 +953,7 @@
    "storeys": 1
   },
   "minka-kawara_1": {
-   "triangles": 7780,
+   "triangles": 12013,
    "min": [
     -6.4,
     0,
@@ -946,31 +962,35 @@
    "max": [
     8,
     8.746,
-    5.08
+    5.1
    ],
    "materials": [
-    "stone_granite",
+    "concrete",
+    "metal_grey",
+    "metal_dark",
     "wood_frame",
     "wood_siding",
     "plaster_white",
-    "wood_dark",
-    "wood_old",
-    "interior_dark",
-    "glass",
+    "room_lit",
     "aluminium",
-    "interior_lit",
-    "wood_planks",
+    "glass",
+    "room_dark",
+    "glass_frosted",
+    "porcelain",
+    "glass_dark",
+    "stone_granite",
+    "lamp_bulb",
+    "wood_light",
     "roof_kawara",
     "roof_soffit",
     "roof_kawara_ridge",
-    "metal_grey",
     "roof_tin",
     "concrete_old",
     "lpg_grey",
-    "metal_dark",
     "brass",
     "tank_cream"
    ],
+   "lod1": true,
    "footprint": [
     10.8,
     8
@@ -983,7 +1003,7 @@
    "storeys": 2
   },
   "minka-kawara_2": {
-   "triangles": 4122,
+   "triangles": 10545,
    "min": [
     -7.76,
     0,
@@ -992,29 +1012,33 @@
    "max": [
     7.76,
     7.26,
-    5.58
+    5.6
    ],
    "materials": [
-    "stone_granite",
+    "concrete",
+    "metal_grey",
+    "metal_dark",
     "wood_frame",
     "wood_siding",
     "plaster_white",
-    "wood_dark",
-    "wood_old",
-    "interior_dark",
+    "room_dark",
     "glass",
     "aluminium",
-    "wood_planks",
+    "glass_frosted",
+    "porcelain",
+    "glass_dark",
+    "stone_granite",
+    "lamp_bulb",
+    "wood_light",
     "roof_kawara",
     "roof_soffit",
     "roof_kawara_ridge",
-    "metal_grey",
     "concrete_old",
     "lpg_grey",
-    "metal_dark",
     "brass",
     "tank_cream"
    ],
+   "lod1": true,
    "footprint": [
     13.5,
     9
@@ -1027,7 +1051,7 @@
    "storeys": 1
   },
   "minka-kawara_3": {
-   "triangles": 7728,
+   "triangles": 12148,
    "min": [
     -6.7,
     0,
@@ -1036,30 +1060,34 @@
    "max": [
     6.7,
     11.716,
-    5.83
+    5.85
    ],
    "materials": [
-    "stone_granite",
+    "concrete",
+    "metal_grey",
+    "metal_dark",
     "wood_frame",
     "wood_siding",
     "plaster_white",
-    "wood_dark",
-    "wood_old",
-    "interior_dark",
-    "glass",
+    "room_dark",
     "aluminium",
-    "interior_lit",
-    "wood_planks",
+    "glass",
+    "glass_frosted",
+    "porcelain",
+    "glass_dark",
+    "stone_granite",
+    "room_lit",
+    "lamp_bulb",
+    "wood_light",
     "roof_kawara",
     "roof_soffit",
     "roof_kawara_ridge",
-    "metal_grey",
-    "metal_dark",
     "concrete_old",
     "lpg_grey",
     "brass",
     "tank_cream"
    ],
+   "lod1": true,
    "footprint": [
     11.4,
     9.5
@@ -1072,7 +1100,7 @@
    "storeys": 2
   },
   "minka-totan_0": {
-   "triangles": 4738,
+   "triangles": 9483,
    "min": [
     -8.35,
     0,
@@ -1081,28 +1109,33 @@
    "max": [
     7.126,
     11.102,
-    4.98
+    5.1
    ],
    "materials": [
-    "stone_granite",
+    "concrete",
+    "metal_grey",
+    "metal_dark",
     "wood_frame",
     "wood_siding",
     "plaster_white",
-    "wood_dark",
-    "wood_old",
-    "interior_dark",
+    "room_lit",
     "glass",
     "aluminium",
-    "wood_planks",
+    "room_dark",
+    "glass_frosted",
+    "porcelain",
+    "glass_dark",
+    "stone_granite",
+    "lamp_bulb",
+    "wood_light",
     "roof_tin",
     "roof_soffit",
-    "metal_grey",
-    "metal_dark",
     "concrete_old",
     "lpg_grey",
     "brass",
     "tank_cream"
    ],
+   "lod1": true,
    "footprint": [
     11.5,
     8
@@ -1115,7 +1148,7 @@
    "storeys": 1
   },
   "minka-totan_1": {
-   "triangles": 5098,
+   "triangles": 10447,
    "min": [
     -7.3,
     0,
@@ -1127,26 +1160,30 @@
     10.4
    ],
    "materials": [
-    "stone_granite",
+    "concrete",
+    "metal_grey",
+    "metal_dark",
     "wood_frame",
     "wood_siding",
     "plaster_white",
-    "wood_dark",
-    "wood_old",
-    "interior_dark",
+    "room_lit",
     "glass",
     "aluminium",
-    "interior_lit",
-    "wood_planks",
+    "room_dark",
+    "glass_frosted",
+    "porcelain",
+    "glass_dark",
+    "stone_granite",
+    "lamp_bulb",
+    "wood_light",
     "roof_tin_blue",
     "roof_soffit",
-    "metal_grey",
-    "metal_dark",
     "concrete_old",
     "lpg_grey",
     "brass",
     "tank_cream"
    ],
+   "lod1": true,
    "footprint": [
     12.8,
     8.6
@@ -1159,37 +1196,42 @@
    "storeys": 1
   },
   "minka-totan_2": {
-   "triangles": 4458,
+   "triangles": 8745,
    "min": [
     -6.96,
     0,
     -4.78
    ],
    "max": [
-    6.2,
+    6.27,
     11.837,
-    4.78
+    4.9
    ],
    "materials": [
-    "stone_granite",
+    "concrete",
+    "metal_grey",
+    "metal_dark",
     "wood_frame",
     "wood_siding",
     "plaster_white",
-    "wood_dark",
-    "wood_old",
-    "interior_dark",
+    "room_lit",
     "glass",
     "aluminium",
-    "wood_planks",
+    "room_dark",
+    "glass_frosted",
+    "porcelain",
+    "glass_dark",
+    "stone_granite",
+    "lamp_bulb",
+    "wood_light",
     "roof_tin",
     "roof_soffit",
-    "metal_grey",
-    "metal_dark",
     "concrete_old",
     "lpg_grey",
     "brass",
     "tank_cream"
    ],
+   "lod1": true,
    "footprint": [
     10.6,
     7.6
@@ -1202,39 +1244,43 @@
    "storeys": 1
   },
   "minka-totan_3": {
-   "triangles": 4642,
+   "triangles": 9414,
    "min": [
     -9.2,
     0,
     -5.58
    ],
    "max": [
-    7.5,
+    7.57,
     9.325,
-    5.58
+    5.7
    ],
    "materials": [
-    "stone_granite",
+    "concrete",
+    "metal_grey",
+    "metal_dark",
     "wood_frame",
     "wood_siding",
     "plaster_white",
-    "wood_dark",
-    "wood_old",
-    "interior_dark",
+    "room_dark",
     "glass",
     "aluminium",
-    "interior_lit",
-    "wood_planks",
+    "glass_frosted",
+    "porcelain",
+    "glass_dark",
+    "stone_granite",
+    "room_lit",
+    "lamp_bulb",
+    "wood_light",
     "roof_tin_green",
     "roof_soffit",
-    "metal_grey",
     "roof_tin",
     "concrete_old",
     "lpg_grey",
-    "metal_dark",
     "brass",
     "tank_cream"
    ],
+   "lod1": true,
    "footprint": [
     13.2,
     9.2
@@ -1247,7 +1293,7 @@
    "storeys": 1
   },
   "minka-kura_0": {
-   "triangles": 340,
+   "triangles": 1483,
    "min": [
     -3.95,
     0,
@@ -1264,7 +1310,8 @@
     "plaster_white",
     "wood_dark",
     "roof_kawara",
-    "roof_soffit"
+    "roof_soffit",
+    "roof_kawara_ridge"
    ],
    "footprint": [
     6.5,
@@ -1273,7 +1320,7 @@
    "storeys": 1
   },
   "minka-kura_1": {
-   "triangles": 340,
+   "triangles": 1564,
    "min": [
     -4.3,
     0,
@@ -1290,7 +1337,8 @@
     "plaster_white",
     "wood_dark",
     "roof_kawara",
-    "roof_soffit"
+    "roof_soffit",
+    "roof_kawara_ridge"
    ],
    "footprint": [
     7.2,
@@ -1299,7 +1347,7 @@
    "storeys": 1
   },
   "minka-kura_2": {
-   "triangles": 340,
+   "triangles": 1412,
    "min": [
     -3.7,
     0,
@@ -1316,7 +1364,8 @@
     "plaster_white",
     "wood_dark",
     "roof_kawara",
-    "roof_soffit"
+    "roof_soffit",
+    "roof_kawara_ridge"
    ],
    "footprint": [
     6,
@@ -1325,7 +1374,7 @@
    "storeys": 1
   },
   "minka-kura_3": {
-   "triangles": 340,
+   "triangles": 1708,
    "min": [
     -4.45,
     0,
@@ -1342,7 +1391,8 @@
     "plaster_white",
     "wood_dark",
     "roof_kawara",
-    "roof_soffit"
+    "roof_soffit",
+    "roof_kawara_ridge"
    ],
    "footprint": [
     7.5,
@@ -1351,7 +1401,7 @@
    "storeys": 1
   },
   "naya_0": {
-   "triangles": 680,
+   "triangles": 1757,
    "min": [
     -3.25,
     0,
@@ -1366,13 +1416,15 @@
     "concrete",
     "wood_old",
     "wood_siding",
+    "wood_frame",
     "roof_tin",
     "roof_soffit",
     "wood_light"
-   ]
+   ],
+   "lod1": true
   },
   "naya_1": {
-   "triangles": 680,
+   "triangles": 1767,
    "min": [
     -3.25,
     0,
@@ -1387,10 +1439,12 @@
     "concrete",
     "wood_old",
     "wood_siding",
+    "wood_frame",
     "roof_tin",
     "roof_soffit",
     "wood_light"
-   ]
+   ],
+   "lod1": true
   },
   "block-wall": {
    "triangles": 24,
@@ -1426,7 +1480,7 @@
    ]
   },
   "denchu": {
-   "triangles": 324,
+   "triangles": 348,
    "min": [
     -0.9,
     -0.5,
@@ -1446,7 +1500,7 @@
    ]
   },
   "denchu-trans": {
-   "triangles": 348,
+   "triangles": 372,
    "min": [
     -0.9,
     -0.5,
@@ -1513,7 +1567,7 @@
    }
   },
   "bus-stop": {
-   "triangles": 176,
+   "triangles": 164,
    "min": [
     -0.3,
     -0.005,
@@ -1532,7 +1586,7 @@
    ]
   },
   "jihanki_0": {
-   "triangles": 1128,
+   "triangles": 1117,
    "min": [
     -0.53,
     0,
@@ -1557,7 +1611,7 @@
    ]
   },
   "jihanki_1": {
-   "triangles": 1128,
+   "triangles": 1113,
    "min": [
     -0.53,
     0,
@@ -1583,7 +1637,7 @@
    ]
   },
   "bridge": {
-   "triangles": 532,
+   "triangles": 804,
    "min": [
     -7.46,
     -3.3,
@@ -1674,7 +1728,7 @@
    ]
   },
   "hinomi": {
-   "triangles": 1796,
+   "triangles": 1907,
    "min": [
     -1.75,
     -0.055,
@@ -1695,7 +1749,7 @@
    ]
   },
   "shobo-shed": {
-   "triangles": 592,
+   "triangles": 760,
    "min": [
     -2.7,
     0,
@@ -1717,7 +1771,7 @@
    ]
   },
   "shobo-tsumesho": {
-   "triangles": 1240,
+   "triangles": 1822,
    "min": [
     -5.1,
     0,
@@ -1748,7 +1802,7 @@
    ]
   },
   "bunko": {
-   "triangles": 2958,
+   "triangles": 6096,
    "min": [
     -13.9,
     0,
@@ -1772,7 +1826,7 @@
    ]
   },
   "mizuguchi": {
-   "triangles": 36,
+   "triangles": 34,
    "min": [
     -0.31,
     -0.21,
@@ -1790,7 +1844,7 @@
    ]
   },
   "post": {
-   "triangles": 560,
+   "triangles": 544,
    "min": [
     -0.3,
     0,
@@ -1809,7 +1863,7 @@
    ]
   },
   "shop-yorozuya": {
-   "triangles": 2576,
+   "triangles": 3983,
    "min": [
     -5.3,
     0,
@@ -1838,9 +1892,9 @@
     "roof_tin",
     "roof_soffit",
     "metal_dark",
-    "paper",
+    "room_dark",
     "metal_grey",
-    "interior_lit",
+    "room_lit",
     "roof_kawara"
    ],
    "signs": [
@@ -1855,7 +1909,7 @@
    ]
   },
   "shop-sakaya": {
-   "triangles": 2252,
+   "triangles": 3531,
    "min": [
     -4.8,
     0,
@@ -1886,8 +1940,8 @@
     "roof_tin",
     "roof_soffit",
     "metal_dark",
-    "paper",
-    "interior_lit"
+    "room_dark",
+    "room_lit"
    ],
    "signs": [
     [
@@ -1909,7 +1963,7 @@
    ]
   },
   "shop-tofu": {
-   "triangles": 2168,
+   "triangles": 3331,
    "min": [
     -4.3,
     0,
@@ -1940,8 +1994,8 @@
     "roof_tin",
     "roof_soffit",
     "metal_dark",
-    "paper",
-    "interior_lit",
+    "room_dark",
+    "room_lit",
     "roof_kawara"
    ],
    "signs": [
@@ -1956,7 +2010,7 @@
    ]
   },
   "barber": {
-   "triangles": 3044,
+   "triangles": 4251,
    "min": [
     -4.3,
     0,
@@ -1985,9 +2039,9 @@
     "roof_tin",
     "roof_soffit",
     "metal_dark",
-    "paper",
+    "room_dark",
     "metal_grey",
-    "interior_lit",
+    "room_lit",
     "post_red"
    ],
    "signs": [
@@ -2002,7 +2056,7 @@
    ]
   },
   "post-office": {
-   "triangles": 204,
+   "triangles": 891,
    "min": [
     -5.3,
     0,
@@ -2034,7 +2088,7 @@
    ]
   },
   "chuzaisho": {
-   "triangles": 2662,
+   "triangles": 2990,
    "min": [
     -4.7,
     0,
@@ -2068,7 +2122,7 @@
    ]
   },
   "nokyo": {
-   "triangles": 2576,
+   "triangles": 3602,
    "min": [
     -6.8,
     0,
@@ -2110,7 +2164,7 @@
    ]
   },
   "nokyo-soko": {
-   "triangles": 412,
+   "triangles": 1381,
    "min": [
     -9.9,
     0,
@@ -2131,7 +2185,7 @@
    ]
   },
   "kominkan": {
-   "triangles": 2654,
+   "triangles": 3226,
    "min": [
     -7.907,
     0,
@@ -2166,7 +2220,7 @@
    ]
   },
   "phone-box": {
-   "triangles": 144,
+   "triangles": 324,
    "min": [
     -0.55,
     0,
@@ -2389,6 +2443,430 @@
     "triangles": 36625,
     "distance": 45
    }
+  },
+  "minka-kayabuki_0-lod1": {
+   "triangles": 2847,
+   "min": [
+    -7.9,
+    0,
+    -5.65
+   ],
+   "max": [
+    9.35,
+    10.613,
+    5.65
+   ],
+   "materials": [
+    "stone_old",
+    "wood_frame",
+    "wood_siding",
+    "plaster_clay",
+    "room_dark",
+    "paper",
+    "glass",
+    "room_lit",
+    "wood_dark",
+    "stone_granite",
+    "roof_thatch",
+    "roof_soffit",
+    "wood_old",
+    "roof_kawara_ridge",
+    "roof_tin",
+    "concrete_old",
+    "lpg_grey"
+   ]
+  },
+  "minka-kawara_0-lod1": {
+   "triangles": 3239,
+   "min": [
+    -7.01,
+    0,
+    -5.33
+   ],
+   "max": [
+    8.6,
+    9.676,
+    5.35
+   ],
+   "materials": [
+    "concrete",
+    "metal_grey",
+    "wood_frame",
+    "wood_siding",
+    "plaster_white",
+    "room_dark",
+    "aluminium",
+    "glass",
+    "glass_frosted",
+    "room_lit",
+    "roof_kawara",
+    "roof_soffit",
+    "roof_kawara_ridge",
+    "roof_tin",
+    "concrete_old",
+    "lpg_grey",
+    "metal_dark",
+    "tank_cream"
+   ]
+  },
+  "minka-kawara_1-lod1": {
+   "triangles": 4549,
+   "min": [
+    -6.4,
+    0,
+    -5.08
+   ],
+   "max": [
+    8,
+    8.746,
+    5.1
+   ],
+   "materials": [
+    "concrete",
+    "metal_grey",
+    "wood_frame",
+    "wood_siding",
+    "plaster_white",
+    "room_lit",
+    "aluminium",
+    "glass",
+    "room_dark",
+    "glass_frosted",
+    "roof_kawara",
+    "roof_soffit",
+    "roof_kawara_ridge",
+    "roof_tin",
+    "concrete_old",
+    "lpg_grey",
+    "metal_dark",
+    "tank_cream"
+   ]
+  },
+  "minka-totan_1-lod1": {
+   "triangles": 3816,
+   "min": [
+    -7.3,
+    0,
+    -5.28
+   ],
+   "max": [
+    8.1,
+    11.358,
+    10.4
+   ],
+   "materials": [
+    "concrete",
+    "metal_grey",
+    "wood_frame",
+    "wood_siding",
+    "plaster_white",
+    "room_lit",
+    "glass",
+    "room_dark",
+    "glass_frosted",
+    "roof_tin_blue",
+    "roof_soffit",
+    "concrete_old",
+    "lpg_grey",
+    "metal_dark",
+    "tank_cream"
+   ]
+  },
+  "naya_0-lod1": {
+   "triangles": 781,
+   "min": [
+    -3.25,
+    0,
+    -2.6
+   ],
+   "max": [
+    3.25,
+    3.705,
+    2.6
+   ],
+   "materials": [
+    "concrete",
+    "wood_old",
+    "wood_siding",
+    "roof_tin",
+    "roof_soffit",
+    "wood_light"
+   ]
+  },
+  "minka-kayabuki_1-lod1": {
+   "triangles": 2817,
+   "min": [
+    -8.6,
+    0,
+    -5.4
+   ],
+   "max": [
+    7.15,
+    13.151,
+    5.4
+   ],
+   "materials": [
+    "stone_old",
+    "wood_frame",
+    "wood_siding",
+    "plaster_white",
+    "room_dark",
+    "paper",
+    "glass",
+    "room_lit",
+    "wood_dark",
+    "stone_granite",
+    "roof_thatch",
+    "roof_soffit",
+    "wood_old",
+    "roof_kawara_ridge",
+    "metal_grey",
+    "roof_tin",
+    "concrete_old",
+    "lpg_grey",
+    "metal_dark",
+    "tank_cream"
+   ]
+  },
+  "minka-kayabuki_2-lod1": {
+   "triangles": 3615,
+   "min": [
+    -9.85,
+    0,
+    -5.9
+   ],
+   "max": [
+    8.4,
+    13.278,
+    11.1
+   ],
+   "materials": [
+    "stone_old",
+    "wood_frame",
+    "wood_siding",
+    "plaster_clay",
+    "room_dark",
+    "paper",
+    "glass",
+    "wood_dark",
+    "stone_granite",
+    "roof_thatch",
+    "roof_soffit",
+    "wood_old",
+    "roof_kawara_ridge",
+    "metal_grey",
+    "roof_tin",
+    "concrete_old",
+    "lpg_grey"
+   ]
+  },
+  "minka-kayabuki_3-lod1": {
+   "triangles": 2670,
+   "min": [
+    -8.35,
+    0,
+    -5.15
+   ],
+   "max": [
+    6.9,
+    9.988,
+    5.15
+   ],
+   "materials": [
+    "stone_old",
+    "wood_frame",
+    "wood_siding",
+    "plaster_white",
+    "room_dark",
+    "paper",
+    "glass",
+    "room_lit",
+    "wood_dark",
+    "stone_granite",
+    "roof_thatch",
+    "roof_soffit",
+    "wood_old",
+    "roof_kawara_ridge",
+    "roof_tin",
+    "concrete_old",
+    "lpg_grey",
+    "metal_dark",
+    "tank_cream"
+   ]
+  },
+  "minka-kawara_2-lod1": {
+   "triangles": 3478,
+   "min": [
+    -7.759,
+    0,
+    -5.58
+   ],
+   "max": [
+    7.759,
+    7.26,
+    5.6
+   ],
+   "materials": [
+    "concrete",
+    "metal_grey",
+    "wood_frame",
+    "wood_siding",
+    "plaster_white",
+    "room_dark",
+    "glass",
+    "glass_frosted",
+    "roof_kawara",
+    "roof_soffit",
+    "roof_kawara_ridge",
+    "concrete_old",
+    "lpg_grey",
+    "metal_dark",
+    "tank_cream"
+   ]
+  },
+  "minka-kawara_3-lod1": {
+   "triangles": 4439,
+   "min": [
+    -6.7,
+    0,
+    -5.83
+   ],
+   "max": [
+    6.7,
+    11.713,
+    5.85
+   ],
+   "materials": [
+    "concrete",
+    "metal_grey",
+    "wood_frame",
+    "wood_siding",
+    "plaster_white",
+    "room_dark",
+    "aluminium",
+    "glass",
+    "glass_frosted",
+    "room_lit",
+    "roof_kawara",
+    "roof_soffit",
+    "roof_kawara_ridge",
+    "concrete_old",
+    "lpg_grey",
+    "metal_dark",
+    "tank_cream"
+   ]
+  },
+  "minka-totan_0-lod1": {
+   "triangles": 3398,
+   "min": [
+    -8.35,
+    0,
+    -4.98
+   ],
+   "max": [
+    6.72,
+    11.099,
+    5.1
+   ],
+   "materials": [
+    "concrete",
+    "metal_grey",
+    "wood_frame",
+    "wood_siding",
+    "plaster_white",
+    "room_lit",
+    "glass",
+    "room_dark",
+    "glass_frosted",
+    "roof_tin",
+    "roof_soffit",
+    "concrete_old",
+    "lpg_grey",
+    "metal_dark",
+    "tank_cream"
+   ]
+  },
+  "minka-totan_2-lod1": {
+   "triangles": 3117,
+   "min": [
+    -6.2,
+    0,
+    -4.78
+   ],
+   "max": [
+    6.27,
+    11.834,
+    4.9
+   ],
+   "materials": [
+    "concrete",
+    "metal_grey",
+    "wood_frame",
+    "wood_siding",
+    "plaster_white",
+    "room_lit",
+    "metal_dark",
+    "glass",
+    "room_dark",
+    "glass_frosted",
+    "roof_tin",
+    "roof_soffit",
+    "concrete_old",
+    "lpg_grey",
+    "tank_cream"
+   ]
+  },
+  "minka-totan_3-lod1": {
+   "triangles": 3615,
+   "min": [
+    -9.2,
+    0,
+    -5.58
+   ],
+   "max": [
+    7.57,
+    9.325,
+    5.7
+   ],
+   "materials": [
+    "concrete",
+    "metal_grey",
+    "wood_frame",
+    "wood_siding",
+    "plaster_white",
+    "room_dark",
+    "metal_dark",
+    "glass",
+    "glass_frosted",
+    "room_lit",
+    "roof_tin_green",
+    "roof_soffit",
+    "roof_tin",
+    "concrete_old",
+    "lpg_grey",
+    "tank_cream"
+   ]
+  },
+  "naya_1-lod1": {
+   "triangles": 792,
+   "min": [
+    -3.25,
+    0,
+    -2.6
+   ],
+   "max": [
+    3.25,
+    3.705,
+    2.6
+   ],
+   "materials": [
+    "concrete",
+    "wood_old",
+    "wood_siding",
+    "roof_tin",
+    "roof_soffit",
+    "wood_light"
+   ]
   }
  }
 }

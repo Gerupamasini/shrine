@@ -4,7 +4,26 @@ import { publicUrl } from "../urls";
 import type { Landscape, System } from "./landscape";
 import type { Placement } from "./data";
 import { MATERIALS } from "./materials";
+import { applyFacade, type FacadeKind } from "../engine/facade";
+import type { Library } from "../engine/library";
 import { isVehicle } from "../vehicles/specs";
+
+export type DuskRamp = { m: T.MeshStandardMaterial; base: number; ramp: number[] };
+
+/** Material for a building part named in materials.json (photographic PBR set + facade shading). */
+export function buildingMaterial(lib: Library, name: string, dusk: DuskRamp[] = []): T.MeshStandardMaterial | null {
+  const def = MATERIALS[name];
+  if (!def) return null;
+  const std = lib.pbr(def) as T.MeshStandardMaterial;
+  std.name = name;
+  if (def.emissive) {
+    std.emissive.set(def.emissive);
+    std.emissiveIntensity = def.emissiveIntensity ?? 1;
+    const ramp = (def as { dusk?: number[] }).dusk;
+    if (ramp) dusk.push({ m: std, base: def.emissiveIntensity ?? 0, ramp });
+  }
+  return applyFacade(std, (def.facade ?? "base") as FacadeKind);
+}
 
 const PROPS: Record<string, string> = {
   "prop-bucket": "props/wooden_bucket_01",
@@ -19,8 +38,11 @@ type Inst = { file: string; matrix: T.Matrix4 };
 /** Places every built object from scene.json as instanced GLB parts. */
 export class Architecture implements System {
   materials = new Map<string, T.Material>();
-  dusk: { m: T.MeshStandardMaterial; base: number; ramp: number[] }[] = [];
-  meshes: { mesh: T.InstancedMesh; centers: T.Vector3[]; far: number; near?: number; matrices: T.Matrix4[] }[] = [];
+  dusk: DuskRamp[] = [];
+  /** lod: 0 / 1 for buildings with a far model (houses, barns): they swap at `lodDist` */
+  meshes: { mesh: T.InstancedMesh; centers: T.Vector3[]; far: number; near?: number; matrices: T.Matrix4[]; lod?: number }[] = [];
+  /** distance at which houses and barns change to their far model (quality setting) */
+  lodDist = 60;
   constructor(public land: Landscape) {}
   material(src: T.Material): T.Material {
     const name = src.name;
@@ -33,16 +55,9 @@ export class Architecture implements System {
       this.materials.set(name, authored);
       return authored;
     }
-    const def = MATERIALS[name];
-    if (def) {
-      const std = this.land.lib.pbr(def) as T.MeshStandardMaterial;
-      if (def.emissive) {
-        std.emissive.set(def.emissive);
-        std.emissiveIntensity = def.emissiveIntensity ?? 1;
-        const dusk = (def as { dusk?: number[] }).dusk;
-        if (dusk) this.dusk.push({ m: std, base: def.emissiveIntensity ?? 0, ramp: dusk });
-      }
-      m = std;
+    const built = buildingMaterial(this.land.lib, name, this.dusk);
+    if (built) {
+      m = built;
     } else {
       // Poly Haven props: keep their own textures
       const s = src as T.MeshStandardMaterial;
@@ -109,11 +124,13 @@ export class Architecture implements System {
       byFile.get(it.file)!.push(it.matrix);
     }
     const loader = new GLTFLoader();
+    const registry = (await fetch(publicUrl("assets/models/architecture/index.json")).then((r) => r.json())).assets as Record<string, { lod1?: boolean }>;
     let done = 0;
     await Promise.all(
       [...byFile].map(async ([file, mats]) => {
         const vehicle = /architecture\/(kei-truck|kei-hatch|crown-sedan|light-truck|utility-wagon)$/.test(file);
-        const levels = vehicle ? [0, 1] : [0];
+        const lodded = !vehicle && !!registry[file.replace(/^architecture\//, "")]?.lod1;
+        const levels = vehicle || lodded ? [0, 1] : [0];
         for (const level of levels) {
         const g = await loader.loadAsync(publicUrl(`assets/models/${file}${level ? "-lod1" : ""}.glb`));
         g.scene.updateMatrixWorld(true);
@@ -129,7 +146,7 @@ export class Architecture implements System {
           mesh.computeBoundingSphere();
           o.geometry.computeBoundingSphere();
           const r = o.geometry.boundingSphere!.radius;
-          this.meshes.push({ mesh, matrices, near: level ? 45 : 0, centers: matrices.map((m) => new T.Vector3().setFromMatrixPosition(m)), far: vehicle && !level ? 45 : file.includes("props") ? 120 : file.includes("stairs") || file.includes("road-ditch") || file.includes("river-works") || file.includes("road-markings") || file.includes("stream-works") ? 1e9 : 400 + r * 40 });
+          this.meshes.push({ mesh, matrices, lod: lodded ? level : undefined, near: level ? 45 : 0, centers: matrices.map((m) => new T.Vector3().setFromMatrixPosition(m)), far: vehicle && !level ? 45 : file.includes("props") ? 120 : file.includes("stairs") || file.includes("road-ditch") || file.includes("river-works") || file.includes("road-markings") || file.includes("stream-works") ? 1e9 : 400 + r * 40 });
           this.land.scene.add(mesh);
         });
         }
@@ -172,6 +189,10 @@ export class Architecture implements System {
     const lines = new T.LineSegments(g, this.land.lib.finish(m));
     this.land.scene.add(lines);
   }
+  setQuality(q: "low" | "standard" | "high") {
+    this.lodDist = q === "low" ? 35 : q === "high" ? 90 : 60;
+    this.culledAt.set(1e9, 0, 0);
+  }
   frame = 0;
   private culledAt = new T.Vector3(1e9, 0, 0);
   update(_dt: number, _t: number, cam: T.PerspectiveCamera) {
@@ -182,12 +203,15 @@ export class Architecture implements System {
     for (const m of this.meshes) {
       if (m.far > 1e8) continue;
       let n = 0;
+      const near = m.lod === 1 ? this.lodDist : (m.near ?? 0), far = m.lod === 0 ? this.lodDist : m.far;
       for (let k = 0; k < m.matrices.length; k++) {
         const distance = m.centers[k].distanceTo(cam.position);
-        if (distance >= m.far || distance < (m.near ?? 0)) continue;
+        if (distance >= far || distance < near) continue;
         m.mesh.setMatrixAt(n++, m.matrices[k]);
       }
       m.mesh.count = n;
+      // nothing to draw: skip the mesh (and its shadow passes) entirely
+      m.mesh.visible = n > 0;
       m.mesh.instanceMatrix.needsUpdate = true;
     }
   }
