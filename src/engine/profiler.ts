@@ -158,9 +158,14 @@ export class Profiler {
         if (u) for (const v of Object.values(u)) addTex(v?.value);
       }
     });
+    const sources = new Set<unknown>();
     for (const t of textures) {
       const img = t.image as { width?: number; height?: number; depth?: number; data?: ArrayBufferView } | undefined;
       if (!img?.width) continue;
+      // (clones with another repeat share one image on the GPU: count it once)
+      const src = (t as unknown as { source?: unknown }).source ?? img;
+      if (sources.has(src)) continue;
+      sources.add(src);
       const layers = (t as T.DataArrayTexture).isDataArrayTexture ? img.depth ?? 1 : 1;
       const bpp = t.type === T.FloatType ? 4 : t.type === T.HalfFloatType ? 2 : 1;
       const ch = t.format === T.RedFormat ? 1 : 4;
@@ -173,6 +178,6 @@ export class Profiler {
     }
     const heap = (performance as unknown as { memory?: { usedJSHeapSize: number } }).memory?.usedJSHeapSize ?? 0;
     const mb = (b: number) => Math.round(b / 1048576);
-    return { geometryMB: mb(geo), textureMB: mb(tex), targetsMB: mb(rt), jsHeapMB: mb(heap), textures: textures.size };
+    return { geometryMB: mb(geo), textureMB: mb(tex), targetsMB: mb(rt), jsHeapMB: mb(heap), textures: sources.size };
   }
 }
