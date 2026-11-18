@@ -6,6 +6,8 @@ import {ALL_EXTENSIONS} from '@gltf-transform/extensions';
 import {weld,dedup,prune,flatten,join,simplify,getBounds,normals} from '@gltf-transform/functions';
 import {MeshoptSimplifier} from 'meshoptimizer';
 import {specs,palette} from './models.mjs';
+import {splitWheels} from './wheels.mjs';
+const designs=JSON.parse(fs.readFileSync(path.join(import.meta.dirname,'source/designs.json'),'utf8'));
 const root=path.resolve(import.meta.dirname,'../..'),out=path.join(root,'public/assets/models/architecture');
 const only=process.argv.find(a=>a.startsWith('--only='))?.slice(7).split(',');
 const lod2Only=process.argv.includes('--lod2-only');
@@ -44,7 +46,11 @@ async function far(s){
 for(const s of selected){
  if(lod2Only){await far(s);continue;}
  const file=path.join(out,s.id+'.glb'),doc=await io.read(file);
- await doc.transform(flatten(),join({keepNamed:false,filter:node=>! /^(wheel_|steering_wheel)/.test(node.getName())}),weld(),dedup(),prune());
+ await doc.transform(flatten(),join({keepNamed:false,filter:node=>! /^(wheel_|steering_wheel)/.test(node.getName())}));
+ // (models whose wheels came joined into the body get wheel nodes the game can spin and steer)
+ const split=splitWheels(doc,designs.find(d=>d.id===s.id));
+ if(split)console.log(s.id,'wheels split out:',split,'triangles');
+ await doc.transform(weld(),dedup(),prune());
  const bounds=getBounds(doc.getRoot().listScenes()[0]),triangles=count(doc);
  await io.write(file,doc);
  await doc.transform(simplify({simplifier:MeshoptSimplifier,ratio:.25,error:.007}),prune());

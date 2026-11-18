@@ -2211,7 +2211,7 @@
    "triangles": 94372,
    "min": [
     -0.8274999856948853,
-    -0.0006000000284984708,
+    -0.0005999999046325533,
     -1.7200000286102295
    ],
    "max": [
@@ -2250,12 +2250,12 @@
    },
    "lod": {
     "file": "kei-hatch-lod1.glb",
-    "triangles": 35295,
+    "triangles": 37229,
     "distance": 45
    },
    "lod2": {
     "file": "kei-hatch-lod2.glb",
-    "triangles": 1047,
+    "triangles": 1103,
     "distance": 35
    }
   },
@@ -2263,7 +2263,7 @@
    "triangles": 99958,
    "min": [
     -0.9775000214576721,
-    -0.0006000000284984708,
+    -0.0006000077724456765,
     -2.4174997806549072
    ],
    "max": [
@@ -2303,12 +2303,12 @@
    },
    "lod": {
     "file": "crown-sedan-lod1.glb",
-    "triangles": 39118,
+    "triangles": 40845,
     "distance": 45
    },
    "lod2": {
     "file": "crown-sedan-lod2.glb",
-    "triangles": 1159,
+    "triangles": 1215,
     "distance": 35
    }
   },
@@ -2316,7 +2316,7 @@
    "triangles": 117082,
    "min": [
     -1.1225000321865082,
-    0,
+    -8.344650248570673e-9,
     -2.3752000025007796
    ],
    "max": [
@@ -2354,12 +2354,12 @@
    },
    "lod": {
     "file": "light-truck-lod1.glb",
-    "triangles": 60027,
+    "triangles": 63601,
     "distance": 45
    },
    "lod2": {
     "file": "light-truck-lod2.glb",
-    "triangles": 1744,
+    "triangles": 1860,
     "distance": 35
    }
   },
@@ -2367,7 +2367,7 @@
    "triangles": 99728,
    "min": [
     -0.9624999761581421,
-    -0.0006000000284984708,
+    -0.0005999970436096347,
     -2.1599998474121094
    ],
    "max": [
@@ -2406,12 +2406,12 @@
    },
    "lod": {
     "file": "utility-wagon-lod1.glb",
-    "triangles": 36625,
+    "triangles": 38423,
     "distance": 45
    },
    "lod2": {
     "file": "utility-wagon-lod2.glb",
-    "triangles": 1087,
+    "triangles": 1142,
     "distance": 35
    }
   }

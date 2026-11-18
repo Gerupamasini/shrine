@@ -4,6 +4,8 @@
       "/opt/node22/bin/node",
       "/home/user/shrine/node_modules/.bin/playwright",
       "test",
+      "tests/driving.spec.ts",
+      "tests/steering-input.spec.ts",
       "--trace",
       "off"
     ],
@@ -110,55 +112,13 @@
   },
   "suites": [
     {
-      "title": "audio.spec.ts",
-      "file": "audio.spec.ts",
-      "column": 0,
-      "line": 0,
-      "specs": [
-        {
-          "title": "movement audio produces footsteps and engine output, respects airborne state and mute bus",
-          "ok": true,
-          "tags": [],
-          "tests": [
-            {
-              "timeout": 1800000,
-              "annotations": [],
-              "expectedStatus": "passed",
-              "projectId": "",
-              "projectName": "",
-              "results": [
-                {
-                  "workerIndex": 0,
-                  "parallelIndex": 0,
-                  "status": "passed",
-                  "duration": 366,
-                  "errors": [],
-                  "stdout": [],
-                  "stderr": [],
-                  "retry": 0,
-                  "startTime": "2026-11-16T18:47:57.392Z",
-                  "annotations": [],
-                  "attachments": []
-                }
-              ],
-              "status": "expected"
-            }
-          ],
-          "id": "87be2dcdb54c25970a35-e3f2004939584da558bb",
-          "file": "audio.spec.ts",
-          "line": 4,
-          "column": 1
-        }
-      ]
-    },
-    {
       "title": "driving.spec.ts",
       "file": "driving.spec.ts",
       "column": 0,
       "line": 0,
       "specs": [
         {
-          "title": "driving: all parked trucks, enter, steer, brake, views, pause, exit and recovery",
+          "title": "driving: all parked cars, enter, steer, brake, views, pause, exit and recovery",
           "ok": true,
           "tags": [],
           "tests": [
@@ -173,12 +133,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 98720,
+                  "duration": 95962,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-11-16T18:47:58.008Z",
+                  "startTime": "2026-11-18T01:17:19.969Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -186,299 +146,8 @@
               "status": "expected"
             }
           ],
-          "id": "93e2c3316732e7234603-ac7229a4fb7c2b3a4e48",
+          "id": "93e2c3316732e7234603-86a598e68685df966dc7",
           "file": "driving.spec.ts",
-          "line": 3,
-          "column": 1
-        }
-      ]
-    },
-    {
-      "title": "exploration.spec.ts",
-      "file": "exploration.spec.ts",
-      "column": 0,
-      "line": 0,
-      "specs": [
-        {
-          "title": "foot torii → 200-step climb → precinct → lookout; collisions, settings, no errors",
-          "ok": true,
-          "tags": [],
-          "tests": [
-            {
-              "timeout": 1800000,
-              "annotations": [],
-              "expectedStatus": "passed",
-              "projectId": "",
-              "projectName": "",
-              "results": [
-                {
-                  "workerIndex": 0,
-                  "parallelIndex": 0,
-                  "status": "passed",
-                  "duration": 233174,
-                  "errors": [],
-                  "stdout": [],
-                  "stderr": [],
-                  "retry": 0,
-                  "startTime": "2026-11-16T18:49:36.754Z",
-                  "annotations": [],
-                  "attachments": []
-                }
-              ],
-              "status": "expected"
-            }
-          ],
-          "id": "b9b4b397a1d4a5f1d1d3-04066e4937f3c731064d",
-          "file": "exploration.spec.ts",
-          "line": 4,
-          "column": 1
-        },
-        {
-          "title": "river: revetment cap, washing steps and bridge are walkable",
-          "ok": true,
-          "tags": [],
-          "tests": [
-            {
-              "timeout": 1800000,
-              "annotations": [],
-              "expectedStatus": "passed",
-              "projectId": "",
-              "projectName": "",
-              "results": [
-                {
-                  "workerIndex": 0,
-                  "parallelIndex": 0,
-                  "status": "passed",
-                  "duration": 45217,
-                  "errors": [],
-                  "stdout": [],
-                  "stderr": [],
-                  "retry": 0,
-                  "startTime": "2026-11-16T18:53:29.953Z",
-                  "annotations": [],
-                  "attachments": []
-                }
-              ],
-              "status": "expected"
-            }
-          ],
-          "id": "b9b4b397a1d4a5f1d1d3-c0bc1b214942060ff97b",
-          "file": "exploration.spec.ts",
-          "line": 83,
-          "column": 1
-        }
-      ]
-    },
-    {
-      "title": "rural-driving.spec.ts",
-      "file": "rural-driving.spec.ts",
-      "column": 0,
-      "line": 0,
-      "specs": [
-        {
-          "title": "rural lanes: low speed truck traversal and braking",
-          "ok": true,
-          "tags": [],
-          "tests": [
-            {
-              "timeout": 1800000,
-              "annotations": [],
-              "expectedStatus": "passed",
-              "projectId": "",
-              "projectName": "",
-              "results": [
-                {
-                  "workerIndex": 0,
-                  "parallelIndex": 0,
-                  "status": "passed",
-                  "duration": 476342,
-                  "errors": [],
-                  "stdout": [
-                    {
-                      "text": "route-progress miyazawa-farm 0 334\n"
-                    },
-                    {
-                      "text": "route-progress miyazawa-farm 160 334\n"
-                    },
-                    {
-                      "text": "{\"id\":\"miyazawa-farm\",\"index\":333,\"total\":334,\"frames\":9460,\"position\":[403.5754429911176,42.50154618519808,250.69079391405455],\"speed\":-0.002529930414674751,\"target\":[404.73,42.575,253.21],\"rotation\":[-0.008376259356737137,0.23215824365615845,0.0022917708847671747,0.972639262676239],\"ok\":true}\n"
-                    },
-                    {
-                      "text": "route-progress east-forest 0 303\n"
-                    },
-                    {
-                      "text": "route-progress east-forest 149 303\n"
-                    },
-                    {
-                      "text": "route-progress east-forest 298 303\n"
-                    },
-                    {
-                      "text": "{\"id\":\"east-forest\",\"index\":302,\"total\":303,\"frames\":10134,\"position\":[308.57283627796676,18.677760299509647,562.1384339729977],\"speed\":-0.011882548762333488,\"target\":[305.81,18.884,562.58],\"rotation\":[-0.022164233028888702,-0.6318122744560242,-0.023697897791862488,0.7744420766830444],\"ok\":true}\n"
-                    },
-                    {
-                      "text": "route-progress minamizawa-farm 0 236\n"
-                    },
-                    {
-                      "text": "route-progress minamizawa-farm 211 236\n"
-                    },
-                    {
-                      "text": "{\"id\":\"minamizawa-farm\",\"index\":235,\"total\":236,\"frames\":5893,\"position\":[16.179185041016535,3.396603988449373,550.0068847732127],\"speed\":-0.0006873359529718893,\"target\":[13.4,3.46,550],\"rotation\":[-0.0020298976451158524,-0.7064259052276611,-0.005936117377132177,0.7077592611312866],\"ok\":true}\n"
-                    },
-                    {
-                      "text": "route-progress okusawa-farm 0 226\n"
-                    },
-                    {
-                      "text": "route-progress okusawa-farm 173 226\n"
-                    },
-                    {
-                      "text": "{\"id\":\"okusawa-farm\",\"index\":225,\"total\":226,\"frames\":6072,\"position\":[299.36654290056515,23.61648134151164,-393.3869000575645],\"speed\":-0.029392776473969984,\"target\":[301.37,24.053,-391.36],\"rotation\":[-0.0682724341750145,0.3997851014137268,0.02537318877875805,0.9137105345726013],\"ok\":true}\n"
-                    },
-                    {
-                      "text": "route-progress north-forest 0 245\n"
-                    },
-                    {
-                      "text": "route-progress north-forest 185 245\n"
-                    },
-                    {
-                      "text": "{\"id\":\"north-forest\",\"index\":244,\"total\":245,\"frames\":6938,\"position\":[9.976831414582993,8.16668779562882,-272.7323198975827],\"speed\":0.0010291995363540995,\"target\":[9.42,8.214,-270],\"rotation\":[-0.0020236624404788017,-0.0975540280342102,-0.0010042553767561913,0.9952277541160583],\"ok\":true}\n"
-                    },
-                    {
-                      "text": "route-progress kawamuko-north-farm 0 38\n"
-                    },
-                    {
-                      "text": "{\"id\":\"kawamuko-north-farm\",\"index\":37,\"total\":38,\"frames\":1076,\"position\":[-284.9644835846204,14.663591307123722,116.10471382476925],\"speed\":0.02290748182017356,\"target\":[-282.26,14.442,116.38],\"rotation\":[0.04090164974331856,0.6913533806800842,-0.03212364390492439,0.7206425070762634],\"ok\":true}\n"
-                    },
-                    {
-                      "text": "route-progress kawamuko-contour-farm 0 123\n"
-                    },
-                    {
-                      "text": "{\"id\":\"kawamuko-contour-farm\",\"index\":122,\"total\":123,\"frames\":3423,\"position\":[-267.6731997969712,9.72039436605045,281.54911380719255],\"speed\":-0.0004952264991801341,\"target\":[-269.68,9.81,283.51],\"rotation\":[-0.0040253279730677605,-0.3577527105808258,-0.003017134265974164,0.9338028430938721],\"ok\":true}\n"
-                    },
-                    {
-                      "text": "route-progress kawamuko-south-farm 0 93\n"
-                    },
-                    {
-                      "text": "{\"id\":\"kawamuko-south-farm\",\"index\":92,\"total\":93,\"frames\":2165,\"position\":[-351.0438810541346,18.29425217021115,223.4625089092013],\"speed\":-0.02653163858091652,\"target\":[-353.81,18.556,224],\"rotation\":[-0.05029132962226868,-0.6406645774841309,-0.04045050963759422,0.7651035189628601],\"ok\":true}\n"
-                    }
-                  ],
-                  "stderr": [],
-                  "retry": 0,
-                  "startTime": "2026-11-16T18:54:15.197Z",
-                  "annotations": [],
-                  "attachments": []
-                }
-              ],
-              "status": "expected"
-            }
-          ],
-          "id": "4f861c9fd722535f1ec4-7ccdc22ec9e59f2a377a",
-          "file": "rural-driving.spec.ts",
-          "line": 3,
-          "column": 1
-        }
-      ]
-    },
-    {
-      "title": "rural-views.spec.ts",
-      "file": "rural-views.spec.ts",
-      "column": 0,
-      "line": 0,
-      "specs": [
-        {
-          "title": "rural final ground views after bank grading",
-          "ok": true,
-          "tags": [],
-          "tests": [
-            {
-              "timeout": 1800000,
-              "annotations": [],
-              "expectedStatus": "passed",
-              "projectId": "",
-              "projectName": "",
-              "results": [
-                {
-                  "workerIndex": 0,
-                  "parallelIndex": 0,
-                  "status": "passed",
-                  "duration": 124435,
-                  "errors": [],
-                  "stdout": [],
-                  "stderr": [],
-                  "retry": 0,
-                  "startTime": "2026-11-16T19:02:11.560Z",
-                  "annotations": [],
-                  "attachments": []
-                }
-              ],
-              "status": "expected"
-            }
-          ],
-          "id": "dd0861a63dc9b7189dc6-90dfa2b993030abd022d",
-          "file": "rural-views.spec.ts",
-          "line": 2,
-          "column": 1
-        }
-      ]
-    },
-    {
-      "title": "rural.spec.ts",
-      "file": "rural.spec.ts",
-      "column": 0,
-      "line": 0,
-      "specs": [
-        {
-          "title": "rural circuits: walk every new lane in both directions with real collisions",
-          "ok": true,
-          "tags": [],
-          "tests": [
-            {
-              "timeout": 1800000,
-              "annotations": [],
-              "expectedStatus": "passed",
-              "projectId": "",
-              "projectName": "",
-              "results": [
-                {
-                  "workerIndex": 0,
-                  "parallelIndex": 0,
-                  "status": "passed",
-                  "duration": 533793,
-                  "errors": [],
-                  "stdout": [
-                    {
-                      "text": "Rural world ready; testing complete circuits\n"
-                    },
-                    {
-                      "text": "Circuit east, forward passed\n"
-                    },
-                    {
-                      "text": "Circuit east, reverse passed\n"
-                    },
-                    {
-                      "text": "Circuit north, forward passed\n"
-                    },
-                    {
-                      "text": "Circuit north, reverse passed\n"
-                    },
-                    {
-                      "text": "Circuit kawamuko, forward passed\n"
-                    },
-                    {
-                      "text": "Circuit kawamuko, reverse passed\n"
-                    }
-                  ],
-                  "stderr": [],
-                  "retry": 0,
-                  "startTime": "2026-11-16T19:04:16.044Z",
-                  "annotations": [],
-                  "attachments": []
-                }
-              ],
-              "status": "expected"
-            }
-          ],
-          "id": "382424fe6d85633b5f00-c7ebac8ab7233366591e",
-          "file": "rural.spec.ts",
           "line": 3,
           "column": 1
         }
@@ -506,12 +175,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 132349,
+                  "duration": 104342,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-11-16T19:13:09.877Z",
+                  "startTime": "2026-11-18T01:18:56.159Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -525,55 +194,13 @@
           "column": 1
         }
       ]
-    },
-    {
-      "title": "valley-views.spec.ts",
-      "file": "valley-views.spec.ts",
-      "column": 0,
-      "line": 0,
-      "specs": [
-        {
-          "title": "valley fields and bunds at ground and distant viewpoints",
-          "ok": true,
-          "tags": [],
-          "tests": [
-            {
-              "timeout": 1800000,
-              "annotations": [],
-              "expectedStatus": "passed",
-              "projectId": "",
-              "projectName": "",
-              "results": [
-                {
-                  "workerIndex": 0,
-                  "parallelIndex": 0,
-                  "status": "passed",
-                  "duration": 229387,
-                  "errors": [],
-                  "stdout": [],
-                  "stderr": [],
-                  "retry": 0,
-                  "startTime": "2026-11-16T19:15:22.255Z",
-                  "annotations": [],
-                  "attachments": []
-                }
-              ],
-              "status": "expected"
-            }
-          ],
-          "id": "f412e093c3468ace7860-1c586b0e3ca34966076a",
-          "file": "valley-views.spec.ts",
-          "line": 4,
-          "column": 1
-        }
-      ]
     }
   ],
   "errors": [],
   "stats": {
-    "startTime": "2026-11-16T18:47:56.012Z",
-    "duration": 1875872.639,
-    "expected": 9,
+    "startTime": "2026-11-18T01:17:18.949Z",
+    "duration": 201923.2,
+    "expected": 2,
     "skipped": 0,
     "unexpected": 0,
     "flaky": 0
