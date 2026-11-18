@@ -3,8 +3,8 @@
 import * as THREE from "three";
 import fs from "node:fs";
 import path from "node:path";
-import { Model, V, rng, lathe, marchingCubes, writeModel, gridSurface } from "./kit.mjs";
-import { hipRoof, gableRoof } from "./roofs.mjs";
+import { Model, V, rng, lathe, marchingCubes, writeModel, gridSurface, bakeOcclusion } from "./kit.mjs";
+import { hipRoof, gableRoof, strutBox } from "./roofs.mjs";
 
 const ROOT = path.resolve(import.meta.dirname, "../..");
 const OUT = path.join(ROOT, "public/assets/models/architecture");
@@ -13,12 +13,32 @@ const scene = JSON.parse(fs.readFileSync(path.join(ROOT, "public/world/scene.jso
 // Regenerate terrain-dependent works without re-authoring the vehicle fleet.
 const WORLD_ONLY = process.argv.includes('--world-only');
 const WORLD_ASSETS = new Set(['stairs', 'river-works', 'road-ditch', 'stream-works', 'road-markings', 'road-bridge', 'tunnel']);
-const index = WORLD_ONLY ? JSON.parse(fs.readFileSync(path.join(OUT, 'index.json'), 'utf8')).assets : {};
+const previous = JSON.parse(fs.readFileSync(path.join(OUT, 'index.json'), 'utf8')).assets;
+// ONLY=<regex>: rebuild only the matching models (quick look development); the rest stay as they are
+const ONLY = process.env.ONLY ? new RegExp(process.env.ONLY) : null;
+const index = WORLD_ONLY || ONLY ? previous : {};
+// Vehicles are built by tools/vehicles/build.mjs with Blender. Without Blender the existing vehicle
+// models and their index entries are kept as they are.
+const HAS_BLENDER = !WORLD_ONLY && !process.env.ONLY && (await import("node:child_process")).spawnSync("blender", ["--version"], { stdio: "ignore" }).status === 0;
+const written = new Set();
 const M4 = (x = 0, y = 0, z = 0, ry = 0, s = 1) => new THREE.Matrix4().compose(V(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(0, ry, 0)), V(s, s, s));
 
-async function save(name, model) {
+const NO_BAKE = process.argv.includes("--no-bake");
+/** far LODs: coarser occlusion refinement (their faces are a few pixels across) */
+const LOD1_BAKE = { maxLen: 9, tol: 0.15, minArea: 0.35, fineLen: 1.0 };
+/** near houses: walls split finer so the darkening under the eaves follows the bays */
+const LOD0_BAKE = { maxLen: 4, tol: 0.09, minArea: 0.12 };
+async function save(name, model, { occluders, bake = {} } = {}) {
   if (WORLD_ONLY && !WORLD_ASSETS.has(name)) return;
+  if (ONLY && !ONLY.test(name)) return;
+  // sky occlusion baked into the vertices of every building (not the world-sized river and road works)
+  if (!WORLD_ASSETS.has(name) && !NO_BAKE && !model.baked) {
+    const t0 = Date.now(), tris = model.triangles();
+    const st = bakeOcclusion(model, { occluders, ...bake });
+    console.log(`  bake ${name}: ${tris} -> ${st.after} triangles (${st.dropped} enclosed dropped), ${st.samples} samples, ${Date.now() - t0} ms`);
+  }
   await writeModel(model, path.join(OUT, `${name}.glb`));
+  written.add(`${name}.glb`);
   const box = new THREE.Box3();
   for (const gs of model.parts.values()) for (const g of gs) { g.computeBoundingBox(); box.union(g.boundingBox); }
   index[name] = { triangles: Math.round(model.triangles()), min: box.min.toArray().map((v) => +v.toFixed(3)), max: box.max.toArray().map((v) => +v.toFixed(3)), materials: [...model.parts.keys()] };
@@ -409,156 +429,305 @@ function jizo() {
   return m;
 }
 
+// ---------------------------------------------------------------- house parts
+/** Swallows geometry: the far LOD of a house is built by the same code with its details sent here. */
+const NULL_MODEL = { add() { return this; }, box() { return this; }, cyl() { return this; }, merge() { return this; } };
+/** Room types seen through a window (src/engine/facade.ts): inner veranda with shoji, room behind
+ *  lace curtains, earthen-floored doma. */
+const ROOM = { veranda: 0, window: 1, doma: 2 };
+
+/** Vertical quad facing local +Z (turned by ry). uv: [u, v] written on every vertex (room planes). */
+function panel(m, mat, w, h, x, y, z, ry = 0, uv = null) {
+  const g = new THREE.PlaneGeometry(w, h);
+  const M = new THREE.Matrix4().compose(V(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(0, ry, 0)), V(1, 1, 1));
+  if (uv) {
+    const a = g.attributes.uv;
+    for (let i = 0; i < a.count; i++) a.setXY(i, uv[0], uv[1]);
+    return m.add(mat, g, { uv: "keep", matrix: M });
+  }
+  return m.add(mat, g, { matrix: M });
+}
+/** Matrix of a wall frame: origin on the wall face at (x, 0, z), local +Z out of the wall. */
+const wallAt = (x, z, ry) => new THREE.Matrix4().compose(V(x, 0, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(0, ry, 0)), V(1, 1, 1));
+
+/**
+ * Window or glazed door on a wall face, built in the wall frame (x along the wall, y up, z out of
+ * the wall face). The room plane lies on the wall; the panes slide on two rails in front of it, in
+ * an outer frame with a drip sill. kind: "alu" aluminium sash, "wood" wooden frames.
+ * lites: horizontal muntins per pane. grille: aluminium window grille (menkoshi) in front.
+ */
+function opening(m, d, M, { w, h, y0, floorY, room = "room_dark", type = ROOM.window, frame = "aluminium", panes = 2, glass = "glass", lites = 1, grille = false, sill = true, open = -1 }) {
+  const a = new Model("opening"), b = new Model("opening-detail");
+  const fw = frame === "wood_frame" ? 0.06 : 0.045;
+  panel(a, "room", w, h, 0, y0 + h / 2, 0.012, 0, [type + (room === "room_lit" ? 10 : 0), floorY]);
+  a.box(frame, w + 2 * fw, fw, 0.085, 0, y0 - fw / 2, 0.0425);
+  a.box(frame, w + 2 * fw, fw, 0.085, 0, y0 + h + fw / 2, 0.0425);
+  for (const s of [-1, 1]) a.box(frame, fw, h, 0.085, s * (w / 2 + fw / 2), y0 + h / 2, 0.0425);
+  if (sill) a.box(frame === "wood_frame" ? "metal_grey" : frame, w + 0.16, 0.022, 0.1, 0, y0 - fw - 0.011, 0.07);
+  const pw = w / panes;
+  for (let k = 0; k < panes; k++) {
+    // one pane may stand slid behind its neighbour: that part of the opening has no glass
+    if (k === open) continue;
+    const cx = -w / 2 + (k + 0.5) * pw, z = k % 2 ? 0.032 : 0.058, ww = pw + (k < panes - 1 ? 0.02 : 0);
+    panel(a, glass, ww - 0.05, h - 0.05, cx, y0 + h / 2, z);
+    const st = frame === "wood_frame" ? 0.045 : 0.03;
+    for (const s of [-1, 1]) b.box(frame, st, h, 0.03, cx + s * (ww / 2 - st / 2), y0 + h / 2, z);
+    for (const y of [y0 + st / 2, y0 + h - st / 2]) b.box(frame, ww, st, 0.03, cx, y, z);
+    for (let l = 1; l < lites; l++) b.box(frame, ww - 0.04, 0.022, 0.024, cx, y0 + (h * l) / lites, z);
+  }
+  if (grille) {
+    const gz = 0.15;
+    for (let x = -w / 2 + 0.06; x <= w / 2 - 0.05; x += 0.1) b.box("aluminium", 0.017, h + 0.1, 0.017, x, y0 + h / 2, gz);
+    for (const y of [y0 - 0.02, y0 + h + 0.02]) b.box("aluminium", w + 0.12, 0.03, 0.035, 0, y, gz);
+    for (const s of [-1, 1]) for (const y of [y0, y0 + h]) b.box("aluminium", 0.03, 0.03, 0.12, s * (w / 2 + 0.03), y, 0.09);
+  }
+  m.merge(a, M);
+  d.merge(b, M);
+}
+
+/** Frieze boards closing the gap between the wall heads and the roof's underside (the attic would
+ *  otherwise stand open under the eaves). */
+function frieze(m, mat, W, D, y0, roof) {
+  const hf = roof.underFront - 0.03 - y0, hs = roof.underSide - 0.03 - y0;
+  if (hf > 0.02) for (const s of [-1, 1]) m.box(mat, W + 0.1, hf, 0.1, 0, y0 + hf / 2, s * D / 2);
+  if (hs > 0.02) for (const s of [-1, 1]) m.box(mat, 0.1, hs, D + 0.1, s * W / 2, y0 + hs / 2, 0);
+}
+
 // ---------------------------------------------------------------- houses
 const PRESETS = JSON.parse(fs.readFileSync(path.join(ROOT, "tools/architecture/presets.json"), "utf8"));
 const HOUSE_PRESETS = Object.fromEntries(Object.entries(PRESETS).filter(([k]) => !k.startsWith("_")));
-function minka(type, v) {
+/** lod 1: the same house without the parts that only read up close (window sash bars, grilles,
+ *  rafters, battens, foundation vents, small fittings) */
+function minka(type, v, lod = 0) {
   const r = rng(1000 + v * 31 + type.length * 7);
+  const r2 = rng(7000 + v * 53 + type.length * 11);     // choices added later: kept off the first stream
   const pre = HOUSE_PRESETS[type][v];
   const W = pre.W, D = pre.D, storeys = pre.storeys ?? 1;
-  const m = new Model(`${type}_${v}`);
+  const m = new Model(`${type}_${v}${lod ? "-lod1" : ""}`);
+  const d = lod ? NULL_MODEL : m;
+  const res = lod ? 0.55 : 1;                       // roof grid resolution
+  const seg = (n) => (lod ? Math.max(4, Math.round(n / 2)) : n);
   const F = type === "minka-kura" ? 0.45 : 0.6;
-  // stone footing course and floor
-  m.box("stone_granite", W + 0.2, F, D + 0.2, 0, F / 2, 0);
+  const thatched = type === "minka-kayabuki";
   if (type === "minka-kura") {
-    // storehouse: thick plaster walls, small doors, heavy gable roof with floating (okiyane) roof
+    // storehouse: thick plaster walls on a stone base, heavy doors, the plaster eave band (hachimaki)
+    m.box("stone_granite", W + 0.2, F, D + 0.2, 0, F / 2, 0);
     m.box("stone_moss", W + 0.4, 0.9, D + 0.4, 0, F + 0.45, 0);
     m.box("plaster_white", W, 4.2, D, 0, F + 0.9 + 2.1, 0);
-    m.box("wood_dark", 1.4, 1.9, 0.12, -W / 4, F + 1.85, D / 2 + 0.02);
-    for (const y of [F + 3.9]) m.box("wood_dark", 0.9, 0.7, 0.12, W / 4, y, D / 2 + 0.02);
+    // door: frame, heavy plastered leaves stood open, the dark wooden inner door
+    panel(m, "room", 1.4, 1.9, -W / 4, F + 0.9 + 0.95, D / 2 + 0.012, 0, [ROOM.doma, F + 0.9]);
+    m.box("wood_dark", 1.3, 1.85, 0.06, -W / 4, F + 1.85, D / 2 + 0.05);
+    for (const s of [-1, 1]) m.box("plaster_white", 0.2, 2.25, 0.24, -W / 4 + s * 0.82, F + 0.9 + 1.12, D / 2 + 0.12);
+    m.box("plaster_white", 2.0, 0.28, 0.32, -W / 4, F + 0.9 + 2.32, D / 2 + 0.16);
+    // high window with plastered shutters
+    m.box("wood_dark", 0.9, 0.7, 0.08, W / 4, F + 3.9, D / 2 + 0.04);
+    m.box("plaster_white", 1.25, 0.95, 0.18, W / 4, F + 3.9, D / 2 + 0.09);
+    d.box("plaster_white", 1.4, 0.12, 0.3, W / 4, F + 4.45, D / 2 + 0.15);
+    // plaster band under the eaves and tiled skirt (mizukiri) over the stone base
     m.box("plaster_white", W + 0.3, 0.3, D + 0.3, 0, F + 5.15, 0);
-    gableRoof(m, "roof_kawara", { W: W, over: 0.6, eaveY: F + 5.25, ridgeY: F + 7.2, frontRun: D / 2 + 0.7, backRun: D / 2 + 0.7, thick: 0.28 });
+    for (const [sx, sz, lw, ld] of [[0, 1, W + 0.5, 0.2], [0, -1, W + 0.5, 0.2], [1, 0, 0.2, D + 0.5], [-1, 0, 0.2, D + 0.5]])
+      m.box("roof_kawara", lw, 0.06, ld, sx * (W / 2 + 0.12), F + 0.92, sz * (D / 2 + 0.12), { rz: sx * 0.35, rx: -sz * 0.35 });
+    gableRoof(m, "roof_kawara", { W: W, over: 0.6, eaveY: F + 5.25, ridgeY: F + 7.2, frontRun: D / 2 + 0.7, backRun: D / 2 + 0.7, thick: 0.28, ridgeMat: "roof_kawara_ridge" });
     return { m, W, D };
   }
-  // posts and walls: lower board siding, upper plaster or clay, wood framing visible
   const bays = Math.round(W / 1.82);
   const bayW = W / bays;
-  const wallH = type === "minka-kayabuki" ? 2.35 : 2.7;
-  const upper = type === "minka-kayabuki" && v % 2 === 0 ? "plaster_clay" : "plaster_white";
+  const wallH = thatched ? 2.35 : 2.7;
+  const upper = thatched && v % 2 === 0 ? "plaster_clay" : "plaster_white";
+  // the house's fittings: aluminium sashes (silver or bronze) on most, old wooden glazed doors on some
+  const alu = !thatched && r2() < 0.78;
+  const frame = alu ? (r2() < 0.55 ? "aluminium" : "metal_dark") : "wood_frame";
+  // ---- foundation: mortar strip footing with vents and a drip flashing; a stone base under thatch
+  if (thatched) {
+    m.box("stone_old", W + 0.3, F - 0.14, D + 0.3, 0, (F - 0.14) / 2, 0);
+    m.box("wood_frame", W + 0.1, 0.16, D + 0.1, 0, F - 0.08, 0);
+  } else {
+    m.box("concrete", W + 0.12, F, D + 0.12, 0, F / 2, 0);
+    m.box("metal_grey", W + 0.2, 0.022, D + 0.2, 0, F + 0.011, 0);
+    for (const s of [-1, 1]) {
+      for (let i = 1; i < bays; i += 2) d.box("metal_dark", 0.38, 0.14, 0.02, -W / 2 + (i + 0.5) * bayW, F * 0.5, s * (D / 2 + 0.065));
+      for (let k = 0; k < 2; k++) d.box("metal_dark", 0.02, 0.14, 0.38, s * (W / 2 + 0.065), F * 0.5, -D / 4 + k * (D / 2));
+    }
+  }
+  // ---- posts and walls: lower board siding with battens, upper plaster or clay, framing visible
   for (let i = 0; i <= bays; i++) for (const z of [-D / 2, D / 2]) m.box("wood_frame", 0.15, wallH, 0.15, -W / 2 + i * bayW, F + wallH / 2, z);
   for (const s of [-1, 1]) for (let i = 0; i <= 4; i++) m.box("wood_frame", 0.15, wallH, 0.15, s * W / 2, F + wallH / 2, -D / 2 + (D / 4) * i);
-  // back and side walls
   m.box("wood_siding", W, 1.0, 0.1, 0, F + 0.5, -D / 2);
   m.box(upper, W, wallH - 1.0, 0.1, 0, F + 1.0 + (wallH - 1.0) / 2, -D / 2);
   for (const s of [-1, 1]) {
     m.box("wood_siding", 0.1, 1.0, D, s * W / 2, F + 0.5, 0);
     m.box(upper, 0.1, wallH - 1.0, D, s * W / 2, F + 1.0 + (wallH - 1.0) / 2, 0);
   }
+  // battens (oshibuchi) over the siding boards, every 0.45 m
+  for (let x = -W / 2 + 0.45; x < W / 2 - 0.2; x += 0.455) d.box("wood_frame", 0.035, 0.98, 0.025, x, F + 0.5, -D / 2 - 0.06);
+  for (const s of [-1, 1]) for (let z = -D / 2 + 0.45; z < D / 2 - 0.2; z += 0.455) d.box("wood_frame", 0.025, 0.98, 0.035, s * (W / 2 + 0.06), F + 0.5, z);
   // nuki beams on walls
   for (const y of [F + 1.0, F + wallH - 0.05]) {
     m.box("wood_frame", W + 0.05, 0.13, 0.17, 0, y, -D / 2);
     for (const s of [-1, 1]) m.box("wood_frame", 0.17, 0.13, D + 0.05, s * W / 2, y, 0);
   }
-  // small windows on side/back
-  for (let i = 0; i < 2; i++) {
-    const x = -W / 4 + i * (W / 2) + (r() - 0.5);
-    m.box("wood_dark", 1.2, 0.75, 0.05, x, F + 1.65, -D / 2 - 0.06);
-    for (let k = -2; k <= 2; k++) m.box("wood_old", 0.03, 0.75, 0.04, x + k * 0.24, F + 1.65, -D / 2 - 0.09);
+  // ---- back windows: kitchen (grille, often lit at dusk) and bath (frosted, grille); lattice
+  // windows over shoji on thatched houses
+  const snap = (x) => -W / 2 + (Math.max(0, Math.min(bays - 1, Math.round((x + W / 2) / bayW - 0.5))) + 0.5) * bayW;
+  const backX = [];
+  for (let i = 0; i < 2; i++) backX.push(snap(-W / 4 + i * (W / 2) + (r() - 0.5)));
+  if (backX[0] === backX[1]) backX[1] = Math.min(backX[1] + bayW, W / 2 - bayW / 2);
+  const wb = Math.min(1.25, bayW - 0.3);
+  if (thatched) {
+    for (const x of backX) {
+      const M = wallAt(x, -D / 2 - 0.05, Math.PI);
+      opening(m, d, M, { w: wb, h: 0.8, y0: F + 1.08, floorY: F, room: "room_dark", frame: "wood_frame", glass: "paper", panes: 2, sill: false });
+      const g = new Model("koshi");
+      for (let x2 = -wb / 2 + 0.05; x2 < wb / 2; x2 += 0.075) g.box("wood_old", 0.03, 0.86, 0.035, x2, F + 1.48, 0.11);
+      d.merge(g, M);
+    }
+  } else {
+    const kitchenLit = r2() < 0.6;
+    opening(m, d, wallAt(backX[0], -D / 2 - 0.05, Math.PI), { w: wb, h: 0.9, y0: F + 1.08, floorY: F, room: kitchenLit ? "room_lit" : "room_dark", frame, glass: "glass", grille: true });
+    opening(m, d, wallAt(backX[1], -D / 2 - 0.05, Math.PI), { w: Math.min(0.9, wb), h: 0.6, y0: F + 1.35, floorY: F, room: "room_dark", frame, glass: "glass_frosted", grille: true });
+    // kitchen fan hood, a vent cap, the electricity meter by the front corner
+    d.box("metal_grey", 0.32, 0.3, 0.2, backX[0] + (wb / 2 + 0.45) * (backX[0] < 0 ? 1 : -1), F + 2.05, -D / 2 - 0.15);
+    d.box("tank_cream", 0.2, 0.32, 0.12, W / 2 + 0.11, F + 1.5, D / 2 - 0.6);
+    d.box("glass", 0.02, 0.14, 0.14, W / 2 + 0.18, F + 1.55, D / 2 - 0.6);
   }
-  // front: engawa + sliding doors (glass on kawara/totan houses, shoji/amado on kayabuki)
+  // ---- front: engawa deck, sliding glass doors (or shoji, amado, open bays on thatched houses)
   const front = D / 2;
   m.box("wood_frame", W - 1.8, 0.08, 0.95, 0.9, F + 0.0, front + 0.47);
-  for (let i = 0; i <= bays; i++) if (i > 0) m.box("wood_frame", 0.1, F, 0.1, -W / 2 + i * bayW, F / 2, front + 0.9);
-  const glassy = type !== "minka-kayabuki";
-  const doorStart = 1;
-  for (let i = doorStart; i < bays; i++) {
+  d.box("wood_frame", W - 1.8, 0.12, 0.1, 0.9, F - 0.09, front + 0.9);
+  for (let i = 0; i <= bays; i++) if (i > 0) {
+    m.box("wood_frame", 0.1, F, 0.1, -W / 2 + i * bayW, F / 2, front + 0.9);
+    d.box("stone_granite", 0.24, 0.1, 0.24, -W / 2 + i * bayW, 0.05, front + 0.9);
+  }
+  const litBay = v % 2 === 1 ? bays - 1 : -1;
+  for (let i = 1; i < bays; i++) {
     const cx = -W / 2 + (i + 0.5) * bayW;
     const open = r() < 0.25;
-    if (glassy) {
-      m.box(v % 2 === 1 && i === bays - 1 ? "interior_lit" : "interior_dark", bayW - 0.1, 1.8, 0.05, cx, F + 0.95, front - 0.25);
-      m.box("glass", bayW - 0.1, 1.75, 0.02, cx, F + 0.95, front + 0.02);
-      for (const dx of [-bayW / 2 + 0.05, 0, bayW / 2 - 0.05]) m.box("aluminium", 0.04, 1.8, 0.05, cx + dx, F + 0.95, front + 0.03);
-      for (const y of [F + 0.07, F + 1.82, F + 0.9]) m.box("aluminium", bayW - 0.05, 0.04, 0.05, cx, y, front + 0.03);
+    const M = wallAt(cx, front, 0);
+    const room = i === litBay || r2() < 0.18 ? "room_lit" : "room_dark";
+    if (!thatched) {
+      opening(m, d, M, { w: bayW - 0.12, h: 1.8, y0: F + 0.05, floorY: F, room, type: ROOM.veranda, frame, lites: alu ? 1 : 3, sill: false, open: open ? 1 : -1 });
     } else {
-      if (open) m.box("interior_dark", bayW - 0.1, 1.8, 0.05, cx, F + 0.95, front - 0.6);
-      else {
+      const pick = r2();
+      if (open) panel(m, "room", bayW - 0.12, 1.8, cx, F + 0.95, front + 0.012, 0, [ROOM.veranda + (room === "room_lit" ? 10 : 0), F]);
+      else if (pick < 0.55) opening(m, d, M, { w: bayW - 0.12, h: 1.8, y0: F + 0.05, floorY: F, room, type: ROOM.veranda, frame: "wood_frame", lites: 4, sill: false });
+      else if (pick < 0.85) {
+        // shoji straight onto the veranda
         m.box("paper", bayW - 0.15, 1.75, 0.02, cx, F + 0.95, front);
-        for (let k = 1; k < 4; k++) m.box("wood_old", 0.025, 1.75, 0.03, cx - bayW / 2 + (bayW / 4) * k, F + 0.95, front + 0.02);
-        for (let k = 1; k < 7; k++) m.box("wood_old", bayW - 0.15, 0.025, 0.03, cx, F + 0.08 + k * 0.25, front + 0.02);
+        for (let k = 1; k < 4; k++) d.box("wood_old", 0.025, 1.75, 0.03, cx - bayW / 2 + (bayW / 4) * k, F + 0.95, front + 0.02);
+        for (let k = 1; k < 7; k++) d.box("wood_old", bayW - 0.15, 0.025, 0.03, cx, F + 0.08 + k * 0.25, front + 0.02);
+        m.box("wood_frame", bayW - 0.1, 0.05, 0.05, cx, F + 0.06, front + 0.02);
+      } else {
+        // wooden rain shutters (amado) closed
+        m.box("wood_siding", bayW - 0.1, 1.8, 0.05, cx, F + 0.95, front + 0.03);
+        for (let k = 1; k < 4; k++) d.box("wood_frame", 0.03, 1.78, 0.02, cx - bayW / 2 + (bayW / 4) * k, F + 0.95, front + 0.065);
       }
     }
   }
-  // doma entrance (earthen floor) at the left bay with a wooden sliding door
+  // rain-shutter box (tobukuro) at the end of the glazed run
+  if (!thatched) {
+    m.box("wood_siding", 0.95, 2.0, 0.24, W / 2 + 0.47, F + 1.0, front + 0.12);
+    m.box("wood_frame", 1.0, 0.06, 0.28, W / 2 + 0.47, F + 2.02, front + 0.12);
+  }
+  // doma entrance: sliding frosted-glass doors under a lamp, or the big plank door of a farmhouse
   const doorTop = F + 1.85;
-  m.box("interior_dark", bayW - 0.1, doorTop, 0.06, -W / 2 + bayW / 2, doorTop / 2, front - 0.3);
-  m.box("wood_planks", bayW * 0.5, doorTop - 0.05, 0.06, -W / 2 + bayW * 0.3, doorTop / 2, front + 0.03);
+  const ex = -W / 2 + bayW / 2;
+  if (!thatched) {
+    opening(m, d, wallAt(ex, front, 0), { w: bayW - 0.12, h: doorTop - 0.2, y0: 0.2, floorY: 0.1, room: r2() < 0.5 ? "room_lit" : "room_dark", type: ROOM.doma, frame, glass: "glass_frosted", lites: 6, sill: false });
+    m.box("concrete", bayW + 0.5, 0.16, 1.1, ex, 0.08, front + 0.55);
+    d.box("lamp_bulb", 0.13, 0.17, 0.11, ex + bayW / 2 - 0.25, doorTop + 0.22, front + 0.08);
+    d.box("tank_cream", 0.09, 0.3, 0.02, ex - bayW / 2 + 0.02, F + 1.3, front + 0.08);
+  } else {
+    panel(m, "room", bayW - 0.1, doorTop - 0.1, ex, (doorTop + 0.1) / 2, front - 0.25 + 0.012, 0, [ROOM.doma, 0.1]);
+    m.box("wood_dark", bayW * 0.52, doorTop - 0.12, 0.06, -W / 2 + bayW * 0.3, doorTop / 2 + 0.03, front + 0.03);
+    for (let k = 0; k < 4; k++) d.box("wood_frame", bayW * 0.52, 0.05, 0.03, -W / 2 + bayW * 0.3, 0.4 + k * 0.55, front + 0.07);
+    m.box("stone_granite", 0.8, 0.25, 0.5, ex, 0.125, front + 0.5);
+  }
   // transom walls (kokabe) between the door head and the eave beam, with a lintel (kamoi)
   m.box(upper, W - 0.05, F + wallH - doorTop, 0.1, 0, (doorTop + F + wallH) / 2, front - 0.02);
   m.box("wood_frame", W + 0.05, 0.12, 0.17, 0, doorTop + 0.04, front + 0.01);
   m.box("wood_frame", W + 0.1, 0.15, 0.19, 0, F + wallH, front);
-  // roofs
-  if (type === "minka-kayabuki") {
-    const ret = hipRoof(m, "roof_thatch", { W, D, over: 1.15, eaveY: F + wallH + 0.15, ridgeY: F + wallH + 0.15 + (D / 2 + 1.15) * 1.25, sori: 0.0, thick: 0.75, gable: 0.82, uv: 0.7, ridgeMat: "roof_kawara_ridge", gableMat: "wood_old", ridgeH: 0.5, ridgeW: 0.8, sag: 0.05 });
+  // ---- roofs
+  if (thatched) {
+    const ret = hipRoof(m, "roof_thatch", { res, W, D, over: 1.15, eaveY: F + wallH + 0.15, ridgeY: F + wallH + 0.15 + (D / 2 + 1.15) * 1.25, sori: 0.0, thick: 0.75, gable: 0.82, uv: 0.7, ridgeMat: "roof_kawara_ridge", gableMat: "wood_old", ridgeH: 0.5, ridgeW: 0.8, sag: 0.05, rafters: { target: d, mat: "wood_old", step: 0.5, size: 0.08 } });
+    frieze(m, "wood_old", W, D, F + wallH + 0.07, ret);
     // ridge cover sticks (gushi)
     for (let k = -6; k <= 6; k++) m.box("wood_old", 0.08, 0.9, 0.08, k * (ret.xg / 6.5), F + wallH + 0.15 + (D / 2 + 1.15) * 1.25 + 0.25, 0, { rx: Math.PI / 2 });
   } else if (type === "minka-totan") {
     const tin = ["roof_tin", "roof_tin_blue", "roof_tin", "roof_tin_green"][v];
-    hipRoof(m, tin, { W, D, over: 0.9, eaveY: F + wallH + 0.1, ridgeY: F + wallH + 0.1 + (D / 2 + 0.9) * 1.05, sori: 0, thick: 0.12, gable: 0.78, uv: 1, ridgeMat: tin, gableMat: "wood_siding", ridgeH: 0.2, sag: 0.02 });
+    const ret = hipRoof(m, tin, { res, W, D, over: 0.9, eaveY: F + wallH + 0.1, ridgeY: F + wallH + 0.1 + (D / 2 + 0.9) * 1.05, sori: 0, thick: 0.12, gable: 0.78, uv: 1, ridgeMat: tin, gableMat: "wood_siding", ridgeH: 0.2, sag: 0.02 });
+    frieze(m, "wood_siding", W, D, F + wallH + 0.07, ret);
   } else if (storeys === 2) {
     // 1970s-80s rebuilt farmhouse: lower hisashi roof all round, upper storey rising through it
-    hipRoof(m, "roof_kawara", { W, D, over: 0.9, eaveY: F + wallH + 0.15, ridgeY: F + wallH + 0.15 + (D / 2 + 0.9) * 0.42, sori: 0.08, thick: 0.2, gable: 1, ridgeMat: "roof_kawara", ridgeH: 0.2 });
-    const W2 = W * 0.66, D2 = D * 0.74, y2 = F + wallH, h2 = 2.75;
-    m.box("plaster_white", W2, h2, D2, 0, y2 + h2 / 2, -D * 0.04);
-    for (let i = 0; i <= 3; i++) for (const zs of [-1, 1]) m.box("wood_frame", 0.13, h2, 0.13, -W2 / 2 + (W2 / 3) * i, y2 + h2 / 2, -D * 0.04 + zs * D2 / 2);
-    m.box("wood_frame", W2 + 0.05, 0.12, D2 + 0.05, 0, y2 + h2 - 0.06, -D * 0.04);
-    // upper windows: aluminium sashes with a dark interior, rain shutters (amado) boxes on two
+    frieze(m, "plaster_white", W, D, F + wallH + 0.07, hipRoof(m, "roof_kawara", { res, W, D, over: 0.9, eaveY: F + wallH + 0.15, ridgeY: F + wallH + 0.15 + (D / 2 + 0.9) * 0.42, sori: 0.08, thick: 0.2, gable: 1, ridgeMat: "roof_kawara", ridgeH: 0.2 }));
+    const W2 = W * 0.66, D2 = D * 0.74, y2 = F + wallH, h2 = 2.75, z2 = -D * 0.04;
+    m.box("plaster_white", W2, h2, D2, 0, y2 + h2 / 2, z2);
+    for (let i = 0; i <= 3; i++) for (const zs of [-1, 1]) m.box("wood_frame", 0.13, h2, 0.13, -W2 / 2 + (W2 / 3) * i, y2 + h2 / 2, z2 + zs * D2 / 2);
+    m.box("wood_frame", W2 + 0.05, 0.12, D2 + 0.05, 0, y2 + h2 - 0.06, z2);
+    // upper windows: aluminium sashes, a rail on the middle one, rain-shutter boxes on two
+    const fz = z2 + D2 / 2 + 0.05;
     for (let i = 0; i < 3; i++) {
-      const cx = -W2 / 2 + (W2 / 3) * (i + 0.5), fz = -D * 0.04 + D2 / 2;
-      m.box("interior_dark", W2 / 3 - 0.35, 1.1, 0.05, cx, y2 + 1.55, fz - 0.06);
-      m.box("glass", W2 / 3 - 0.35, 1.1, 0.02, cx, y2 + 1.55, fz + 0.02);
-      for (const dx of [-(W2 / 3 - 0.35) / 2, 0, (W2 / 3 - 0.35) / 2]) m.box("aluminium", 0.04, 1.14, 0.05, cx + dx, y2 + 1.55, fz + 0.03);
-      for (const dy of [-0.55, 0.55]) m.box("aluminium", W2 / 3 - 0.3, 0.04, 0.05, cx, y2 + 1.55 + dy, fz + 0.03);
-      if (i !== 1) m.box("wood_siding", 0.32, 1.25, 0.18, cx + (W2 / 3 - 0.35) / 2 + 0.2, y2 + 1.55, fz + 0.08);
+      const cx = -W2 / 2 + (W2 / 3) * (i + 0.5), ww = W2 / 3 - 0.4;
+      opening(m, d, wallAt(cx, fz, 0), { w: ww, h: 1.1, y0: y2 + 1.0, floorY: y2 + 0.15, room: i === 1 && v % 2 === 1 ? "room_lit" : "room_dark", frame: alu ? frame : "aluminium" });
+      if (i !== 1) m.box("wood_siding", 0.34, 1.25, 0.2, cx + ww / 2 + 0.24, y2 + 1.55, fz + 0.1);
+      else for (let x = -ww / 2; x <= ww / 2 + 1e-6; x += ww / 8) d.box("aluminium", 0.02, 0.55, 0.02, cx + x, y2 + 1.0 + 0.2, fz + 0.3);
+      if (i === 1) d.box("aluminium", ww + 0.1, 0.035, 0.04, cx, y2 + 1.5, fz + 0.3);
     }
-    hipRoof(m, "roof_kawara", { W: W2, D: D2, over: 0.75, eaveY: y2 + h2 + 0.1, ridgeY: y2 + h2 + 0.1 + (D2 / 2 + 0.75) * 0.6, sori: 0.12, thick: 0.2, gable: r() < 0.5 ? 0.6 : 1, ridgeMat: "roof_kawara_ridge", gableMat: "plaster_white", ridgeH: 0.42 });
+    const up = hipRoof(m, "roof_kawara", { res, W: W2, D: D2, over: 0.75, eaveY: y2 + h2 + 0.1, ridgeY: y2 + h2 + 0.1 + (D2 / 2 + 0.75) * 0.6, sori: 0.12, thick: 0.2, gable: r() < 0.5 ? 0.6 : 1, ridgeMat: "roof_kawara_ridge", gableMat: "plaster_white", ridgeH: 0.42 });
+    const fm = new Model("upper-frieze");
+    frieze(fm, "plaster_white", W2, D2, y2 + h2, up);
+    m.merge(fm, new THREE.Matrix4().makeTranslation(0, 0, z2));
   } else {
-    hipRoof(m, "roof_kawara", { W, D, over: 1.0, eaveY: F + wallH + 0.15, ridgeY: F + wallH + 0.15 + (D / 2 + 1.0) * 0.62, sori: 0.15, thick: 0.22, gable: r() < 0.5 ? 0.6 : 1, ridgeMat: "roof_kawara_ridge", gableMat: "plaster_white", ridgeH: 0.45 });
+    const ret = hipRoof(m, "roof_kawara", { res, W, D, over: 1.0, eaveY: F + wallH + 0.15, ridgeY: F + wallH + 0.15 + (D / 2 + 1.0) * 0.62, sori: 0.15, thick: 0.22, gable: r() < 0.5 ? 0.6 : 1, ridgeMat: "roof_kawara_ridge", gableMat: "plaster_white", ridgeH: 0.45, rafters: { target: d, mat: "roof_soffit", step: 0.45 } });
+    frieze(m, "plaster_white", W, D, F + wallH + 0.07, ret);
   }
   // magariya: L-shaped wing (former stable / barn) projecting forward at one end
   if (pre.wing) {
     const [wx, wz, ww, wd] = pre.wing;
     const wh = 2.3, z0 = wz - wd / 2;
-    m.box("stone_granite", ww + 0.2, F, wd + 0.2, wx, F / 2, wz);
+    m.box(thatched ? "stone_old" : "concrete", ww + 0.2, F, wd + 0.2, wx, F / 2, wz);
     for (const sx of [-1, 1]) {
       m.box("wood_siding", 0.1, 1.1, wd, wx + sx * ww / 2, F + 0.55, wz);
-      m.box(type === "minka-kayabuki" ? "plaster_clay" : "plaster_white", 0.1, wh - 1.1, wd, wx + sx * ww / 2, F + 1.1 + (wh - 1.1) / 2, wz);
+      m.box(thatched ? "plaster_clay" : "plaster_white", 0.1, wh - 1.1, wd, wx + sx * ww / 2, F + 1.1 + (wh - 1.1) / 2, wz);
     }
     m.box("wood_siding", ww, wh, 0.1, wx, F + wh / 2, z0 + wd);
     for (const sx of [-1, 0, 1]) for (const zz of [z0, z0 + wd]) m.box("wood_frame", 0.15, wh, 0.15, wx + sx * ww / 2, F + wh / 2, zz);
     // big stable doorway with a slatted window above
-    m.box("interior_dark", 1.8, 1.9, 0.06, wx + (wx > 0 ? -ww / 2 : ww / 2) * 0.98, F + 0.95, wz + 0.6, { ry: Math.PI / 2 });
+    const side = wx > 0 ? -1 : 1;
+    panel(m, "room", 1.8, 1.9, wx + side * (ww / 2 + 0.062), F + 0.95, wz + 0.6, side * Math.PI / 2, [ROOM.doma, F]);
     for (let k = 0; k < 7; k++) m.box("wood_frame", 0.04, 0.45, 0.05, wx - 0.9 + k * 0.3, F + 1.8, z0 + wd + 0.06);
     const wr = new Model("wing-roof");
-    const roofMat = type === "minka-kayabuki" ? "roof_thatch" : "roof_tin_blue";
-    gableRoof(wr, roofMat, { W: wd + 0.9, over: 0.0, eaveY: F + wh + 0.1, ridgeY: F + wh + 0.1 + (ww / 2 + 0.9) * (type === "minka-kayabuki" ? 1.1 : 0.7), frontRun: ww / 2 + 0.9, backRun: ww / 2 + 0.9, thick: type === "minka-kayabuki" ? 0.6 : 0.1, uv: 0.7 });
+    const roofMat = thatched ? "roof_thatch" : "roof_tin_blue";
+    gableRoof(wr, roofMat, { W: wd + 0.9, over: 0.0, eaveY: F + wh + 0.1, ridgeY: F + wh + 0.1 + (ww / 2 + 0.9) * (thatched ? 1.1 : 0.7), frontRun: ww / 2 + 0.9, backRun: ww / 2 + 0.9, thick: thatched ? 0.6 : 0.1, uv: 0.7 });
     m.merge(wr, new THREE.Matrix4().makeRotationY(Math.PI / 2).setPosition(wx, 0, wz + 0.45));
   }
   // rain gutters + downpipes on tiled/tin roofs (kayabuki has none)
-  if (type !== "minka-kayabuki") {
+  if (!thatched) {
     const over = type === "minka-totan" ? 0.9 : 1.0;
     const eY = F + wallH + 0.1;
     for (const zs of [1, -1]) {
-      const g = new THREE.CylinderGeometry(0.06, 0.06, W + over * 2, 8, 1, true, 0, Math.PI);
+      const g = new THREE.CylinderGeometry(0.06, 0.06, W + over * 2, seg(8), 1, true, 0, Math.PI);
       g.rotateZ(Math.PI / 2);
       g.rotateX(Math.PI);
       g.translate(0, eY - 0.06, zs * (D / 2 + over + 0.02));
       m.add("metal_grey", g);
-      m.cyl("metal_grey", 0.035, 0.035, eY - 0.06, (W / 2 + over - 0.3) * (zs > 0 ? 1 : -1), 0, zs * (D / 2 + over * 0.15), 6);
+      // the front downpipe stands by the entrance, clear of the rain-shutter box
+      m.cyl("metal_grey", 0.035, 0.035, eY - 0.06, -(W / 2 + over - 0.3), 0, zs * (D / 2 + over * 0.15), seg(6));
+      d.box("metal_grey", 0.05, 0.05, over * 0.85, -(W / 2 + over - 0.3), eY - 0.12, zs * (D / 2 + over * 0.58));
     }
   }
   // 1990s TV antenna (Yagi) on a mast at the ridge end
   if (r() < 0.8) {
-    const ridgeY = storeys === 2 ? F + wallH + 2.85 + (D * 0.74 / 2 + 0.75) * 0.6 : type === "minka-kayabuki" ? F + wallH + 0.15 + (D / 2 + 1.15) * 1.25 : type === "minka-totan" ? F + wallH + 0.1 + (D / 2 + 0.9) * 1.05 : F + wallH + 0.15 + (D / 2 + 1.0) * 0.62;
+    const ridgeY = storeys === 2 ? F + wallH + 2.85 + (D * 0.74 / 2 + 0.75) * 0.6 : thatched ? F + wallH + 0.15 + (D / 2 + 1.15) * 1.25 : type === "minka-totan" ? F + wallH + 0.1 + (D / 2 + 0.9) * 1.05 : F + wallH + 0.15 + (D / 2 + 1.0) * 0.62;
     const ax = (r() < 0.5 ? -1 : 1) * ((storeys === 2 ? W * 0.33 : W / 2) - 1.6);
     const mastH = 3.2 + r() * 1.5;
     const yaw = r() * Math.PI;
-    m.cyl("metal_grey", 0.025, 0.025, mastH, ax, ridgeY - 1.2, 0, 6);
+    m.cyl("metal_grey", 0.025, 0.025, mastH, ax, ridgeY - 1.2, 0, seg(6));
     for (const k of [0, 1]) {
       const by = ridgeY - 1.2 + mastH - 0.25 - k * 0.9;
       m.box("metal_grey", 1.7 - k * 0.4, 0.025, 0.025, ax, by, 0, { ry: yaw });
       for (let e = 0; e < 7 - k * 2; e++) {
         const t = -0.75 + e * 0.24;
-        m.box("metal_grey", 0.018, 0.018, 0.55 - e * 0.04, ax + Math.cos(yaw) * t, by, -Math.sin(yaw) * t, { ry: yaw });
+        d.box("metal_grey", 0.018, 0.018, 0.55 - e * 0.04, ax + Math.cos(yaw) * t, by, -Math.sin(yaw) * t, { ry: yaw });
       }
     }
     // guy wires
@@ -568,7 +737,7 @@ function minka(type, v) {
       g.translate(0, len / 2, 0);
       g.applyMatrix4(new THREE.Matrix4().makeRotationAxis(new THREE.Vector3(Math.sin(a), 0, -Math.cos(a)), Math.atan2(1.8, mastH - 0.6)));
       g.translate(ax + Math.cos(a) * 1.8, ridgeY - 1.2 + 0.6, Math.sin(a) * 1.8 * 0.6);
-      m.add("metal_dark", g);
+      d.add("metal_dark", g);
     }
   }
   // lean-to (geya) on the side for some houses
@@ -577,60 +746,83 @@ function minka(type, v) {
     const s = r() < 0.5 ? -1 : 1;
     lean = s;
     m.box("wood_siding", 2.4, 2.1, D * 0.6, s * (W / 2 + 1.2), F + 1.05 - 0.3, -D * 0.1);
+    for (let z = -D * 0.4 + 0.3; z < D * 0.2 - 0.1; z += 0.455) d.box("wood_frame", 0.025, 2.0, 0.035, s * (W / 2 + 2.42), F + 0.75, z);
     const g = new Model("geya");
     gableRoof(g, "roof_tin", { W: D * 0.6, over: 0.2, eaveY: 2.1, ridgeY: 2.6, frontRun: 2.6, backRun: 0.01, thick: 0.06 });
     m.merge(g, new THREE.Matrix4().makeRotationY(s * Math.PI / 2).setPosition(s * W / 2, F - 0.3, -D * 0.1));
+  }
+  // side window on the other side of tiled and tin houses
+  if (!thatched && r2() < 0.7) {
+    const s = lean ? -lean : 1, z = D / 8;
+    opening(m, d, wallAt(s * (W / 2 + 0.05), z, s * Math.PI / 2), { w: Math.min(1.2, D / 4 - 0.35), h: 0.9, y0: F + 1.08, floorY: F, room: r2() < 0.3 ? "room_lit" : "room_dark", frame });
   }
   // LP gas: two grey 50 kg cylinders chained to the wall on a concrete slab, with the regulator and
   // the copper pipe into the kitchen, on the side without the lean-to; in Tohoku also the kerosene
   // home tank (490 L, on legs) that feeds the bath boiler and the winter stoves
   {
     const s = lean ? -lean : r() < 0.5 ? -1 : 1, gx = s * (W / 2 + 0.42), gz = -D / 2 + 1.1;
-    m.box("concrete_old", 0.6, 0.08, 1.05, gx, 0.04, gz);
+    m.box("concrete", 0.6, 0.08, 1.05, gx, 0.04, gz);
     for (const dz of [-0.24, 0.24]) {
-      m.cyl("lpg_grey", 0.18, 0.18, 1.02, gx, 0.08, gz + dz, 14);
-      m.cyl("lpg_grey", 0.18, 0.12, 0.1, gx, 1.1, gz + dz, 14);
-      m.cyl("metal_dark", 0.1, 0.1, 0.16, gx, 1.2, gz + dz, 10, { open: true });
+      m.cyl("lpg_grey", 0.18, 0.18, 1.02, gx, 0.08, gz + dz, seg(14));
+      m.cyl("lpg_grey", 0.18, 0.12, 0.1, gx, 1.1, gz + dz, seg(14));
+      d.cyl("metal_dark", 0.1, 0.1, 0.16, gx, 1.2, gz + dz, 10, { open: true });
     }
-    m.box("metal_dark", 0.04, 0.04, 0.62, gx - s * 0.2, 0.9, gz);                 // chain
-    m.box("brass", 0.1, 0.14, 0.08, gx - s * 0.16, 1.45, gz);                     // regulator
-    m.cyl("brass", 0.012, 0.012, 1.05, gx - s * 0.28, 0.4, gz, 4);
-    if (type !== "minka-kayabuki" || r() < 0.5) {
+    d.box("metal_dark", 0.04, 0.04, 0.62, gx - s * 0.2, 0.9, gz);                 // chain
+    d.box("metal_grey", 0.1, 0.14, 0.08, gx - s * 0.16, 1.45, gz);                     // regulator
+    d.cyl("metal_dark", 0.012, 0.012, 1.05, gx - s * 0.28, 0.4, gz, 4);
+    if (!thatched || r() < 0.5) {
       const tz = gz + 1.9;
       for (const lx of [-0.22, 0.22]) for (const lz of [-0.6, 0.6]) m.box("metal_dark", 0.05, 0.42, 0.05, s * (W / 2 + 0.5) + lx, 0.21, tz + lz);
       m.box("tank_cream", 0.62, 0.95, 1.35, s * (W / 2 + 0.5), 0.42 + 0.48, tz);
-      m.cyl("metal_dark", 0.06, 0.06, 0.08, s * (W / 2 + 0.5), 1.37, tz - 0.4, 8);
-      m.cyl("metal_grey", 0.015, 0.015, 0.9, s * (W / 2 + 0.24), 0.05, tz - 0.6, 4);
+      d.cyl("metal_dark", 0.06, 0.06, 0.08, s * (W / 2 + 0.5), 1.37, tz - 0.4, 8);
+      d.cyl("metal_grey", 0.015, 0.015, 0.9, s * (W / 2 + 0.24), 0.05, tz - 0.6, 4);
     }
   }
-  m.box("stone_granite", 0.8, 0.25, 0.5, -W / 2 + bayW / 2, 0.125, front + 0.5);
+  // air-conditioner outdoor unit on the back of some tiled and tin houses (1990s)
+  if (!thatched && r2() < 0.45) {
+    const ax = backX[0] > 0 ? backX[0] - wb / 2 - 0.75 : backX[0] + wb / 2 + 0.75, az = -D / 2 - 0.5;
+    d.box("tank_cream", 0.78, 0.56, 0.27, ax, 0.4, az);
+    d.cyl("metal_dark", 0.2, 0.2, 0.02, ax - 0.1, 0.39, az - 0.135, 16, { rx: Math.PI / 2 });
+    for (const dx of [-0.28, 0.28]) d.box("concrete", 0.1, 0.12, 0.32, ax + dx, 0.06, az);
+    d.box("tank_cream", 0.07, 0.07, 0.42, ax + 0.3, 0.5, az + 0.3);
+  }
   // where evening smoke rises: the bath-stove chimney at the back (a galvanised pipe with a rain
   // cap) on tiled and tin houses, the smoke vent (kemudashi) at the ridge of a thatched house
   let smoke;
-  if (type === "minka-kayabuki") {
+  if (thatched) {
     smoke = [0, F + wallH + 0.15 + (D / 2 + 1.15) * 1.25 + 0.2, 0];
   } else {
     const cx = W / 2 - 1.1, cz = -D / 2 - 0.45;
     const top = F + wallH + (storeys === 2 ? 3.9 : 1.9);
-    m.cyl("metal_grey", 0.075, 0.075, top, cx, 0.2, cz, 10);
-    m.cyl("metal_grey", 0.24, 0.02, 0.16, cx, top + 0.22, cz, 10);
-    for (const y of [F + 1.2, F + wallH - 0.2]) m.box("metal_dark", 0.04, 0.04, 0.42, cx, y, cz + 0.22);
+    m.cyl("metal_grey", 0.075, 0.075, top, cx, 0.2, cz, seg(10));
+    m.cyl("metal_grey", 0.24, 0.02, 0.16, cx, top + 0.22, cz, seg(10));
+    for (const y of [F + 1.2, F + wallH - 0.2]) d.box("metal_dark", 0.04, 0.04, 0.42, cx, y, cz + 0.22);
     smoke = [cx, top + 0.3, cz];
   }
   return { m, W, D, smoke };
 }
-function naya(v) {
+function naya(v, lod = 0) {
   const r = rng(500 + v);
-  const m = new Model(`naya_${v}`);
+  const m = new Model(`naya_${v}${lod ? "-lod1" : ""}`);
+  const d = lod ? NULL_MODEL : m;
   const W = 5.6, D = 4.4;
   m.box("concrete", W, 0.15, D, 0, 0.075, 0);
   for (const x of [-W / 2, 0, W / 2]) for (const z of [-D / 2, D / 2]) m.box("wood_old", 0.12, 2.6, 0.12, x, 1.3, z);
   m.box("wood_siding", W, 2.5, 0.06, 0, 1.25, -D / 2);
   for (const s of [-1, 1]) m.box("wood_siding", 0.06, 2.5, D, s * W / 2, 1.25, 0);
   m.box("wood_siding", W / 2, 2.5, 0.06, -W / 4, 1.25, D / 2);
+  // battens over the boards, a beam at mid-height, the eave beam
+  for (let x = -W / 2 + 0.45; x < W / 2 - 0.2; x += 0.455) d.box("wood_frame", 0.035, 2.4, 0.025, x, 1.25, -D / 2 - 0.045);
+  for (const s of [-1, 1]) for (let z = -D / 2 + 0.45; z < D / 2 - 0.2; z += 0.455) d.box("wood_frame", 0.025, 2.4, 0.035, s * (W / 2 + 0.045), 1.25, z);
+  for (let x = -W / 2 + 0.45; x < -0.1; x += 0.455) d.box("wood_frame", 0.035, 2.4, 0.025, x, 1.25, D / 2 + 0.045);
+  m.box("wood_old", W + 0.1, 0.14, 0.14, 0, 2.55, D / 2);
+  m.box("wood_old", W + 0.1, 0.14, 0.14, 0, 2.55, -D / 2);
   gableRoof(m, "roof_tin", { W, over: 0.35, eaveY: 2.6, ridgeY: 3.5, frontRun: D / 2 + 0.4, backRun: D / 2 + 0.4, thick: 0.06 });
-  // stacked firewood / straw bundles in the open bay
+  // stacked firewood / straw bundles in the open bay, a ladder and a hoe against the wall
   for (let k = 0; k < 10; k++) m.cyl("wood_light", 0.08, 0.08, 1.0, W / 4 + (r() - 0.5) * 1.4, 0.15 + Math.floor(k / 5) * 0.17, D / 2 - 0.8 + (k % 5) * 0.17, 7, { rx: Math.PI / 2 });
+  d.box("wood_old", 0.05, 2.1, 0.05, W / 2 - 0.5, 1.1, -D / 2 + 0.2, { rz: 0.12 });
+  d.box("wood_old", 0.05, 2.1, 0.05, W / 2 - 0.9, 1.1, -D / 2 + 0.2, { rz: 0.12 });
+  for (let k = 0; k < 6; k++) d.box("wood_old", 0.45, 0.04, 0.04, W / 2 - 0.7 + 0.12 * (k * 0.3 - 0.75) * 0.12, 0.25 + k * 0.33, -D / 2 + 0.2);
   return m;
 }
 function blockWall() {
@@ -1096,15 +1288,11 @@ function shopHouse(name, { W, D, storeys = 2, roof = "roof_kawara", front = "gla
     // living floor: two windows with a rail, the roof along the road
     for (const s of [-1, 1]) {
       const x = s * W / 4, ww = W / 2 - 1.2;
-      // sliding windows: glass in wooden frames, lace curtains behind (lit at dusk in some rooms)
-      m.box(s > 0 ? "interior_lit" : "paper", ww, 1.0, 0.03, x, F + H1 + 1.35, fz - 0.2);
-      m.box("glass", ww, 1.05, 0.02, x, F + H1 + 1.35, fz - 0.05);
-      for (let k = 0; k <= 4; k++) m.box("wood_frame", 0.05, 1.1, 0.06, x - ww / 2 + (k * ww) / 4, F + H1 + 1.35, fz - 0.03);
-      m.box("wood_frame", ww + 0.1, 0.06, 0.08, x, F + H1 + 0.8, fz);
-      m.box("wood_frame", ww + 0.1, 0.06, 0.08, x, F + H1 + 1.9, fz);
+      // sliding windows in wooden frames, the room behind lace curtains (lit at dusk in some rooms)
+      opening(m, m, wallAt(x, fz - 0.07, 0), { w: ww, h: 1.0, y0: F + H1 + 0.85, floorY: F + H1 + 0.12, room: s > 0 ? "room_lit" : "room_dark", frame: "wood_frame", panes: 4, sill: false });
       m.box("metal_grey", ww + 0.2, 0.04, 0.04, x, F + H1 + 1.15, fz + 0.18);
     }
-    m.box(upper, W, H2 - 1.1, 0.1, 0, F + H1 + 0.55 + (H2 - 1.1) / 2 + 0.55, fz - 0.07);
+    m.box(upper, W, H2 - 0.8, 0.1, 0, F + H1 + 0.8 + (H2 - 0.8) / 2, fz - 0.12);
   }
   gableRoof(m, roof, { W: W + 0.5, over: 0.45, eaveY: F + H1 + H2 + 0.05, ridgeY: F + H1 + H2 + 0.05 + (D / 2 + 0.45) * 0.5, frontRun: D / 2 + 0.45, backRun: D / 2 + 0.45, thick: roof === "roof_kawara" ? 0.2 : 0.06 });
   extras?.(m, { F, H1, H2, fz, signs });
@@ -2047,12 +2235,25 @@ await save("sekihi", sekihi());
 await save("jizo", jizo());
 for (const type of Object.keys(HOUSE_PRESETS)) for (let v = 0; v < 4; v++) {
   const { m, W, D, smoke } = minka(type, v);
-  await save(`${type}_${v}`, m);
+  // the far LOD is baked against the full house, so both levels darken alike
+  const near = new Model("occluders");
+  for (const [k, gs] of m.parts) near.parts.set(k, gs);
+  await save(`${type}_${v}`, m, { bake: type === "minka-kura" ? {} : LOD0_BAKE });
+  if (type !== "minka-kura") {
+    await save(`${type}_${v}-lod1`, minka(type, v, 1).m, { occluders: near, bake: LOD1_BAKE });
+    if (index[`${type}_${v}`]) index[`${type}_${v}`].lod1 = true;
+  }
   index[`${type}_${v}`].footprint = [W, D];
   if (smoke) index[`${type}_${v}`].smoke = smoke.map((x) => +x.toFixed(3));
   index[`${type}_${v}`].storeys = HOUSE_PRESETS[type][v].storeys;
 }
-for (let v = 0; v < 2; v++) await save(`naya_${v}`, naya(v));
+for (let v = 0; v < 2; v++) {
+  const m = naya(v), near = new Model("occluders");
+  for (const [k, gs] of m.parts) near.parts.set(k, gs);
+  await save(`naya_${v}`, m, { bake: LOD0_BAKE });
+  await save(`naya_${v}-lod1`, naya(v, 1), { occluders: near, bake: LOD1_BAKE });
+  if (index[`naya_${v}`]) index[`naya_${v}`].lod1 = true;
+}
 await save("block-wall", blockWall());
 await save("ishigaki", ishigaki());
 await save("denchu", denchu(false));
@@ -2110,7 +2311,11 @@ await save("kominkan", kominkan());
 await save("phone-box", phoneBox());
 await save("road-markings", roadMarkings());
 for (const [k, v] of Object.entries(SIGN_ANCHORS)) if (index[k]) index[k].signs = v;
-fs.writeFileSync(path.join(OUT, "index.json"), JSON.stringify({ presets: HOUSE_PRESETS, assets: index }, null, 1));
+// keep the previous order of the registry (smaller diffs), new entries go last
+const ordered = {};
+for (const k of Object.keys(previous)) if (k in index) ordered[k] = index[k]; else if (!HAS_BLENDER && !WORLD_ONLY && !ONLY) ordered[k] = previous[k];
+for (const k of Object.keys(index)) if (!(k in ordered)) ordered[k] = index[k];
+fs.writeFileSync(path.join(OUT, "index.json"), JSON.stringify({ presets: HOUSE_PRESETS, assets: ordered }, null, 1));
 // weld + quantize every GLB (KHR_mesh_quantization: supported by three.js and glTFast)
 const { NodeIO, PropertyType } = await import("@gltf-transform/core");
 const { ALL_EXTENSIONS } = await import("@gltf-transform/extensions");
@@ -2118,7 +2323,7 @@ const { weld, quantize, dedup } = await import("@gltf-transform/functions");
 const io2 = new NodeIO().registerExtensions(ALL_EXTENSIONS);
 let total = 0;
 for (const f of fs.readdirSync(OUT).filter((f) => f.endsWith(".glb"))) {
-  if (WORLD_ONLY && !WORLD_ASSETS.has(f.slice(0, -4))) continue;
+  if (!written.has(f)) continue;
   const doc = await io2.read(path.join(OUT, f));
   await doc.transform(weld({ tolerance: 0.0005 }), dedup({ propertyTypes: [PropertyType.ACCESSOR, PropertyType.MESH] }), quantize({ pattern: /^(POSITION|NORMAL)$/, quantizePosition: 16, quantizeNormal: 10 }));
   await io2.write(path.join(OUT, f), doc);
@@ -2127,4 +2332,5 @@ for (const f of fs.readdirSync(OUT).filter((f) => f.endsWith(".glb"))) {
 console.log("architecture bytes", total);
 
 // Vehicles share the architecture registry; rebuild after the main index is written.
-if (!WORLD_ONLY) await import("../vehicles/build.mjs");
+if (HAS_BLENDER) await import("../vehicles/build.mjs");
+else if (!WORLD_ONLY) console.log("vehicles: blender not found, the existing vehicle models are kept");

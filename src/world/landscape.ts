@@ -29,7 +29,16 @@ export class Landscape {
   async load(progress: (p: number, label: string) => void) {
     progress(0.05, "空と光を整えています");
     await this.lighting.init(this.quality);
-    this.lib.finishers.push((m) => this.lighting.csm.setupMaterial(m));
+    // CSM.setupMaterial replaces onBeforeCompile: keep any hook the material already had
+    this.lib.finishers.push((m) => {
+      const prev = m.onBeforeCompile;
+      this.lighting.csm.setupMaterial(m);
+      const csm = m.onBeforeCompile;
+      m.onBeforeCompile = (s, r) => {
+        prev.call(m, s, r);
+        csm.call(m, s, r);
+      };
+    });
     progress(0.15, "地形を読み込んでいます");
     await this.terrain.build(this.quality);
     this.scene.add(this.terrain.group);

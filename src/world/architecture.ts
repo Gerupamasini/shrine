@@ -4,9 +4,28 @@ import { publicUrl } from "../urls";
 import type { Landscape, System } from "./landscape";
 import type { Placement } from "./data";
 import { MATERIALS } from "./materials";
+import { applyFacade, type FacadeKind } from "../engine/facade";
+import type { Library } from "../engine/library";
 import { isVehicle } from "../vehicles/specs";
 import { FAR_CASTER, SHADOW_ONLY } from "../engine/lighting";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
+
+export type DuskRamp = { m: T.MeshStandardMaterial; base: number; ramp: number[] };
+
+/** Material for a building part named in materials.json (photographic PBR set + facade shading). */
+export function buildingMaterial(lib: Library, name: string, dusk: DuskRamp[] = []): T.MeshStandardMaterial | null {
+  const def = MATERIALS[name];
+  if (!def) return null;
+  const std = lib.pbr(def) as T.MeshStandardMaterial;
+  std.name = name;
+  if (def.emissive) {
+    std.emissive.set(def.emissive);
+    std.emissiveIntensity = def.emissiveIntensity ?? 1;
+    const ramp = (def as { dusk?: number[] }).dusk;
+    if (ramp) dusk.push({ m: std, base: def.emissiveIntensity ?? 0, ramp });
+  }
+  return applyFacade(std, (def.facade ?? "base") as FacadeKind);
+}
 
 const PROPS: Record<string, string> = {
   "prop-bucket": "props/wooden_bucket_01",
@@ -21,13 +40,16 @@ type Inst = { file: string; matrix: T.Matrix4 };
 /** Places every built object from scene.json as instanced GLB parts. */
 export class Architecture implements System {
   materials = new Map<string, T.Material>();
-  dusk: { m: T.MeshStandardMaterial; base: number; ramp: number[] }[] = [];
+  dusk: DuskRamp[] = [];
   /** the shadow stand-ins (instanced) */
   meshes: { mesh: T.InstancedMesh; centers: T.Vector3[]; far: number; matrices: T.Matrix4[] }[] = [];
-  /** every placed part in the material batches */
-  items: { batch: T.BatchedMesh; id: number; center: T.Vector3; far: number; shown: boolean }[] = [];
+  /** every placed part in the material batches. lod: 0 / 1 for buildings with a far model (houses,
+   *  barns): the near parts show inside `lodDist`, the far parts beyond it, in the same batches */
+  items: { batch: T.BatchedMesh; id: number; center: T.Vector3; far: number; shown: boolean; lod?: number }[] = [];
   /** stand-in shadow casters are drawn depth-only: any opaque material does */
   shadowMaterial = new T.MeshBasicMaterial();
+  /** distance at which houses and barns change to their far model (quality setting) */
+  lodDist = 60;
   constructor(public land: Landscape) {}
   material(src: T.Material): T.Material {
     const name = src.name;
@@ -40,16 +62,9 @@ export class Architecture implements System {
       this.materials.set(name, authored);
       return authored;
     }
-    const def = MATERIALS[name];
-    if (def) {
-      const std = this.land.lib.pbr(def) as T.MeshStandardMaterial;
-      if (def.emissive) {
-        std.emissive.set(def.emissive);
-        std.emissiveIntensity = def.emissiveIntensity ?? 1;
-        const dusk = (def as { dusk?: number[] }).dusk;
-        if (dusk) this.dusk.push({ m: std, base: def.emissiveIntensity ?? 0, ramp: dusk });
-      }
-      m = std;
+    const built = buildingMaterial(this.land.lib, name, this.dusk);
+    if (built) {
+      m = built;
     } else {
       // Poly Haven props: keep their own textures
       const s = src as T.MeshStandardMaterial;
@@ -116,12 +131,16 @@ export class Architecture implements System {
       byFile.get(it.file)!.push(it.matrix);
     }
     const loader = new GLTFLoader();
+    const registry = (await fetch(publicUrl("assets/models/architecture/index.json")).then((r) => r.json())).assets as Record<string, { lod1?: boolean }>;
     let done = 0;
-    type Part = { material: T.Material; geometry: T.BufferGeometry; matrices: T.Matrix4[]; far: number };
+    type Part = { material: T.Material; geometry: T.BufferGeometry; matrices: T.Matrix4[]; far: number; lod?: number };
     const parts: Part[] = [];
     await Promise.all(
       [...byFile].map(async ([file, mats]) => {
-        const g = await loader.loadAsync(publicUrl(`assets/models/${file}.glb`));
+        const lodded = !!registry[file.replace(/^architecture\//, "")]?.lod1;
+        const levels = lodded ? [0, 1] : [0];
+        for (const level of levels) {
+        const g = await loader.loadAsync(publicUrl(`assets/models/${file}${level ? "-lod1" : ""}.glb`));
         g.scene.updateMatrixWorld(true);
         // buildings and other big pieces shade the ground beyond the first shadow cascade; props,
         // posts, signs, low walls and the channel linings only near the camera
@@ -137,7 +156,9 @@ export class Architecture implements System {
           if (!(o instanceof T.Mesh)) return;
           const material = this.material(o.material as T.Material);
           const geometry = bake(o.geometry, o.matrixWorld);
-          if (casts && !material.transparent) {
+          // the shadow stand-in of a house comes from its far model (the near one only adds sash
+          // bars, grilles and rafters to it)
+          if (casts && !material.transparent && level === levels.length - 1) {
             const sg = new T.BufferGeometry().setAttribute("position", geometry.getAttribute("position"));
             sg.setIndex(geometry.index);
             shadowParts.push(sg);
@@ -146,7 +167,7 @@ export class Architecture implements System {
           const r = geometry.boundingSphere!.radius;
           const far = file.includes("props") ? 120 : /stairs|road-ditch|river-works|road-markings|stream-works/.test(file) ? 1e9 : 400 + r * 40;
           reach = Math.max(reach, far);
-          parts.push({ material, geometry, matrices: mats, far });
+          parts.push({ material, geometry, matrices: mats, far, lod: lodded ? level : undefined });
         });
         if (shadowParts.length) {
           const merged = mergeGeometries(shadowParts, false);
@@ -163,6 +184,7 @@ export class Architecture implements System {
             this.meshes.push({ mesh: proxy, matrices: mats, centers: mats.map((m) => new T.Vector3().setFromMatrixPosition(m)), far: reach });
             this.land.scene.add(proxy);
           }
+        }
         }
         progress(++done / byFile.size);
       }),
@@ -192,7 +214,7 @@ export class Architecture implements System {
         for (const m of p.matrices) {
           const id = batch.addInstance(gid);
           batch.setMatrixAt(id, m);
-          this.items.push({ batch, id, center: new T.Vector3().setFromMatrixPosition(m), far: p.far, shown: true });
+          this.items.push({ batch, id, center: new T.Vector3().setFromMatrixPosition(m), far: p.far, shown: true, lod: p.lod });
         }
       }
       this.land.scene.add(batch);
@@ -233,6 +255,10 @@ export class Architecture implements System {
     const lines = new T.LineSegments(g, this.land.lib.finish(m));
     this.land.scene.add(lines);
   }
+  setQuality(q: "low" | "standard" | "high") {
+    this.lodDist = q === "low" ? 35 : q === "high" ? 90 : 60;
+    this.culledAt.set(1e9, 0, 0);
+  }
   frame = 0;
   private culledAt = new T.Vector3(1e9, 0, 0);
   update(_dt: number, _t: number, cam: T.PerspectiveCamera) {
@@ -242,7 +268,8 @@ export class Architecture implements System {
     // distance culling of small parts (props, far houses keep rendering)
     for (const it of this.items) {
       if (it.far > 1e8) continue;
-      const show = it.center.distanceTo(cam.position) < it.far;
+      const d = it.center.distanceTo(cam.position);
+      const show = it.lod === 0 ? d < this.lodDist : it.lod === 1 ? d >= this.lodDist && d < it.far : d < it.far;
       if (show !== it.shown) (it.shown = show), it.batch.setVisibleAt(it.id, show);
     }
     for (const m of this.meshes) {
@@ -253,6 +280,8 @@ export class Architecture implements System {
         m.mesh.setMatrixAt(n++, m.matrices[k]);
       }
       m.mesh.count = n;
+      // nothing to draw: skip the mesh (and its shadow passes) entirely
+      m.mesh.visible = n > 0;
       m.mesh.instanceMatrix.needsUpdate = true;
     }
   }
@@ -262,7 +291,8 @@ export class Architecture implements System {
  *  node's transform baked in, indexed: what a BatchedMesh needs of every geometry it takes. */
 function bake(src: T.BufferGeometry, matrix: T.Matrix4) {
   const g = new T.BufferGeometry();
-  for (const name of ["position", "normal", "uv", "uv1", "color"]) {
+  // _occl: the sky occlusion baked into the buildings (src/engine/facade.ts)
+  for (const name of ["position", "normal", "uv", "uv1", "color", "_occl"]) {
     const a = src.getAttribute(name);
     if (!a) continue;
     const n = a.itemSize, out = new Float32Array(a.count * n);

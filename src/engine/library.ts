@@ -23,6 +23,14 @@ export type PbrDef = {
   /** saturation kept from the albedo texture (1 = as photographed). Lets one photographed set
    *  (a beige plaster) serve as white lime plaster or grey concrete without its colour cast. */
   saturation?: number;
+  /** share of the albedo texture's tone variation that is kept around its mean (1 = as photographed).
+   *  A low value keeps a photographed set as fine surface detail without its blotches. */
+  contrast?: number;
+  /** true: the texture is divided by its mean colour, so `color` is the surface's average albedo
+   *  (hue included) and the photograph only adds its relative detail */
+  normalize?: boolean;
+  /** building-surface shading branch (src/engine/facade.ts) */
+  facade?: string;
 };
 
 /**
@@ -92,16 +100,6 @@ export class Library {
       m.metalnessMap = def.metalness ? arm : null;
     }
     if (def.gain) m.color.multiplyScalar(def.gain);
-    if (def.saturation !== undefined && def.saturation !== 1) {
-      const sat = def.saturation.toFixed(3);
-      addHook(m, "sat" + sat, (s) => {
-        s.fragmentShader = s.fragmentShader.replace(
-          "diffuseColor *= sampledDiffuseColor;",
-          `sampledDiffuseColor.rgb = mix(vec3(dot(sampledDiffuseColor.rgb, vec3(0.2126, 0.7152, 0.0722))), sampledDiffuseColor.rgb, ${sat});
-          diffuseColor *= sampledDiffuseColor;`,
-        );
-      });
-    }
     if (def.alphaTest) m.alphaTest = def.alphaTest;
     if (def.envIntensity !== undefined) m.envMapIntensity = def.envIntensity;
     if (def.opacity !== undefined && def.opacity < 1) {
@@ -109,7 +107,31 @@ export class Library {
       m.opacity = def.opacity;
       m.depthWrite = false;
     }
-    return this.finish(m);
+    // finish first: the shadow setup replaces onBeforeCompile, hooks are chained after it
+    this.finish(m);
+    const sat = def.saturation ?? 1, con = def.contrast ?? 1;
+    if (m.map && (sat !== 1 || con !== 1 || def.normalize)) {
+      const key = `tone${sat.toFixed(3)}/${con.toFixed(3)}/${def.normalize ? 1 : 0}`;
+      // (chunks are resolved after onBeforeCompile: expand map_fragment here to edit its body)
+      addHook(m, key, (s) => {
+        s.fragmentShader = s.fragmentShader.replace("#include <map_fragment>", T.ShaderChunk.map_fragment.replace(
+          "diffuseColor *= sampledDiffuseColor;",
+          `{
+            // the coarsest mip level is the texture's mean colour
+            vec3 mean = textureLod( map, vMapUv, 16.0 ).rgb;
+            float ml = dot( mean, vec3( 0.2126, 0.7152, 0.0722 ) );
+            vec3 c = sampledDiffuseColor.rgb;
+            c = mix( vec3( dot( c, vec3( 0.2126, 0.7152, 0.0722 ) ) ), c, ${sat.toFixed(3)} );
+            mean = mix( vec3( ml ), mean, ${sat.toFixed(3)} );
+            c = max( mean + ( c - mean ) * ${con.toFixed(3)}, vec3( 0.0 ) );
+            ${def.normalize ? "c /= max( mean, vec3( 1e-3 ) );" : ""}
+            sampledDiffuseColor.rgb = c;
+          }
+          diffuseColor *= sampledDiffuseColor;`,
+        ));
+      });
+    }
+    return m;
   }
   /** Materials that want alpha-to-coverage. It only works with MSAA: without it three.js keeps the
    *  fractional alpha of cut-out edges and skips its opaque path, which leaves light, see-through

@@ -1,30 +1,34 @@
 {
- "_doc": "Material name (as written into GLBs) -> photographic PBR texture set in public/assets/textures/<tex>/{albedo,normal,arm}.jpg. size = metres per texture repeat (GLB UVs are in metres). arm = R ambient occlusion, G roughness, B metalness (glTF ORM). Normal maps use the OpenGL (+Y) convention. colour multiplies the albedo (sRGB hex). gain = extra multiplier on the albedo (linear) to reach measured-looking reflectance. terrainLayers.fixed = sample without anti-tiling rotation (directional furrows, rows along world X). dusk = [startHour, fullHour, emissiveIntensity at full]: emissive ramps up with the time of day. saturation = share of the albedo texture's own colour that is kept (1 = as photographed; the beige white_plaster_rough_01 set stands in for white lime plaster and grey concrete with its cast removed).",
+ "_doc": "Material name (as written into GLBs) -> photographic PBR texture set in public/assets/textures/<tex>/{albedo,normal,arm}.jpg. size = metres per texture repeat (GLB UVs are in metres). arm = R ambient occlusion, G roughness, B metalness (glTF ORM). Normal maps use the OpenGL (+Y) convention. colour multiplies the albedo (sRGB hex). gain = extra multiplier on the albedo (linear) to reach measured-looking reflectance. terrainLayers.fixed = sample without anti-tiling rotation (directional furrows, rows along world X). dusk = [startHour, fullHour, emissiveIntensity at full]: emissive ramps up with the time of day. saturation = share of the albedo texture's own colour that is kept (1 = as photographed; the beige white_plaster_rough_01 set stands in for white lime plaster and grey concrete with its cast removed). contrast = share of the albedo texture's tone variation kept around its mean; normalize = the texture is divided by its mean colour, so colour is the average albedo (hue included). facade = building-surface shading branch (src/engine/facade.ts: weathering, baked sky occlusion, roof relief, glass, window rooms). room planes carry UV = (room type, floor height) for the interior seen through windows; room type + 10 = a room whose lamp is lit at dusk (the emissive ramp).",
  "architecture": {
   "stone_granite": {
    "tex": "rock_surface",
    "size": 1.2,
    "color": "#c4d0dc",
-   "gain": 1.45
+   "gain": 1.45,
+   "facade": "stone"
   },
   "stone_step": {
    "tex": "rock_surface",
    "size": 0.9,
    "color": "#bcc4cc",
    "normalScale": 1.3,
-   "gain": 1.5
+   "gain": 1.5,
+   "facade": "stone"
   },
   "stone_moss": {
    "tex": "mossy_stone_wall",
    "size": 1.4,
    "color": "#c8c8b8",
-   "gain": 1.15
+   "gain": 1.15,
+   "facade": "stone"
   },
   "stone_old": {
    "tex": "mossy_rock",
    "size": 0.9,
    "color": "#b9b6aa",
-   "gain": 1.25
+   "gain": 1.25,
+   "facade": "stone"
   },
   "stone_dark": {
    "color": "#211e1b",
@@ -34,33 +38,41 @@
    "tex": "japanese_stone_wall",
    "size": 3,
    "color": "#c0bab0",
-   "gain": 1.2
+   "gain": 1.2,
+   "facade": "stone"
   },
   "wood_old": {
    "tex": "hinoki_planks",
    "size": 2,
    "color": "#9a8b7a",
-   "gain": 1.05
+   "gain": 1.05,
+   "facade": "wood",
+   "saturation": 0.55
   },
   "wood_planks": {
    "tex": "hinoki_planks",
    "size": 2,
-   "color": "#b09c84"
+   "color": "#b09c84",
+   "facade": "wood"
   },
   "wood_dark": {
    "tex": "japanese_cedar_planks",
    "size": 2,
-   "color": "#3a2f27"
+   "color": "#3a2f27",
+   "facade": "wood"
   },
   "wood_light": {
    "tex": "hinoki_planks",
    "size": 1,
-   "color": "#e3d2b5"
+   "color": "#e3d2b5",
+   "facade": "wood"
   },
   "wood_siding": {
    "tex": "weathered_plank_siding",
    "size": 2.4,
-   "color": "#b3a596"
+   "color": "#57483a",
+   "normalize": true,
+   "facade": "siding"
   },
   "vermilion": {
    "tex": "vermilion_paint",
@@ -75,26 +87,40 @@
   "roof_kawara": {
    "tex": "grey_roof_tiles",
    "size": 1.6,
-   "color": "#6f7a86",
-   "normalScale": 1.2,
-   "gain": 1
+   "color": "#4d4f52",
+   "normalScale": 0.3,
+   "saturation": 0.25,
+   "contrast": 0.3,
+   "normalize": true,
+   "facade": "tile"
   },
   "roof_kawara_ridge": {
    "tex": "grey_roof_tiles",
    "size": 0.8,
-   "color": "#4c535b"
+   "color": "#3f4144",
+   "saturation": 0.25,
+   "contrast": 0.3,
+   "normalize": true,
+   "normalScale": 0.3,
+   "facade": "ridge"
   },
   "roof_thatch": {
    "tex": "thatch_roof_angled",
    "size": 2.2,
-   "color": "#9a9286",
-   "normalScale": 1.4
+   "color": "#635849",
+   "normalScale": 1.4,
+   "normalize": true,
+   "facade": "thatch"
   },
   "roof_tin": {
    "tex": "rusty_corrugated_iron",
    "size": 1.4,
-   "color": "#9a5040",
-   "metalness": 0.25
+   "color": "#6f483e",
+   "metalness": 0.25,
+   "contrast": 0.55,
+   "normalize": true,
+   "normalScale": 0.5,
+   "facade": "tin"
   },
   "roof_copper": {
    "tex": "white_plaster_rough_01",
@@ -111,49 +137,60 @@
   "plaster_white": {
    "tex": "white_plaster_rough_01",
    "size": 3,
-   "color": "#f2efe8",
-   "gain": 3.9,
-   "saturation": 0.2
+   "color": "#d1cec8",
+   "saturation": 0.0,
+   "contrast": 0.25,
+   "normalize": true,
+   "normalScale": 0.35,
+   "facade": "plaster"
   },
   "plaster_clay": {
    "tex": "clay_plaster",
    "size": 3,
-   "color": "#d6c4a8",
-   "gain": 1.15
+   "color": "#937c5f",
+   "normalize": true,
+   "facade": "clay"
   },
   "concrete": {
    "tex": "white_plaster_rough_01",
    "size": 3,
-   "color": "#c4c3be",
-   "gain": 3,
-   "saturation": 0.3
+   "color": "#959490",
+   "saturation": 0.0,
+   "contrast": 0.5,
+   "normalize": true,
+   "facade": "concrete"
   },
   "concrete_block": {
    "tex": "concrete_block_wall",
    "size": 2,
    "color": "#d6d2c8",
-   "gain": 1.25
+   "gain": 1.25,
+   "facade": "concrete"
   },
   "concrete_pole": {
    "tex": "white_plaster_rough_01",
    "size": 2,
-   "color": "#c9c8c3",
-   "gain": 3,
-   "saturation": 0.3
+   "color": "#9b9a97",
+   "saturation": 0.0,
+   "contrast": 0.45,
+   "normalize": true,
+   "facade": "concrete"
   },
   "glass": {
-   "color": "#0c1214",
+   "color": "#1c2224",
    "roughness": 0.04,
-   "metalness": 0.2,
-   "envIntensity": 1.8,
-   "opacity": 0.32
+   "metalness": 0.0,
+   "envIntensity": 1.0,
+   "opacity": 0.04,
+   "facade": "glass"
   },
   "glass_dark": {
-   "color": "#06090a",
+   "color": "#0f1314",
    "roughness": 0.06,
-   "metalness": 0.2,
-   "envIntensity": 1.5,
-   "opacity": 0.55
+   "metalness": 0.0,
+   "envIntensity": 1.0,
+   "opacity": 0.3,
+   "facade": "glass"
   },
   "interior_lit": {
    "color": "#1a140c",
@@ -172,7 +209,8 @@
   "aluminium": {
    "color": "#b6b9b8",
    "metalness": 0.85,
-   "roughness": 0.35
+   "roughness": 0.35,
+   "facade": "metal"
   },
   "paper": {
    "color": "#cfc8b8",
@@ -206,12 +244,14 @@
   "metal_dark": {
    "color": "#2b2c2e",
    "metalness": 0.6,
-   "roughness": 0.5
+   "roughness": 0.5,
+   "facade": "metal"
   },
   "metal_grey": {
    "color": "#7d8185",
    "metalness": 0.5,
-   "roughness": 0.45
+   "roughness": 0.45,
+   "facade": "metal"
   },
   "porcelain": {
    "color": "#e6e5e0",
@@ -239,52 +279,72 @@
    "size": 2,
    "color": "#4f4c45",
    "roughness": 1,
-   "saturation": 0.4
+   "saturation": 0.4,
+   "facade": "concrete"
   },
   "concrete_old": {
    "tex": "concrete_block_wall",
    "size": 1.6,
    "color": "#8e8b82",
    "roughness": 1,
-   "normalScale": 0.6
+   "normalScale": 0.6,
+   "facade": "concrete"
   },
   "roof_tin_blue": {
    "tex": "rusty_corrugated_iron",
    "size": 1.4,
-   "color": "#506a80",
-   "metalness": 0.25
+   "color": "#455d73",
+   "metalness": 0.25,
+   "saturation": 0.2,
+   "contrast": 0.55,
+   "normalize": true,
+   "normalScale": 0.5,
+   "facade": "tin"
   },
   "roof_tin_green": {
    "tex": "rusty_corrugated_iron",
    "size": 1.4,
-   "color": "#5d7356",
-   "metalness": 0.25
+   "color": "#4d654d",
+   "metalness": 0.25,
+   "saturation": 0.2,
+   "contrast": 0.55,
+   "normalize": true,
+   "normalScale": 0.5,
+   "facade": "tin"
   },
   "wood_frame": {
    "tex": "japanese_cedar_planks",
    "size": 1.8,
-   "color": "#5a4636",
-   "roughness": 0.95
+   "color": "#4c3d31",
+   "roughness": 0.95,
+   "saturation": 0.5,
+   "normalize": true,
+   "facade": "wood"
   },
   "roof_soffit": {
    "tex": "japanese_cedar_planks",
    "size": 1.2,
-   "color": "#6b5846",
-   "roughness": 1
+   "color": "#615242",
+   "roughness": 1,
+   "saturation": 0.5,
+   "normalize": true,
+   "facade": "wood"
   },
   "stone_paving_moss": {
    "tex": "rock_surface",
    "size": 0.9,
    "color": "#a9b49a",
    "gain": 1.25,
-   "normalScale": 1.2
+   "normalScale": 1.2,
+   "facade": "stone"
   },
   "stone_step_b": {
    "tex": "rock_surface",
    "size": 0.9,
    "color": "#b3b2ae",
    "gain": 1.35,
-   "normalScale": 1.3
+   "normalScale": 1.3,
+   "facade": "stone"
   },
   "vend_lit": {
    "color": "#f4efe2",
@@ -382,7 +442,8 @@
    "color": "#6d4234",
    "metalness": 0.4,
    "roughness": 0.7,
-   "normalScale": 0.4
+   "normalScale": 0.4,
+   "facade": "metal"
   },
   "verge_gravel": {
    "tex": "stony_dirt_path",
@@ -437,12 +498,14 @@
   "lpg_grey": {
    "color": "#8b8f8d",
    "roughness": 0.55,
-   "metalness": 0.25
+   "metalness": 0.25,
+   "facade": "metal"
   },
   "tank_cream": {
    "color": "#cdc4a6",
    "roughness": 0.6,
-   "metalness": 0.1
+   "metalness": 0.1,
+   "facade": "metal"
   },
   "pole_vinyl": {
    "color": "#9ec1ad",
@@ -636,6 +699,25 @@
    "opacity": 0.24,
    "doubleSided": true,
    "coat": 1
+  },
+  "glass_frosted": {
+   "color": "#7f817c",
+   "roughness": 0.55,
+   "metalness": 0.0,
+   "opacity": 0.7,
+   "facade": "glass"
+  },
+  "room": {
+   "color": "#ffffff",
+   "roughness": 1,
+   "emissive": "#ffe2bc",
+   "emissiveIntensity": 0.12,
+   "dusk": [
+    17.8,
+    18.7,
+    1.25
+   ],
+   "facade": "room"
   }
  },
  "terrainLayers": [
