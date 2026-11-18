@@ -71,4 +71,21 @@ export async function populate(land: Landscape, progress: (p: number, label: str
   land.add(new Dragonflies(land, wt, () => land.lighting.elevation));
   crops(land);
   irrigationWorks(land);
+  freezeStatic(land);
+}
+
+/**
+ * Nothing placed so far moves (the trees sway in their shaders): their matrices are composed once
+ * here, not again every frame. The sky (follows the camera) and the sun's shadow lights and their
+ * targets keep updating; the cars are added after this.
+ */
+export function freezeStatic(land: Landscape) {
+  const keep = new Set<T.Object3D>([land.lighting.sky.mesh, ...land.lighting.csm.lights.flatMap((l) => [l, l.target])]);
+  land.scene.updateMatrixWorld(true);
+  const visit = (o: T.Object3D) => {
+    if (keep.has(o) || (o as T.Light).isLight) return;
+    o.matrixAutoUpdate = false;
+    for (const c of o.children) visit(c);
+  };
+  for (const c of land.scene.children) visit(c);
 }

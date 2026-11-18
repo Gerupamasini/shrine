@@ -310,11 +310,29 @@ export class Soundscape {
     this.leaves.gain.setTargetAtTime((0.012 + 0.05 * forest) * gust * gust, now, 0.6);
   }
   private fc = { at: new T.Vector3(1e9, 0, 0), n: 0 };
+  /** trees per 30 m cell (built once): the count around the listener reads nine cells instead of
+   *  looping over every tree of the map (120,000) each time the listener has moved 8 m */
+  private treeCells: Map<number, number[]> | null = null;
   private forestCount(w: World, p: T.Vector3) {
     if (this.fc.at.distanceTo(p) < 8) return this.fc.n;
+    const C = 30, key = (i: number, j: number) => (j + 512) * 1024 + i + 512;
+    if (!this.treeCells) {
+      this.treeCells = new Map();
+      for (const k of ["sugi", "hinoki", "broadleaf", "keyaki", "bamboo"])
+        for (const r of w.trees[k] ?? []) {
+          const c = key(Math.floor(r[0] / C), Math.floor(r[2] / C));
+          let l = this.treeCells.get(c);
+          if (!l) this.treeCells.set(c, (l = []));
+          l.push(r[0], r[2]);
+        }
+    }
     let n = 0;
-    for (const k of ["sugi", "hinoki", "broadleaf", "keyaki", "bamboo"])
-      for (const r of w.trees[k] ?? []) if (Math.abs(r[0] - p.x) < 30 && Math.abs(r[2] - p.z) < 30) n++;
+    const ci = Math.floor(p.x / C), cj = Math.floor(p.z / C);
+    for (let j = cj - 1; j <= cj + 1; j++)
+      for (let i = ci - 1; i <= ci + 1; i++) {
+        const l = this.treeCells.get(key(i, j));
+        if (l) for (let k = 0; k < l.length; k += 2) if (Math.abs(l[k] - p.x) < 30 && Math.abs(l[k + 1] - p.z) < 30) n++;
+      }
     this.fc.at.copy(p);
     this.fc.n = n;
     return n;

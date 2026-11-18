@@ -497,9 +497,20 @@ async function boot() {
   const start = params.get("place") ?? "foot";
   goto(start);
   setTime(params.has("time") ? +params.get("time")! : world.data.environment.defaultTime);
-  // compile shaders before the first visible frame
+  // Compile every shader before the first visible frame, including those of objects hidden now (the
+  // far LODs, the near model of a car, the far ground's material): otherwise each compiles the first
+  // time it comes into view, a stall in the middle of a turn or a drive.
   land.update(0, 0);
-  renderer.compile(land.scene, camera);
+  {
+    const hidden: T.Object3D[] = [];
+    land.scene.traverse((o) => { if (!o.visible) { hidden.push(o); o.visible = true; } });
+    const probe = new T.Mesh(new T.PlaneGeometry(1, 1), land.terrain.farMaterial);
+    land.scene.add(probe);
+    renderer.compile(land.scene, camera);
+    land.scene.remove(probe);
+    probe.geometry.dispose();
+    for (const o of hidden) o.visible = false;
+  }
   // the village map: places to go are the destinations of the settings panel
   const places = Array.from(document.querySelectorAll<HTMLButtonElement>("[data-place]"))
     .map((b) => ({ key: b.dataset.place!, name: b.textContent!.trim(), l: world.data.landmarks[b.dataset.place!] }))
