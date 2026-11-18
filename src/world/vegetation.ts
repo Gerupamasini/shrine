@@ -344,7 +344,7 @@ export class Vegetation implements System {
         .replace(
           "#include <common>",
           `#include <common>
-          uniform sampler2D tImpNormal; varying vec2 vImpUv; varying vec3 vRight; varying vec3 vToCam; varying float vTint; varying float vImpFar;`,
+          uniform sampler2D tImpNormal; uniform vec2 uAtlasGrid; varying vec2 vImpUv; varying vec3 vRight; varying vec3 vToCam; varying float vTint; varying float vImpFar;`,
         )
         .replace(
           "#include <map_fragment>",
