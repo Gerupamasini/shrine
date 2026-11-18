@@ -1,0 +1,38 @@
+{
+ "village": {
+  "median": 0.30000000074505806,
+  "p95": 3.100000001490116,
+  "colliders": 1401,
+  "trunks": 389
+ },
+ "tanada": {
+  "median": 0.30000000074505806,
+  "p95": 1,
+  "colliders": 1583,
+  "trunks": 571
+ },
+ "forest": {
+  "median": 0.30000000074505806,
+  "p95": 1,
+  "colliders": 2493,
+  "trunks": 1481
+ },
+ "river": {
+  "median": 0.19999999925494194,
+  "p95": 3,
+  "colliders": 1526,
+  "trunks": 514
+ },
+ "lookout": {
+  "median": 0.3999999985098839,
+  "p95": 1,
+  "colliders": 1947,
+  "trunks": 935
+ },
+ "cockpit": {
+  "median": 0.2000000011175871,
+  "p95": 0.8000000007450581,
+  "colliders": 1504,
+  "trunks": 492
+ }
+}
