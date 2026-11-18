@@ -281,8 +281,8 @@ export class Architecture implements System {
   frame = 0;
   private culledAt = new T.Vector3(1e9, 0, 0);
   update(_dt: number, _t: number, cam: T.PerspectiveCamera) {
-    // every 15th frame, or at once when the view has jumped (a teleport, a capture)
-    if (this.frame++ % 15 && cam.position.distanceToSquared(this.culledAt) < 64) return;
+    // after every 2 m of movement (standing still nothing changes; a quality change resets culledAt)
+    if (cam.position.distanceToSquared(this.culledAt) < 4) return;
     this.culledAt.copy(cam.position);
     // distance culling of small parts (props, far houses keep rendering)
     for (const it of this.items) {

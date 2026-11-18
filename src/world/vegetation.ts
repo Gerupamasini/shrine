@@ -478,8 +478,9 @@ export class Vegetation implements System {
     this.frame++;
     const moved = cam.position.distanceToSquared(this.lastPos) > 0.8;
     const turned = cam.quaternion.angleTo(this.lastQuat) > 0.03;
-    if (!moved && !turned && this.frame % 20) return;
-    if (moved || this.frame % 20 === 0) this.updateImpostors(cam.position);
+    // (standing still nothing changes: a new time of day or quality setting resets lastPos)
+    if (!moved && !turned) return;
+    if (moved) this.updateImpostors(cam.position);
     this.lastPos.copy(cam.position);
     this.lastQuat.copy(cam.quaternion);
     cam.updateMatrixWorld();
