@@ -29,16 +29,8 @@ export class Landscape {
   async load(progress: (p: number, label: string) => void) {
     progress(0.05, "空と光を整えています");
     await this.lighting.init(this.quality);
-    // CSM.setupMaterial replaces onBeforeCompile: keep any hook the material already had
-    this.lib.finishers.push((m) => {
-      const prev = m.onBeforeCompile;
-      this.lighting.csm.setupMaterial(m);
-      const csm = m.onBeforeCompile;
-      m.onBeforeCompile = (s, r) => {
-        prev.call(m, s, r);
-        csm.call(m, s, r);
-      };
-    });
+    // cascaded shadows (chained after any hook the material already had)
+    this.lib.finishers.push((m) => this.lighting.setupMaterial(m));
     progress(0.15, "地形を読み込んでいます");
     await this.terrain.build(this.quality);
     this.scene.add(this.terrain.group);
@@ -53,6 +45,7 @@ export class Landscape {
   setTime(h: number) {
     this.hours = h;
     this.lighting.setTime(h);
+    this.lighting.invalidateShadows();
     for (const s of this.systems) s.setTime?.(h);
   }
   setQuality(q: Quality) {
