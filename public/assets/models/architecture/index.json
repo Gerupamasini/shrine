@@ -103,16 +103,16 @@
  },
  "assets": {
   "road-ditch": {
-   "triangles": 40344,
+   "triangles": 49536,
    "min": [
     -84.092,
-    1.901,
+    0.158,
     -558.969
    ],
    "max": [
-    76.889,
-    9.942,
-    689.14
+    88.769,
+    9.956,
+    988.574
    ],
    "materials": [
     "concrete",
@@ -372,15 +372,15 @@
    ]
   },
   "stream-works": {
-   "triangles": 67104,
+   "triangles": 66672,
    "min": [
-    -674.384,
+    -732.434,
     -4.497,
-    -428.619
+    -426.721
    ],
    "max": [
-    332.036,
-    37.353,
+    331.973,
+    40.789,
     558.2
    ],
    "materials": [
@@ -1510,6 +1510,11 @@
     "file": "kei-truck-lod1.glb",
     "triangles": 52172,
     "distance": 45
+   },
+   "lod2": {
+    "file": "kei-truck-lod2.glb",
+    "triangles": 1550,
+    "distance": 35
    }
   },
   "bus-stop": {
@@ -1603,16 +1608,16 @@
    ]
   },
   "river-works": {
-   "triangles": 16590,
+   "triangles": 17306,
    "min": [
     -189.279,
-    -5.352,
+    -7.116,
     -289.616
    ],
    "max": [
-    -103.064,
+    -81.429,
     2.44,
-    595.516
+    874.585
    ],
    "materials": [
     "revet_block_wet",
@@ -2187,16 +2192,16 @@
    ]
   },
   "road-markings": {
-   "triangles": 15744,
+   "triangles": 19380,
    "min": [
     -85.014,
-    2.391,
+    0.736,
     -560.689
    ],
    "max": [
-    75.629,
+    87.498,
     9.902,
-    729.17
+    1028.759
    ],
    "materials": [
     "road_paint"
@@ -2206,7 +2211,7 @@
    "triangles": 94372,
    "min": [
     -0.8274999856948853,
-    -0.0006000000284984708,
+    -0.0005999999046325533,
     -1.7200000286102295
    ],
    "max": [
@@ -2245,15 +2250,20 @@
    },
    "lod": {
     "file": "kei-hatch-lod1.glb",
-    "triangles": 35295,
+    "triangles": 37229,
     "distance": 45
+   },
+   "lod2": {
+    "file": "kei-hatch-lod2.glb",
+    "triangles": 1103,
+    "distance": 35
    }
   },
   "crown-sedan": {
    "triangles": 99958,
    "min": [
     -0.9775000214576721,
-    -0.0006000000284984708,
+    -0.0006000077724456765,
     -2.4174997806549072
    ],
    "max": [
@@ -2293,15 +2303,20 @@
    },
    "lod": {
     "file": "crown-sedan-lod1.glb",
-    "triangles": 39118,
+    "triangles": 40845,
     "distance": 45
+   },
+   "lod2": {
+    "file": "crown-sedan-lod2.glb",
+    "triangles": 1215,
+    "distance": 35
    }
   },
   "light-truck": {
    "triangles": 117082,
    "min": [
     -1.1225000321865082,
-    0,
+    -8.344650248570673e-9,
     -2.3752000025007796
    ],
    "max": [
@@ -2339,15 +2354,20 @@
    },
    "lod": {
     "file": "light-truck-lod1.glb",
-    "triangles": 60027,
+    "triangles": 63601,
     "distance": 45
+   },
+   "lod2": {
+    "file": "light-truck-lod2.glb",
+    "triangles": 1860,
+    "distance": 35
    }
   },
   "utility-wagon": {
    "triangles": 99728,
    "min": [
     -0.9624999761581421,
-    -0.0006000000284984708,
+    -0.0005999970436096347,
     -2.1599998474121094
    ],
    "max": [
@@ -2386,8 +2406,13 @@
    },
    "lod": {
     "file": "utility-wagon-lod1.glb",
-    "triangles": 36625,
+    "triangles": 38423,
     "distance": 45
+   },
+   "lod2": {
+    "file": "utility-wagon-lod2.glb",
+    "triangles": 1142,
+    "distance": 35
    }
   }
  }

@@ -30,8 +30,10 @@ OUT = ROOT / "public/world"
 OUT.mkdir(parents=True, exist_ok=True)
 
 SEED = 19940808
-EXTENT = 1500.0
-N = 1281
+# (2.1 km: the valley runs on south onto the widening floor below the village - Shimohara - and the
+# hills on either side leave room for forest roads; the cell stays 1.17 m)
+EXTENT = 2100.0
+N = 1793
 CELL = EXTENT / (N - 1)
 HALF = EXTENT / 2
 H_MIN, H_RANGE = -20.0, 420.0
@@ -52,9 +54,14 @@ rng = np.random.default_rng(SEED)
 
 import time as _time
 _t0 = _time.time()
+_PROBE = [tuple(map(float, p_.split(","))) for p_ in os.environ.get("PROBE", "").split(";") if p_]   # (debugging: "x,z;x,z")
 def _tick(label):
     """Progress line with the elapsed time (the generator takes a couple of minutes)."""
-    print(f"[{_time.time() - _t0:6.1f}s] {label}", flush=True)
+    probe = ""
+    if _PROBE and isinstance(globals().get("h"), np.ndarray) and globals()["h"].shape == (N, N):
+        hh_ = globals()["h"]
+        probe = " | " + " ".join(f"{hh_[int(round((z_ / EXTENT + 0.5) * (N - 1))), int(round((x_ / EXTENT + 0.5) * (N - 1)))]:.1f}" for x_, z_ in _PROBE)
+    print(f"[{_time.time() - _t0:6.1f}s] {label}{probe}", flush=True)
 
 def _np(o):
     if isinstance(o, np.generic):
@@ -826,9 +833,11 @@ HAMLETS = [  # name, centre z, half length along the road, houses, valley-side s
     ("shimojuku", 268.0, 40.0, 14, 0.4, ["kawara", "kawara", "tin", "kawara"]),
     # Minamizawa: newer houses (tin roofs, block walls) among older farms
     ("minamizawa", 365.0, 40.0, 9, 0.35, ["tin", "kawara", "tin", "thatch"]),
+    # Shimohara: farms on the wider floor downstream, below the village
+    ("shimohara", 868.0, 55.0, 9, 0.4, ["kawara", "tin", "kawara", "thatch", "tin"]),
 ]
 # share of a hamlet's houses in the row fronting the road (the rest stand back as farmsteads)
-ROADSIDE_SHARE = {"kaminosawa": 0.45, "nakazato": 0.2, "miyashita": 0.45, "shimojuku": 0.85, "minamizawa": 0.5}
+ROADSIDE_SHARE = {"kaminosawa": 0.45, "nakazato": 0.2, "miyashita": 0.45, "shimojuku": 0.85, "minamizawa": 0.5, "shimohara": 0.35}
 MACHI_Z = (50.0, 204.0)                            # the village centre along the main road
 FIRE_TOWER = (float(road_x(70.0)) + 7.5, 70.0)    # hinomi-yagura at the north end of the centre
 # the temple stands on a bench at the foot of the eastern hills between Nakazato and Miyashita
@@ -1592,9 +1601,10 @@ _rural_block = (stream_d < 9.0) | (irr_d < 3.0) | (temple_d < 12) | (shrine_spur
 _rural_block |= (rd < RIVER_KEEP + 3) | (np.abs(X) > HALF - 35) | (np.abs(Z) > HALF - 45)
 for _hs in houses:
     _rural_block |= np.hypot(X - _hs['x'], Z - _hs['z']) < 23
-_rural_block &= ~(((road_d < 4.0) & (Z > ROAD_Z0)) | (town_d < 2.0))
+_rural_open = ((road_d < 4.0) & (Z > ROAD_Z0)) | (town_d < 2.0)
+_rural_block &= ~_rural_open
 rural_roads = []
-def rural_leg(name, cls, a, b, avoid=None, east_of=None):
+def rural_leg(name, cls, a, b, avoid=None, east_of=None, max_grade=.22):
     global h
     blocked_route = _rural_block.copy()
     if east_of is not None:
@@ -1606,7 +1616,23 @@ def rural_leg(name, cls, a, b, avoid=None, east_of=None):
                 for p, q in zip(road_['pts'], road_['pts'][1:]):
                     _line_dist(corridor, *p, *q, reach=16)
         blocked_route |= (corridor < 13) & (np.hypot(X-a[0], Z-a[1]) > 18) & (np.hypot(X-b[0], Z-b[1]) > 18)
-    pts = rural_route(h, blocked_route, a, b, CELL, HALF)
+    pts = rural_route(h, blocked_route, a, b, CELL, HALF, open_=_rural_open, max_grade=max_grade)
+    # (the lattice can overshoot a junction and come back to it: a node beside the tip where the
+    # path doubles back by more than 120 degrees is dropped, so the road runs straight in; a
+    # switchback further out is kept)
+    pts = [tuple(p_) for p_ in pts]
+    for _end in (0, 1):
+        seq = pts if _end else pts[::-1]
+        for _ in range(3):
+            if len(seq) < 3:
+                break
+            t_, m_, o_ = (np.array(v_) for v_ in seq[-1:-4:-1])
+            u_, w_ = t_ - m_, m_ - o_
+            if np.hypot(*u_) < 7.0 and np.dot(u_, w_) < -0.5 * np.hypot(*u_) * np.hypot(*w_):
+                seq = seq[:-2] + [seq[-1]]
+            else:
+                break
+        pts = seq if _end else seq[::-1]
     # Sample tie-ins at <=2 m: a long routing edge can cross the whole road
     # shoulder between vertices, otherwise its sloping profile gets cut off by
     # the existing flat carriageway and leaves a step at the edge.
@@ -1619,6 +1645,7 @@ def rural_leg(name, cls, a, b, avoid=None, east_of=None):
     lengths = np.hypot(*np.diff(np.array(pts), axis=0).T)
     chainage = np.r_[0., np.cumsum(lengths)]
     ground = np.array([at(h, x, z) for x, z in pts])
+    ground_raw = ground.copy()
     uniform = np.arange(0., chainage[-1]+2., 2.)
     ys = np.interp(chainage, uniform, gaussian_filter1d(np.interp(uniform, chainage, ground), 3., mode='nearest'))
     on_main = np.array([at(road_d, x, z) < W_FLAT+.2 for x, z in pts])
@@ -1626,12 +1653,20 @@ def rural_leg(name, cls, a, b, avoid=None, east_of=None):
     _td = np.array([at(town_d, x, z) for x, z in pts])
     fixed = on_main | (_td < .8)
     # (a point on a paved road's shoulder can stand on its cut or fill: where two pinned points are too
-    # far apart in height to ramp between, the one off the carriageway is left to the grade envelope)
-    for k in range(1, len(pts)):
-        if fixed[k] and fixed[k - 1] and abs(ground[k] - ground[k - 1]) > .16 * lengths[k - 1]:
-            j = k if _td[k] > _td[k - 1] else k - 1
-            if not on_main[j] and _td[j] > 0:
-                fixed[j] = False
+    # far apart in height to ramp between, the one further from the carriageway is left to the grade
+    # envelope, until every pinned pair can be joined)
+    for _pass in range(len(pts)):
+        changed = False
+        for k in range(1, len(pts)):
+            if fixed[k] and fixed[k - 1] and abs(ground[k] - ground[k - 1]) > .16 * lengths[k - 1]:
+                j = k if _td[k] > _td[k - 1] else k - 1
+                if on_main[j] or j in (0, len(pts) - 1):
+                    j = k - 1 if j == k else k
+                if not on_main[j] and j not in (0, len(pts) - 1):
+                    fixed[j] = False
+                    changed = True
+        if not changed:
+            break
     # Shared rural junctions get a short level turnout. Separate vertical
     # alignments must agree where their shoulders overlap at the fork.
     for end, distances in [(0, chainage), (-1, chainage[-1]-chainage)]:
@@ -1651,15 +1686,33 @@ def rural_leg(name, cls, a, b, avoid=None, east_of=None):
     # lane where it briefly shares the main road or crosses Shimojuku's old road.
     # A short vertex spacing at a rounded hairpin must not concentrate the climb.
     # Project the vertical alignment onto a 16% grade envelope with fixed tie-ins.
-    for _ in range(30):
-        ys[fixed] = ground[fixed]
-        for k in range(1, len(ys)):
-            if not fixed[k]:
-                ys[k] = np.clip(ys[k], ys[k-1]-.16*lengths[k-1], ys[k-1]+.16*lengths[k-1])
-        ys[fixed] = ground[fixed]
-        for k in range(len(ys)-2, -1, -1):
-            if not fixed[k]:
-                ys[k] = np.clip(ys[k], ys[k+1]-.16*lengths[k], ys[k+1]+.16*lengths[k])
+    def _envelope():
+        for _ in range(30):
+            ys[fixed] = ground[fixed]
+            for k in range(1, len(ys)):
+                if not fixed[k]:
+                    ys[k] = np.clip(ys[k], ys[k-1]-.16*lengths[k-1], ys[k-1]+.16*lengths[k-1])
+            ys[fixed] = ground[fixed]
+            for k in range(len(ys)-2, -1, -1):
+                if not fixed[k]:
+                    ys[k] = np.clip(ys[k], ys[k+1]-.16*lengths[k], ys[k+1]+.16*lengths[k])
+    _envelope()
+    # (a level pad pinned at a junction may meet ground rising faster than the envelope can climb:
+    # where the profile still steps, the pinned point beside the step is released, back to the end)
+    for _round in range(60):
+        bad = [k for k in range(1, len(ys)) if abs(ys[k] - ys[k-1]) > .17 * lengths[k-1]]
+        if not bad:
+            break
+        k = bad[0]
+        cand = [j for j in (k - 1, k) if fixed[j] and not on_main[j] and j not in (0, len(ys) - 1)]
+        if not cand:
+            break
+        for j in cand:
+            fixed[j] = False
+        _envelope()
+    # (a forest road the profile cannot keep near the ground - a fill or cut over 10 m - is not built)
+    if max_grade < .2 and np.abs(ys - ground_raw).max() > 10.0:
+        raise ValueError(f'{name}: the road would stand {np.abs(ys - ground_raw).max():.1f} m off the ground')
     profile = [(x, z, float(y)) for (x, z), y in zip(pts, ys)]
     rural_roads.append(dict(id=name, kind=cls, pts=pts, profile=profile))
     # A terrain-aware route can share the main road briefly before branching.
@@ -1747,8 +1800,38 @@ for group in [(0,1,2),(3,4),(5,6,7)]:
         rr['profile']=[tuple(v) for v in pp[offset:offset+count]]
         h=grade_line(h,rr['profile'],4.2,farm_d)
         offset+=count
+# Forest roads (rindo) over the hills on both sides, from the ends of the farm and forest roads: a
+# ridge road from the Okusawa side round to Miyazawa, one up the northern hills, one from Minamizawa
+# over the south-eastern hills down to the road at Shimohara, and a loop through the western hills
+# behind Kawamuko with spurs north and south to log landings. Each leg is routed like the others (a
+# grade-limited path that keeps out of the brooks and yards); one that finds no way is left out.
+_rindo = []
+def forest_leg(name, a, b, avoid=()):
+    try:
+        # (routed no steeper than 13% between lattice points, under the 16% the profile allows: a
+        # route that climbed faster left its profile hanging over the valley it ran along, built up
+        # on a fill tens of metres high)
+        rural_leg(name, 'forest', a, b, avoid=list(avoid), max_grade=.13)
+        _rindo.append(name)
+    except ValueError as e_:
+        print("forest road left out:", name, e_)
+_ne, _nw = tuple(rural_roads[3]['profile'][-1][:2]), tuple(rural_roads[6]['profile'][0][:2])
+_e1p, _e2p = tuple(rural_roads[0]['profile'][-1][:2]), tuple(rural_roads[1]['profile'][-1][:2])
+_kw2 = tuple(rural_roads[7]['profile'][0][:2])
+_r990, _r505 = (float(road_x(990.0)), 990.0), (float(road_x(-505.0)), -505.0)
+forest_leg('higashi-ridge-forest', _ne, (750.0, -50.0), avoid=['north-forest', 'okusawa-farm'])
+forest_leg('kitayama-forest', _r505, (300.0, -600.0), avoid=['higashi-ridge-forest'])
+forest_leg('kitayama-forest-2', (300.0, -600.0), (400.0, -750.0), avoid=['kitayama-forest', 'higashi-ridge-forest'])
+forest_leg('minami-forest', _r990, (450.0, 1000.0))
+forest_leg('minami-forest-2', (450.0, 1000.0), (650.0, 950.0), avoid=['minami-forest'])
+forest_leg('nishi-forest', _nw, (-600.0, 0.0), avoid=['kawamuko-contour-farm', 'kawamuko-north-farm'])
+forest_leg('nishi-forest-2', (-600.0, 0.0), (-700.0, 330.0), avoid=['nishi-forest'])
+forest_leg('nishi-forest-3', (-700.0, 330.0), _kw2, avoid=['nishi-forest-2', 'kawamuko-south-farm', 'kawamuko-contour-farm'])
+forest_leg('nishi-oku-forest', (-600.0, 0.0), (-850.0, -60.0), avoid=['nishi-forest', 'nishi-forest-2'])
+forest_leg('nishi-minami-forest', (-700.0, 330.0), (-650.0, 750.0), avoid=['nishi-forest-2', 'nishi-forest-3'])
+print("forest roads", len(_rindo), round(sum(np.hypot(*np.diff(np.array(r_['pts']), axis=0).T).sum() for r_ in rural_roads if r_['id'] in _rindo)), "m")
 # Keep the prefectural road and its gutters level at the new junctions.
-for _p in (_e0, _e3, _n0, _n2):
+for _p in (_e0, _e3, _n0, _n2, _r990, _r505):
     ditch_crossings.append(round(_p[1], 2))
 h = np.where((Z >= ROAD_Z0 - .6) & (Z < HALF - 32) & (road_d < W_FLAT), road_y, h)
 
@@ -2802,7 +2885,7 @@ Image.fromarray(np.uint8(np.rint(np.clip(aux, 0, 1) * 255)), "RGBA").save(OUT / 
 # Openings of the brook-fed canals in the ground: distance (m) from each 0.5 m texel centre to the
 # nearest open stretch of canal, 0-2 m in 0-255. The ends stop short of the intake and the end wall;
 # the inside of each diversion box is open too.
-CHAN_RES, CHAN_RANGE = 3000, 2.0
+CHAN_RES, CHAN_RANGE = 4096, 2.0     # (0.51 m texels; 4096 is the largest texture every GPU takes)
 _chd = np.full((CHAN_RES, CHAN_RES), CHAN_RANGE, np.float32)
 _tc = -EXTENT / 2 + (np.arange(CHAN_RES) + 0.5) * EXTENT / CHAN_RES
 def _chan_seg(ax_, az_, bx_, bz_, trim0=0.0, trim1=0.0, scale=1.0):
@@ -3497,6 +3580,11 @@ SIGNS = {
     "shinryojo": [("上沢診療所", "board")],
 }
 smoke_n = 0
+_vrng = np.random.default_rng(SEED + 41)
+_vdesigns = json.loads((ROOT / "tools/vehicles/source/designs.json").read_text())
+VEHICLE_LEN = {d_["id"]: float(d_["l"]) for d_ in _vdesigns}
+VEHICLE_W = {d_["id"]: float(d_["w"]) for d_ in _vdesigns}
+_vneed = ["crown-sedan", "light-truck", "utility-wagon", "kei-hatch"]
 for i, hs in enumerate(houses):
     asset = hs["asset"]
     W2, D2 = hs["w"] / 2, hs["d"] / 2
@@ -3534,19 +3622,33 @@ for i, hs in enumerate(houses):
     obj("naya", bx, hs["y"], bz, hs["yaw"] - bs * math.pi / 2, rng.uniform(0.85, 1.1), collider={"type": "box", "halfExtents": [2.6, 1.8, 2.1]})
     # farmsteads: a work shed (sagyo-goya) for the tools and the tiller at the back corner on the barn
     # side, so the yard is framed by the house, the barn and the shed
-    if hs["group"] in ("kaminosawa", "nakazato", "miyashita", "shimojuku", "minamizawa", "sankyo", "kawamuko") and rng.random() < 0.75:
+    if hs["group"] in ("kaminosawa", "nakazato", "miyashita", "shimojuku", "minamizawa", "shimohara", "sankyo", "kawamuko") and rng.random() < 0.75:
         sx_, sz_ = local(bs * (W2 + 3.4), -D2 + 1.6)
         obj("naya", sx_, hs["y"], sz_, hs["yaw"] + bs * math.pi / 2, rng.uniform(0.62, 0.72), collider={"type": "box", "halfExtents": [1.8, 1.3, 1.5]})
     # laundry poles (monohoshi) in the sunny front yard, on the side away from the barn
-    if hs["front"] > 5.0 and rng.random() < 0.65:
+    pole = hs["front"] > 5.0 and rng.random() < 0.65
+    if pole:
         lx_, lz_ = local(-bs * (W2 - 3.0), D2 + 2.6)
         obj("monohoshi", lx_, hs["y"], lz_, hs["yaw"] + rng.normal(0, 0.05), 1.0, collider={"type": "box", "halfExtents": [1.6, 0.95, 0.12]})
     if (i % 3 == 0 or (hs["group"] == "minamizawa" and i % 3 == 1)) and hs["group"] != "sankyo":
         wx, wz = local(-2.0, D2 + hs["front"] + 0.3)
         obj("block-wall", wx, hs["y"], wz, hs["yaw"], 1.0, length=round(hs["w"] + 8, 2))
-    if i % 4 == 1 and hs["front"] > 6:
-        tx, tz = local(-bs * (W2 - 1.8), D2 + min(5.5, hs["front"] - 2.5))
-        obj("kei-truck", tx, hs["y"], tz, hs["yaw"] + 0.3, 1.0, collider={"type": "box", "halfExtents": [0.75, 0.9, 1.7]})
+    # The family's cars in the front yard, facing out to the road: most farms keep a kei truck, many also a
+    # small car; a bigger farm a light truck, a few a saloon or a wagon. (Drawn from their own random
+    # stream, so the rest of the layout does not move.)
+    if hs["front"] > 6.0 and _vrng.random() < 0.62:
+        first = str(_vrng.choice(["kei-truck", "kei-truck", "kei-truck", "kei-truck", "light-truck", "kei-hatch", "utility-wagon", "crown-sedan"]))
+        # (every model is parked somewhere: the first yards deep enough take the ones not yet drawn)
+        if _vneed and hs["front"] > 0.8 + 0.96 * VEHICLE_LEN[_vneed[0]] + 1.2 and _vrng.random() < 0.5:
+            first = _vneed[0]
+        if first in _vneed:
+            _vneed.remove(first)
+        for k_, model in enumerate([first] + ([str(_vrng.choice(["kei-hatch", "kei-hatch", "utility-wagon", "crown-sedan", "kei-truck"]))]
+                                             if hs["front"] > 7.0 and not pole and hs["w"] > 9.0 and _vrng.random() < 0.5 else [])):
+            L_ = VEHICLE_LEN[model]
+            tx, tz = local(-bs * (W2 - 1.8 - 3.2 * k_), D2 + hs["front"] - 0.8 - 0.48 * L_)
+            obj(model, tx, hs["y"], tz, hs["yaw"] + 0.3 * (1 - 2 * k_ * 0.5) + _vrng.normal(0, 0.05), 1.0,
+                collider={"type": "box", "halfExtents": [round(VEHICLE_W[model] / 2, 3), 0.9, round(L_ / 2, 3)]})
     px_, pz_ = local(bs * (W2 + 2.4), D2 + min(6.0, hs["front"] - 1.5))
     obj(str(rng.choice(["prop-bucket", "prop-basket", "prop-crate"])), px_, hs["y"], pz_, float(rng.random() * math.tau), 1.0)
     # stone retaining wall where the yard stands above the ground in front of it
@@ -3554,6 +3656,41 @@ for i, hs in enumerate(houses):
     if drop_ > 1.1:
         rx_, rz_ = local(0, D2 + hs["front"] + 0.7)
         obj("ishigaki", rx_, hs["y"], rz_, hs["yaw"], 1.0, length=round(hs["w"] + 14, 2), height=round(min(drop_, 4.0), 2))
+# Cars at the public buildings: the doctor's saloon and a visitor's car at the clinic, a light truck
+# and kei trucks at the co-op, a small car at the post office and the halls. Each takes the first
+# spot from a short list that is level, off the road and the fields, and clear of anything built.
+def _spot_free(x_, z_, yaw_, model_):
+    L_, W_ = VEHICLE_LEN[model_], VEHICLE_W[model_]
+    if at(road_d, x_, z_) < W_FLAT + 0.6 or at(is_paddy_f, x_, z_) > 0.5 or at(slope0, x_, z_) > 8:
+        return False
+    for o_ in objects:
+        ox_, _, oz_ = o_["position"]
+        he_ = (o_.get("collider") or {}).get("halfExtents") or [0.6, 0, 0.6]
+        if math.hypot(ox_ - x_, oz_ - z_) < max(he_[0], he_[2]) * o_["scale"][0] + L_ / 2 + 0.4:
+            return False
+    for h_ in houses:
+        c_, s2_ = math.cos(h_["yaw"]), math.sin(h_["yaw"])
+        lx_, lz_ = (x_ - h_["x"]) * c_ - (z_ - h_["z"]) * s2_, (x_ - h_["x"]) * s2_ + (z_ - h_["z"]) * c_
+        if abs(lx_) < h_["w"] / 2 + L_ / 2 + 0.3 and abs(lz_) < h_["d"] / 2 + L_ / 2 + 0.3:
+            return False
+    return True
+_public_cars = {"shinryojo": ["crown-sedan", "kei-hatch"], "nokyo": ["light-truck", "kei-truck"], "nokyo-soko": ["kei-truck"],
+                "post-office": ["kei-hatch"], "kominkan": ["utility-wagon"]}
+_pc = 0
+for hs in houses:
+    for model_ in _public_cars.get(hs["asset"], []):
+        c_, s2_ = math.cos(hs["yaw"]), math.sin(hs["yaw"])
+        W2_, D2_ = hs["w"] / 2, hs["d"] / 2
+        for lx_, lz_, turn_ in [(-W2_ + 2.0, D2_ + 3.2, math.pi / 2), (W2_ - 2.0, D2_ + 3.2, math.pi / 2), (0.0, D2_ + 3.2, math.pi / 2),
+                                (-W2_ - 2.6, 0.0, 0.0), (W2_ + 2.6, 0.0, 0.0), (-W2_ - 2.6, -D2_ + 2.4, 0.0), (W2_ + 2.6, -D2_ + 2.4, 0.0)]:
+            x_, z_ = hs["x"] + lx_ * c_ + lz_ * s2_, hs["z"] - lx_ * s2_ + lz_ * c_
+            yaw_ = hs["yaw"] + turn_ + _vrng.normal(0, 0.04)
+            if _spot_free(x_, z_, yaw_, model_):
+                obj(model_, x_, float(sample(x_, z_)), z_, yaw_, 1.0,
+                    collider={"type": "box", "halfExtents": [round(VEHICLE_W[model_] / 2, 3), 0.9, round(VEHICLE_LEN[model_] / 2, 3)]})
+                _pc += 1
+                break
+print("cars at public buildings", _pc, "| cars in all", sum(1 for o_ in objects if o_["asset"] in VEHICLE_LEN))
 # The temple: main hall, gate, bell tower, six Jizo, stone lanterns and the graveyard.
 _ty, _tyaw = TEMPLE["y"], TEMPLE["yaw"]
 def _tobj(asset, lx, lz, yaw=0.0, scale=1.0, **kw):
@@ -4048,7 +4185,7 @@ meta = {
     "vegetationMask": {"file": "vegetation-mask.png", "channels": ["forestDensity", "paddyIdHash", "riceEdgeDistance (0.5 = edge of the rice, +-2 m)", "grassDensity"]},
     "paddyLevel": {"file": "paddy-level.png", "encoding": "same as heightEncoding, uint16 PNG"},
     "channelMask": {"file": "channels.png", "range": CHAN_RANGE, "openBelow": round(CANAL2_W / 2 + 0.02, 3),
-                    "encoding": "distance (m) from each texel centre to the nearest open stretch of a brook-fed canal = value/255*range; row 0 is z=-750, texel 0.5 m; the ground is drawn open where the distance is below openBelow (the heightfield closes over the channel at the wall tops)"},
+                    "encoding": "distance (m) from each texel centre to the nearest open stretch of a brook-fed canal = value/255*range; row 0 is the north edge, texel extent/4096; the ground is drawn open where the distance is below openBelow (the heightfield closes over the channel at the wall tops)"},
     "environment": {"date": "1994-08-08", "latitude": 38.32, "longitude": 141.02, "timezone": 9, "defaultTime": 18.0,
                     "timeRange": [17.0, 19.0], "sky": "assets/sky/kloppenheim_06_puresky", "notes": "Sun position from a standard solar position algorithm (NOAA approximation)."},
     "landmarks": landmarks,

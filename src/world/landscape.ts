@@ -58,5 +58,6 @@ export class Landscape {
     this.lighting.update();
     this.terrain.update(this.camera.position, this.quality);
     for (const s of this.systems) s.update?.(dt, t, this.camera);
+    this.lighting.renderShadows();
   }
 }

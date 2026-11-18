@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 
-test("driving: all parked trucks, enter, steer, brake, views, pause, exit and recovery", async ({ page }) => {
+test("driving: all parked cars, enter, steer, brake, views, pause, exit and recovery", async ({ page }) => {
   const errors: string[] = [];
   page.on("pageerror", e => errors.push(e.message));
   page.on("response", r => { if (r.status() >= 400) errors.push(`${r.status()} ${r.url()}`); });
@@ -10,7 +10,8 @@ test("driving: all parked trucks, enter, steer, brake, views, pause, exit and re
     const g = (window as any).__satoyama;
     let staticTrucks = 0;
     g.scene.traverse((o: any) => { if (o.isInstancedMesh && o.name === "architecture/kei-truck") staticTrucks++; });
-    return { fleet: g.state.vehicle.cars, placed: g.world.objects.filter((o: any) => o.asset === "kei-truck"), staticTrucks };
+    const models = ["kei-truck", "kei-hatch", "crown-sedan", "light-truck", "utility-wagon"];
+    return { fleet: g.state.vehicle.cars, placed: g.world.objects.filter((o: any) => models.includes(o.asset)), staticTrucks };
   });
   expect(initial.placed.length).toBeGreaterThan(0);
   expect(initial.fleet).toHaveLength(initial.placed.length);
@@ -75,10 +76,11 @@ test("driving: all parked trucks, enter, steer, brake, views, pause, exit and re
     const g = (window as any).__satoyama, car = g.vehicleSystem.active;
     car.root.updateMatrixWorld(true);
     const p = car.root.worldToLocal(g.camera.position.clone());
-    return { eye: p.toArray(), disabledWalker: !g.vehicleSystem.walker.body.isEnabled() };
+    return { eye: p.toArray(), seat: car.sim.spec.eye[1], disabledWalker: !g.vehicleSystem.walker.body.isEnabled() };
   });
   expect(camera.eye[0]).toBeLessThan(0);
-  expect(camera.eye[1]).toBeCloseTo(1.30, 2);
+  // (the driver's eye of whichever model is nearest: 1.30 m in the kei truck, lower in the cars)
+  expect(camera.eye[1]).toBeCloseTo(camera.seat, 2);
   expect(camera.disabledWalker).toBeTruthy();
   await page.evaluate(() => (window as any).__satoyama.renderFrames(1));
   await page.screenshot({ path: "artifacts/driving/first-person.png", timeout: 180000 });

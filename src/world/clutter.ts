@@ -36,7 +36,9 @@ const KINDS: Record<string, KindDef> = {
 };
 
 type Specimen = { parts: { geometry: T.BufferGeometry; material: T.Material; local: T.Matrix4 }[]; size: number };
-type Batch = { rows: InstanceRow[]; meshes: { mesh: T.InstancedMesh; local: T.Matrix4 }[]; far: number; mul: number; stretch: number };
+type Batch = { rows: InstanceRow[]; meshes: { mesh: T.InstancedMesh; local: T.Matrix4 }[]; far: number; mul: number; stretch: number; grid?: Map<string, InstanceRow[]> };
+/** side (m) of the cells the clutter rows are bucketed in */
+const CLUTTER_CELL = 32;
 
 export class Clutter implements System {
   batches: Batch[] = [];
@@ -166,6 +168,15 @@ export class Clutter implements System {
       );
     }
     await Promise.all(jobs);
+    // bucket each batch's rows in a grid, so an update visits only the cells within reach
+    for (const b of this.batches) {
+      b.grid = new Map();
+      for (const r of b.rows) {
+        const key = `${Math.floor(r[0] / CLUTTER_CELL)},${Math.floor(r[2] / CLUTTER_CELL)}`;
+        if (!b.grid.has(key)) b.grid.set(key, []);
+        b.grid.get(key)!.push(r);
+      }
+    }
   }
   setQuality(q: Quality) {
     this.scale = q === "low" ? 0.55 : q === "high" ? 1.4 : 1;
@@ -181,18 +192,26 @@ export class Clutter implements System {
     if (cam.position.distanceToSquared(this.last) < 4) return;
     this.last.copy(cam.position);
     const up = new T.Vector3(0, 1, 0);
+    const cx = cam.position.x, cz = cam.position.z;
     for (const b of this.batches) {
       const far = b.far * this.scale;
       let n = 0;
-      for (const r of b.rows) {
-        const dx = r[0] - cam.position.x, dz = r[2] - cam.position.z;
-        if (dx * dx + dz * dz > far * far) continue;
-        this.q.setFromAxisAngle(up, r[4]);
-        const sc = r[3] * b.mul;
-        this.m.compose(this.v.set(r[0], r[1], r[2]), this.q, this.s.set(sc * b.stretch, sc, sc * b.stretch));
-        for (const p of b.meshes) p.mesh.setMatrixAt(n, this.tmp.copy(this.m).multiply(p.local));
-        n++;
-      }
+      const i0 = Math.floor((cx - far) / CLUTTER_CELL), i1 = Math.floor((cx + far) / CLUTTER_CELL);
+      const j0 = Math.floor((cz - far) / CLUTTER_CELL), j1 = Math.floor((cz + far) / CLUTTER_CELL);
+      for (let j = j0; j <= j1; j++)
+        for (let i = i0; i <= i1; i++) {
+          const rows = b.grid?.get(`${i},${j}`);
+          if (!rows) continue;
+          for (const r of rows) {
+            const dx = r[0] - cx, dz = r[2] - cz;
+            if (dx * dx + dz * dz > far * far) continue;
+            this.q.setFromAxisAngle(up, r[4]);
+            const sc = r[3] * b.mul;
+            this.m.compose(this.v.set(r[0], r[1], r[2]), this.q, this.s.set(sc * b.stretch, sc, sc * b.stretch));
+            for (const p of b.meshes) p.mesh.setMatrixAt(n, this.tmp.copy(this.m).multiply(p.local));
+            n++;
+          }
+        }
       for (const p of b.meshes) {
         p.mesh.count = n;
         p.mesh.instanceMatrix.needsUpdate = true;

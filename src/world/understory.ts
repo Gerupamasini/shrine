@@ -13,8 +13,10 @@ import { windUniforms } from "./vegetation";
  * (Unity: Terrain Detail / tree prototypes from the same atlases.)
  */
 export class Understory implements System {
-  meshes: T.InstancedMesh[] = [];
-  update() {}
+  meshes: T.Group[] = [];
+  update(_dt: number, _t: number, cam: T.PerspectiveCamera) {
+    updateCardTiles(cam.position);
+  }
   async load(land: Landscape) {
     const [veg, s0, s1, s2] = await Promise.all([loadImageData("world/vegetation-mask.png"), loadImageData("world/splat0.png"), loadImageData("world/splat1.png"), loadImageData("world/splat2.png")]);
     const h: Heightfield = land.world.height;
@@ -63,7 +65,7 @@ export class Understory implements System {
       }
     for (const leaf of [true, false])
       this.meshes.push(
-        cardField(land, rows.filter((r) => r.leaf === leaf), leaf ? "leaf" : "needle", leaf ? "#8f9a76" : "#7f8c6c", { nearFade: [7, 16], name: "understory" }),
+        cardField(land, rows.filter((r) => r.leaf === leaf), leaf ? "leaf" : "needle", leaf ? "#8f9a76" : "#7f8c6c", { nearFade: [7, 16], name: "understory", far: 160 }),
       );
     return rows.length;
   }
@@ -92,12 +94,17 @@ function crossedQuads() {
 }
 
 /** Instanced crossed photo cards from a 4x4 foliage atlas (understory, crops). */
-export function cardField(land: Landscape, list: CardRow[], atlasName: string, color: string, opts: { nearFade?: [number, number]; name: string; tintRange?: [T.Color, T.Color] }) {
+/** Card fields are cut into tiles of this size, each culled by the camera and hidden past `far`. */
+const CARD_TILE = 96;
+const cardTiles: { mesh: T.InstancedMesh; center: T.Vector3; radius: number; far: number }[] = [];
+let tilesAt = new T.Vector3(1e9, 0, 0);
+export function updateCardTiles(cam: T.Vector3) {
+  if (cam.distanceToSquared(tilesAt) < 25) return;
+  tilesAt = cam.clone();
+  for (const t of cardTiles) t.mesh.visible = t.center.distanceTo(cam) - t.radius < t.far;
+}
+export function cardField(land: Landscape, list: CardRow[], atlasName: string, color: string, opts: { nearFade?: [number, number]; name: string; tintRange?: [T.Color, T.Color]; far?: number }) {
   const g = crossedQuads();
-  const cell = new Float32Array(list.length), tint = new Float32Array(list.length);
-  list.forEach((r, i) => ((cell[i] = r.cell), (tint[i] = r.tint)));
-  g.setAttribute("aCell", new T.InstancedBufferAttribute(cell, 1));
-  g.setAttribute("aTint", new T.InstancedBufferAttribute(tint, 1));
   const atlas = land.lib.texture(`assets/foliage/${atlasName}-albedo.png`, true, false);
   atlas.flipY = false;
   const m = new T.MeshStandardMaterial({ map: atlas, color, roughness: 0.85, alphaTest: 0.5, side: T.DoubleSide, alphaToCoverage: true });
@@ -127,17 +134,36 @@ export function cardField(land: Landscape, list: CardRow[], atlasName: string, c
       )
       .replace("#include <map_fragment>", "vec4 tc = texture2D(map, vCellUv); diffuseColor *= tc; diffuseColor.rgb *= mix(uTint0, uTint1, vUTint);");
   });
-  const mesh = new T.InstancedMesh(g, m, Math.max(1, list.length));
-  mesh.count = list.length;
+  // One instanced mesh per tile: the camera culls the tiles out of view, and past `far` they are
+  // hidden. (As one mesh for the whole map, every shrub card was drawn every frame - near a million
+  // triangles - and only faded out pixel by pixel.)
+  const group = new T.Group();
+  group.name = opts.name;
+  const tiles = new Map<string, CardRow[]>();
+  for (const r of list) {
+    const key = `${Math.floor(r.x / CARD_TILE)},${Math.floor(r.z / CARD_TILE)}`;
+    if (!tiles.has(key)) tiles.set(key, []);
+    tiles.get(key)!.push(r);
+  }
   const mat = new T.Matrix4(), q = new T.Quaternion(), up = new T.Vector3(0, 1, 0);
-  list.forEach((r, i) => mesh.setMatrixAt(i, mat.compose(new T.Vector3(r.x, r.y, r.z), q.setFromAxisAngle(up, r.yaw), new T.Vector3(r.s * 0.95, r.s, r.s * 0.95))));
-  mesh.instanceMatrix.needsUpdate = true;
-  mesh.castShadow = true;
-  mesh.receiveShadow = true;
-  mesh.computeBoundingSphere();
-  mesh.name = opts.name;
-  land.scene.add(mesh);
-  return mesh;
+  for (const rows of tiles.values()) {
+    const tg = new T.InstancedBufferGeometry();
+    for (const k of ["position", "uv", "normal"]) tg.setAttribute(k, g.getAttribute(k));
+    tg.setIndex(g.getIndex());
+    tg.setAttribute("aCell", new T.InstancedBufferAttribute(Float32Array.from(rows, (r) => r.cell), 1));
+    tg.setAttribute("aTint", new T.InstancedBufferAttribute(Float32Array.from(rows, (r) => r.tint), 1));
+    const mesh = new T.InstancedMesh(tg, m, rows.length);
+    rows.forEach((r, i) => mesh.setMatrixAt(i, mat.compose(new T.Vector3(r.x, r.y, r.z), q.setFromAxisAngle(up, r.yaw), new T.Vector3(r.s * 0.95, r.s, r.s * 0.95))));
+    mesh.instanceMatrix.needsUpdate = true;
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    mesh.computeBoundingSphere();
+    mesh.name = opts.name;
+    group.add(mesh);
+    if (opts.far) cardTiles.push({ mesh, center: mesh.boundingSphere!.center.clone(), radius: mesh.boundingSphere!.radius, far: opts.far });
+  }
+  land.scene.add(group);
+  return group;
 }
 
 /** Vegetable rows on the hatake (clutter.json "crop": one crop per field, rows on the furrow ridges). */
@@ -156,7 +182,7 @@ export function crops(land: Landscape) {
       rows.filter((r) => r[5] === k).map((r, i) => ({ x: r[0], y: r[1], z: r[2], s: r[3], yaw: r[4], cell: look.cells[i % 4], tint: ((r[0] * 7.13 + r[2] * 3.7) % 1 + 1) % 1 })),
       "leaf",
       look.color,
-      { name: `crop-${k}`, nearFade: [16, 24], tintRange: [new T.Color(0.85, 0.92, 0.82), new T.Color(1.05, 1.04, 0.92)] },
+      { name: `crop-${k}`, nearFade: [16, 24], far: 260, tintRange: [new T.Color(0.85, 0.92, 0.82), new T.Color(1.05, 1.04, 0.92)] },
     ),
   );
 }

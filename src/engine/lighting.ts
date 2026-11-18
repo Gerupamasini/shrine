@@ -8,6 +8,12 @@ import { SkyDome, type SkyMeta } from "./sky";
 
 export type Quality = "low" | "standard" | "high";
 
+/** Layer of the shadow casters big enough to matter beyond the first cascade (trees, buildings,
+ *  hills). Everything else - shrubs, props, crops, cars, low walls - casts only near the camera. */
+export const FAR_CASTER = 1;
+/** Layer of stand-ins drawn only into the shadow maps (merged building parts, coarse hills). */
+export const SHADOW_ONLY = 2;
+
 /**
  * Time-of-day lighting: real solar position, cascaded sun shadows, sky dome,
  * image-based ambient (sun removed from the HDR so it is not counted twice),
@@ -103,10 +109,12 @@ export class Lighting {
       shadowBias: -0.00012,
     });
     this.csm.fade = true;
-    for (const l of this.csm.lights) {
+    this.csm.lights.forEach((l, i) => {
       l.shadow.normalBias = 0.04;
       l.shadow.radius = 2;
-    }
+      void i;
+    });
+    this.wrapShadowPass();
     this.setShadowQuality(quality);
   }
   setShadowQuality(quality: Quality) {
@@ -165,5 +173,36 @@ export class Lighting {
     this.camera.updateMatrixWorld();
     this.csm.update();
     this.sky.update(this.camera, this.azimuth, this.elevation);
+  }
+  private shadowPending = true;
+  /** a new frame: the next render of the scene draws the shadow maps (once, however many passes) */
+  renderShadows() {
+    this.shadowPending = true;
+  }
+  /**
+   * The renderer's shadow pass, split: the near cascade (to ~90 m) is drawn with every caster, the
+   * two far ones with the big casters only (FAR_CASTER: trees, buildings, hills). The renderer tests
+   * shadow casters against the view camera's layers, so a cascade cannot be given layers of its own;
+   * the far cascades get a stand-in camera that sees only that layer. Shrubs, props and crops in the
+   * far cascades were most of the shadow draw calls. And the maps are drawn once a frame, not again
+   * for every pass that renders the scene.
+   */
+  private wrapShadowPass() {
+    const sm = this.renderer.shadowMap, render = sm.render.bind(sm);
+    const big = new T.Object3D(), all = new T.Object3D();
+    big.layers.set(FAR_CASTER);
+    all.layers.set(0);
+    all.layers.enable(SHADOW_ONLY);
+    sm.render = (lights: T.Light[], scene: T.Scene, camera: T.Camera) => {
+      if (!lights.length) return;
+      if (!this.shadowPending) return;
+      this.shadowPending = false;
+      const cascades = this.csm.lights as T.Light[];
+      const near = lights.filter((l) => l === cascades[0] || !cascades.includes(l));
+      const far = lights.filter((l) => l !== cascades[0] && cascades.includes(l));
+      void camera;
+      render(near, scene, all as unknown as T.Camera);
+      render(far, scene, big as unknown as T.Camera);
+    };
   }
 }

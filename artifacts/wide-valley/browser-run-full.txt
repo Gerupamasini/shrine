@@ -1,0 +1,71 @@
+
+Running 9 tests using 1 worker
+
+  ✓  1 tests/audio.spec.ts:4:1 › movement audio produces footsteps and engine output, respects airborne state and mute bus (308ms)
+[WebServer] Assets in public directory cannot be imported from JavaScript.
+[WebServer] If you intend to import that asset, put the file in the src directory, and use /src/world/materials.json instead of /public/world/materials.json.
+[WebServer] If you intend to use the URL of that asset, use /world/materials.json?url.
+  ✘  2 tests/driving.spec.ts:3:1 › driving: all parked cars, enter, steer, brake, views, pause, exit and recovery (53.8s)
+[WebServer] Assets in public directory cannot be imported from JavaScript.
+[WebServer] If you intend to import that asset, put the file in the src directory, and use /src/world/materials.json instead of /public/world/materials.json.
+[WebServer] If you intend to use the URL of that asset, use /world/materials.json?url.
+  ✓  3 tests/exploration.spec.ts:4:1 › foot torii → 200-step climb → precinct → lookout; collisions, settings, no errors (4.0m)
+[WebServer] Assets in public directory cannot be imported from JavaScript.
+[WebServer] If you intend to import that asset, put the file in the src directory, and use /src/world/materials.json instead of /public/world/materials.json.
+[WebServer] If you intend to use the URL of that asset, use /world/materials.json?url.
+  ✓  4 tests/exploration.spec.ts:83:1 › river: revetment cap, washing steps and bridge are walkable (1.5m)
+[WebServer] Assets in public directory cannot be imported from JavaScript.
+[WebServer] If you intend to import that asset, put the file in the src directory, and use /src/world/materials.json instead of /public/world/materials.json.
+[WebServer] If you intend to use the URL of that asset, use /world/materials.json?url.
+  ✓  5 tests/rural-driving.spec.ts:3:1 › rural lanes: low speed truck traversal and braking (18.2m)
+[WebServer] Assets in public directory cannot be imported from JavaScript.
+[WebServer] If you intend to import that asset, put the file in the src directory, and use /src/world/materials.json instead of /public/world/materials.json.
+[WebServer] If you intend to use the URL of that asset, use /world/materials.json?url.
+  ✓  6 tests/rural-views.spec.ts:2:1 › rural final ground views after bank grading (1.5m)
+[WebServer] Assets in public directory cannot be imported from JavaScript.
+[WebServer] If you intend to import that asset, put the file in the src directory, and use /src/world/materials.json instead of /public/world/materials.json.
+[WebServer] If you intend to use the URL of that asset, use /world/materials.json?url.
+Rural world ready; testing complete circuits
+Circuit east, forward passed
+Circuit east, reverse passed
+Circuit north, forward passed
+Circuit north, reverse passed
+Circuit kawamuko, forward passed
+Circuit kawamuko, reverse passed
+  ✓  7 tests/rural.spec.ts:3:1 › rural circuits: walk every new lane in both directions with real collisions (16.1m)
+[WebServer] Assets in public directory cannot be imported from JavaScript.
+[WebServer] If you intend to import that asset, put the file in the src directory, and use /src/world/materials.json instead of /public/world/materials.json.
+[WebServer] If you intend to use the URL of that asset, use /world/materials.json?url.
+  ✓  8 tests/steering-input.spec.ts:3:1 › A/D and arrow keys turn toward the driver left/right in both views (1.8m)
+[WebServer] Assets in public directory cannot be imported from JavaScript.
+[WebServer] If you intend to import that asset, put the file in the src directory, and use /src/world/materials.json instead of /public/world/materials.json.
+[WebServer] If you intend to use the URL of that asset, use /world/materials.json?url.
+  ✓  9 tests/valley-views.spec.ts:4:1 › valley fields and bunds at ground and distant viewpoints (2.0m)
+
+
+  1) tests/driving.spec.ts:3:1 › driving: all parked cars, enter, steer, brake, views, pause, exit and recovery 
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: 4
+    Received: 0
+
+      18 |   expect(initial.staticTrucks).toBe(0);
+      19 |   for (const car of initial.fleet) {
+    > 20 |     expect(car.wheels).toBe(4);
+         |                        ^
+      21 |     const original = initial.placed.find((o: any) => o.id === car.id);
+      22 |     for (let i = 0; i < 3; i++) expect(car.position[i]).toBeCloseTo(original.position[i], 3);
+      23 |   }
+        at /home/user/shrine/tests/driving.spec.ts:20:24
+
+    Error Context: test-results/driving-driving-all-parked-60ff7-ews-pause-exit-and-recovery/error-context.md
+
+  Slow test file: tests/rural-driving.spec.ts (18.2m)
+  Slow test file: tests/rural.spec.ts (16.1m)
+  Slow test file: tests/exploration.spec.ts (5.5m)
+  Consider running tests from slow files in parallel. See: https://playwright.dev/docs/test-parallel
+  1 failed
+    tests/driving.spec.ts:3:1 › driving: all parked cars, enter, steer, brake, views, pause, exit and recovery 
+  8 passed (46.0m)
+EXIT 1

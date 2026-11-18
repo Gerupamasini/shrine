@@ -1,6 +1,12 @@
 import * as T from "three";
 import { publicUrl } from "../urls";
 import type { Library } from "../engine/library";
+import { FAR_CASTER } from "../engine/lighting";
+
+/** the far shadow cascades take the ground from coarse tiles of this many cells (300 m, 4.7 m mesh) */
+const SHADOW_BLOCK = 256, SHADOW_STEP = 4;
+/** chunks per side of a far ground block */
+const FAR_BLOCK = 4;
 import { addHook } from "../engine/hooks";
 import type { Heightfield, WorldData } from "./data";
 import table from "../../public/world/materials.json";
@@ -83,6 +89,7 @@ const CHUNK = 32; // cells per chunk (37.5 m)
 export class Terrain {
   group = new T.Group();
   chunks: { meshes: T.Mesh[]; center: T.Vector3; lod: number }[] = [];
+  blocks: { mesh: T.Mesh; members: number[]; center: T.Vector3; radius: number; far: boolean }[] = [];
   material!: T.MeshStandardMaterial;
   uniforms: Record<string, T.IUniform> = {};
   normalMap: T.DataTexture;
@@ -307,6 +314,7 @@ export class Terrain {
           const g = this.chunkGeometry(ci * CHUNK, cj * CHUNK, step);
           const mesh = new T.Mesh(g, this.material);
           mesh.receiveShadow = true;
+          // (the chunks cast in the near cascade; beyond it the coarse shadow tiles below stand in)
           mesh.castShadow = step <= 4;
           mesh.visible = false;
           mesh.matrixAutoUpdate = false;
@@ -319,10 +327,58 @@ export class Terrain {
         const cz = ((cj + 0.5) * CHUNK * s) - this.data.extent / 2;
         this.chunks.push({ meshes, center: new T.Vector3(cx, this.height.sample(cx, cz), cz), lod: -1 });
       }
-  }
-  chunkGeometry(i0: number, j0: number, step: number) {
+    // Far away, 4 x 4 chunks are drawn as one mesh (4-cell mesh, skirts): a draw per 150 m instead of
+    // sixteen, for all the ground beyond the middle LOD ring.
+    for (let bj = 0; bj < per; bj += FAR_BLOCK)
+      for (let bi = 0; bi < per; bi += FAR_BLOCK) {
+        const size = Math.min(FAR_BLOCK, per - bi, per - bj) * CHUNK;
+        const mesh = new T.Mesh(this.chunkGeometry(bi * CHUNK, bj * CHUNK, 4, size), this.material);
+        mesh.receiveShadow = true;
+        mesh.castShadow = false;
+        mesh.visible = false;
+        mesh.matrixAutoUpdate = false;
+        mesh.name = "terrain-far";
+        this.group.add(mesh);
+        const members: number[] = [];
+        for (let j = bj; j < Math.min(bj + FAR_BLOCK, per); j++) for (let i = bi; i < Math.min(bi + FAR_BLOCK, per); i++) members.push(j * per + i);
+        const s = this.height.spacing, c = (k: number) => (k + size / CHUNK / 2) * CHUNK * s - this.data.extent / 2;
+        this.blocks.push({ mesh, members, center: new T.Vector3(c(bi), 0, c(bj)), radius: (size * s) / Math.SQRT2, far: false });
+      }
+    // The hills' long evening shadows in the far cascades: big coarse tiles drawn into the shadow
+    // maps only (FAR_CASTER alone, which the view camera does not see), one draw each instead of
+    // every 37.5 m chunk again for each cascade.
     const h = this.height, s = h.spacing, half = this.data.extent / 2;
-    const cells = CHUNK / step, row = cells + 1;
+    const shadowMat = new T.MeshBasicMaterial();
+    for (let bj = 0; bj < n; bj += SHADOW_BLOCK)
+      for (let bi = 0; bi < n; bi += SHADOW_BLOCK) {
+        const ci = Math.min(SHADOW_BLOCK, n - bi) / SHADOW_STEP, cj = Math.min(SHADOW_BLOCK, n - bj) / SHADOW_STEP, row = ci + 1;
+        const pos: number[] = [], idx: number[] = [];
+        for (let j = 0; j <= cj; j++)
+          for (let i = 0; i <= ci; i++) {
+            const gi = bi + i * SHADOW_STEP, gj = bj + j * SHADOW_STEP;
+            pos.push(gi * s - half, h.cell(gi, gj) - 0.35, gj * s - half);   // (a little low: no false shade in hollows)
+          }
+        for (let j = 0; j < cj; j++)
+          for (let i = 0; i < ci; i++) {
+            const a = j * row + i;
+            idx.push(a, a + row, a + 1, a + 1, a + row, a + row + 1);
+          }
+        const g = new T.BufferGeometry();
+        g.setAttribute("position", new T.Float32BufferAttribute(pos, 3));
+        g.setIndex(idx);
+        g.computeBoundingSphere();
+        const m = new T.Mesh(g, shadowMat);
+        m.castShadow = true;
+        m.receiveShadow = false;
+        m.layers.set(FAR_CASTER);
+        m.matrixAutoUpdate = false;
+        m.name = "terrain-shadow";
+        this.group.add(m);
+      }
+  }
+  chunkGeometry(i0: number, j0: number, step: number, size = CHUNK) {
+    const h = this.height, s = h.spacing, half = this.data.extent / 2;
+    const cells = size / step, row = cells + 1;
     const pos: number[] = [];
     const idx: number[] = [];
     for (let j = 0; j <= cells; j++)
@@ -361,7 +417,18 @@ export class Terrain {
   }
   update(camera: T.Vector3, quality: string) {
     const near = quality === "low" ? 120 : 220, mid = quality === "low" ? 300 : 480;
+    for (const b of this.blocks) {
+      const far = Math.hypot(b.center.x - camera.x, b.center.z - camera.z) - b.radius > mid;
+      if (far === b.far) continue;
+      b.far = b.mesh.visible = far;
+      for (const k of b.members) {
+        const c = this.chunks[k];
+        if (far) c.meshes.forEach((m) => (m.visible = false));
+        c.lod = far ? -2 : -1;
+      }
+    }
     for (const c of this.chunks) {
+      if (c.lod === -2) continue;
       const d = Math.hypot(c.center.x - camera.x, c.center.z - camera.z);
       const lod = c.meshes.length === 1 ? 0 : d < near ? 0 : d < mid ? 1 : 2;
       if (lod === c.lod) continue;
