@@ -1,12 +1,13 @@
-"""Contour map of the whole terrain: the playable map, the hills around it and the far ranges.
+"""Contour map of the whole terrain: the playable map, the hills around it and the river's catchment.
 
 The game draws three height fields, nested:
   * the map itself      heightmap.r16      2.1 km square, 1.17 m cells
   * the hills around it mid-heightmap.png  4.8 km square, 6.25 m cells (1.35 km beyond the map)
-  * the far ranges      far-heightmap.png  14 km square, 54.7 m cells
+  * the whole catchment far-heightmap.png  14 km square, 18.2 m cells
 This samples each where the game shows it (the finest one that covers a point), joins them over a
-narrow band at the edges, and draws contours over a tint and hillshade. Heights are elevations
-(no earth curvature, unlike the far meshes in the game).
+narrow band at the edges, and draws contours over a tint and hillshade, with the streams beyond
+the map traced down the heights (steepest descent) and drawn thicker the more they drain. Heights
+are elevations (no earth curvature, unlike the far meshes in the game).
 
   python3 tools/world/contour_map.py [out_dir] [view ...]
 
@@ -19,6 +20,8 @@ from pathlib import Path
 import numpy as np
 from PIL import Image
 from scipy import ndimage
+sys.path.insert(0, str(Path(__file__).parent))
+import region  # noqa: E402  (flow routing for the stream lines)
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
@@ -80,17 +83,17 @@ def composite(x0, x1, z0, z1, n):
 # ---- styling ---------------------------------------------------------------------------------
 # a quiet hypsometric tint, fixed over 0-850 m so all views agree
 TINT = LinearSegmentedColormap.from_list("tint", [
-    (0.00, "#e4ecd0"), (0.03, "#d8e6be"), (0.12, "#c9dca8"), (0.25, "#dfdba6"), (0.40, "#e6cf9a"),
-    (0.58, "#d9b48a"), (0.76, "#c49a7a"), (0.90, "#b9a194"), (1.00, "#d6d0cc")])
+    (0.00, "#d2e5ae"), (0.10, "#bcd890"), (0.22, "#c2d88b"), (0.34, "#d5d58e"), (0.46, "#dfc893"),
+    (0.60, "#d3ab7f"), (0.74, "#bf8f6c"), (0.88, "#b39588"), (1.00, "#e6e0dc")])
 NORM = Normalize(-10, 850)
 LINE = "#6e4b2a"
 HALO = [patheffects.withStroke(linewidth=2.2, foreground=(1, 1, 1, 0.8))]
 
 VIEW = {
     #               half-size (m), grid, contour, index, shade exaggeration, peak window (m), peaks
-    "region":       (7000.0, 2200, 20, 100, 1.4, 900, 14),
-    "surroundings": (2400.0, 2400, 10, 50, 1.2, 380, 16),
-    "map":          (1050.0, 1793, 5, 25, 1.0, 200, 10),
+    "region":       (7000.0, 2200, 20, 100, 2.0, 1800, 4),
+    "surroundings": (2400.0, 2400, 10, 50, 1.6, 600, 8),
+    "map":          (1050.0, 1793, 5, 25, 1.2, 250, 8),
 }
 TITLE = {
     "region": "全域の等高線図（14 km 四方・主曲線 20 m・計曲線 100 m）",
@@ -106,7 +109,7 @@ def peaks(h, xs, zs, window_m, count, inside=None):
     mx = ndimage.maximum_filter(h, size=k, mode="nearest")
     jj, ii = np.nonzero((h == mx) & (h > np.percentile(h, 60)))
     # not on the frame: a maximum there is usually just the slope running out of the view
-    m = int(k // 2)
+    m = min(int(k // 2), int(250 / cell))
     keep = (ii > m) & (ii < len(xs) - 1 - m) & (jj > m) & (jj < len(zs) - 1 - m)
     cand = sorted(((h[j, i], xs[i], zs[j]) for i, j in zip(ii[keep], jj[keep])), reverse=True)
     out = []
@@ -118,6 +121,51 @@ def peaks(h, xs, zs, window_m, count, inside=None):
         if len(out) >= count:
             break
     return out
+
+
+# the drainage network drawn outside the map (inside it the river and brooks come from the scene):
+# streams draining more than this many m2, by view
+STREAM_AREA = {"region": 1.0e5, "surroundings": 3.0e4, "map": 1.0e4}
+
+
+def streams(h, xs, zs, a_min):
+    """Stream lines of the land: steepest-descent flow over the heights (pits filled, the frame of
+    the view an outlet), traced from the heads and junctions down; [(x km, y km, drained m2)]."""
+    step = max(1, int(round(len(xs) / 1100)))       # (a grid of about 1100 cells is plenty)
+    hs, xa, za = h[::step, ::step], xs[::step], zs[::step]
+    cell = float(xa[1] - xa[0])
+    out = np.zeros(hs.shape, bool)
+    out[0, :] = out[-1, :] = out[:, 0] = out[:, -1] = True
+    hf = region.fill_depressions(hs, out, eps=0.001)
+    rec, _ = region._receivers(hf, out, cell)
+    area = region._accumulate(rec, np.full(hs.size, cell * cell))
+    chan = area > a_min
+    idx = np.flatnonzero(chan)
+    n_up = np.bincount(rec[idx][rec[idx] != idx], minlength=hs.size)
+    starts = idx[(n_up[idx] == 0) | (n_up[idx] >= 2)]
+    nx = hs.shape[1]
+    lines = []
+    for s in starts:
+        path = [s]
+        c = s
+        while True:
+            d = rec[c]
+            if d == c:
+                break
+            path.append(d)
+            c = d
+            if n_up[c] >= 2 or not chan[c]:
+                break
+        if len(path) < 2:
+            continue
+        pj, pi = np.divmod(np.asarray(path), nx)
+        x, y = xa[pi] / 1000, -za[pj] / 1000
+        if len(x) > 4:                                 # round off the steps of the 8 directions
+            k = np.ones(3) / 3
+            x[1:-1] = np.convolve(x, k, "same")[1:-1]
+            y[1:-1] = np.convolve(y, k, "same")[1:-1]
+        lines.append((x, y, float(area[path[-2]])))
+    return lines
 
 
 def polyline(points, ix=0, iz=2):
@@ -145,7 +193,7 @@ def draw(view):
     major = [l for l in levels if not l % index]
     ax.contour(X, Y, h, levels=minor, colors=LINE, linewidths=0.28, alpha=0.75)
     cs = ax.contour(X, Y, h, levels=major, colors=LINE, linewidths=0.85)
-    lab = ax.clabel(cs, fmt="%d", fontsize=6.2, inline=True, inline_spacing=2, colors=LINE)
+    lab = ax.clabel(cs, fmt="%d", fontsize=6.6, inline=True, inline_spacing=2, colors="#3a2a1a")
     for t in lab:
         t.set_path_effects(HALO)
 
@@ -156,6 +204,18 @@ def draw(view):
     square(E / 2, color="#c0392b", lw=1.6, zorder=5)
     if E_MID / 2 < half:
         square(E_MID / 2, color="#2c3e50", lw=1.0, ls=(0, (6, 4)), zorder=5)
+
+    # streams beyond the map, thicker downstream
+    from matplotlib.collections import LineCollection
+    a_min = STREAM_AREA[view]
+    segs, widths = [], []
+    for x, y, a in streams(h, xs, zs, a_min):
+        inside = (np.abs(x) < E / 2000) & (np.abs(y) < E / 2000)
+        if inside.all():
+            continue
+        segs.append(np.stack([x, y], -1))
+        widths.append(min(0.35 + 0.42 * np.log10(a / a_min) ** 1.25, 2.6))
+    ax.add_collection(LineCollection(segs, colors="#2f8fd0", linewidths=widths, zorder=4, capstyle="round", joinstyle="round"))
 
     # river and the prefectural road (inside the map) for orientation
     rx, ry = polyline(scene["river"]["points"])
@@ -176,8 +236,8 @@ def draw(view):
 
     # spot heights: the summits of the view (on the map, the shrine too)
     for x, z, y in peaks(h, xs, zs, pwin, npk):
-        ax.plot(x / 1000, -z / 1000, marker="^", ms=4.2, color="#5b3a1e", zorder=6)
-        label(x, z, f" {y:.0f}", size=6.8, color="#5b3a1e", va="center")
+        ax.plot(x / 1000, -z / 1000, marker="^", ms=5.5, color="#222", zorder=6)
+        label(x, z, f" {y:.0f}", size=9, color="#222", va="center")
 
     lm = scene["landmarks"]
     sx, sy = lm["shrine"][0], lm["shrine"][2]
@@ -193,12 +253,8 @@ def draw(view):
         label(t["x"], t["z"] - 25, "上沢隧道", size=6.5, color="#3b3b3b", ha="center")
     else:
         label(E / 2 + 60, -E / 2 - 60, "地図（歩ける範囲）2.1 km", size=8, color="#c0392b", va="bottom")
-        label(E_MID / 2 + 60, -E_MID / 2 - 60, "周りの山（同じ浸食モデル）4.8 km", size=8, color="#2c3e50", va="bottom")
-        label(-half + 250, -half + 300, "遠景の山並み（14 km）", size=9, color="#2c3e50", va="top")
-        # the saddle the evening sun shines through (WNW, 286 deg)
-        az = np.radians(286.0)
-        for r in (3500.0,):
-            label(r * np.sin(az), -r * np.cos(az), "夕日の鞍部 →", size=8, color="#8e44ad", ha="center", va="center", rotation=-16)
+        label(E_MID / 2 + 60, -E_MID / 2 - 60, "周りの山 4.8 km（6.25 m格子）", size=8, color="#2c3e50", va="bottom")
+        label(-half + 250, -half + 300, "上沢川の流域 14 km（18 m格子）", size=9, color="#2c3e50", va="top")
     if view == "surroundings":
         label(E / 2 - 40, -E / 2 + 40, "地図の範囲 2.1 km", size=7.5, color="#c0392b", ha="right", va="top")
 
@@ -210,7 +266,7 @@ def draw(view):
     ax.set_aspect("equal")
     ax.grid(color="#000", alpha=0.08, lw=0.5)
     fig.text(0.06, 0.955, TITLE[view], fontsize=13)
-    key = {"region": "赤枠＝地図、破線＝周りの山（その外は遠景の山並み）、青＝上沢川と沢、黒＝県道",
+    key = {"region": "赤枠＝地図、破線＝周りの山（その外は流域の遠景）、青＝上沢川と沢、黒＝県道",
            "surroundings": "赤枠＝地図、外枠＝周りの山の端、青＝上沢川と沢、黒＝県道",
            "map": "青＝上沢川と沢、黒＝県道、灰＝町道・農道・林道"}[view]
     fig.text(0.06, 0.935, f"標高 {h.min():.0f}〜{h.max():.0f} m　原点は地図の中心（石段の西の谷底）。" + key,

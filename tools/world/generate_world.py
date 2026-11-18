@@ -670,6 +670,23 @@ REGION = region.cached([_m0, _design0], REGION_PARAMS, ROOT / ".cache", _region_
 _mount = region.sampler(REGION["M"], REGION_EXTENT)
 _yatsu = region.sampler(REGION["yatsu"], REGION_EXTENT)
 
+def beyond_inputs(map_h):
+    """What tools/world/beyond.py needs to grow the land beyond the map around it: the valley's
+    design as tables along z, the regional model of the hills, the map's own heights."""
+    zt = np.arange(-9000.0, 9000.5, 4.0)
+    return dict(zt=zt, floor=floor_base(zt), axis=valley_axis(zt), half=valley_floor_half(zt), river=river_x(zt),
+                drop=river_drop(zt), scarp=np.array(SCARP_RISE), sun=np.array([SUN_ORIGIN[0], SUN_ORIGIN[1], SUN_AZ]),
+                seed=np.array(SEED), map_h=np.asarray(map_h, np.float64), map_extent=np.array(EXTENT),
+                region_h=floor_base(RZ) + REGION["M"], region_extent=np.array(REGION_EXTENT))
+
+if os.environ.get("BEYOND_INPUTS"):
+    # (for working on the land beyond the map alone: the inputs with the map as last generated)
+    _enc = json.loads((OUT / "scene.json").read_text())["heightEncoding"]
+    _mh = np.fromfile(OUT / "heightmap.r16", dtype="<u2").reshape(N, N) / 65535 * _enc["range"] + _enc["minHeight"]
+    np.savez_compressed(os.environ["BEYOND_INPUTS"], **beyond_inputs(_mh))
+    print("wrote", os.environ["BEYOND_INPUTS"])
+    sys.exit(0)
+
 def mountains(x, z):
     """Height of the hills above the valley floor (0 on the floor), from the regional model."""
     return np.maximum(_mount(x, z), 0)
@@ -4238,52 +4255,26 @@ meta = {
 (OUT / "clutter.json").write_text(json.dumps({
     "format": "[x, y, z, scale, yawRadians, variant]", "seed": SEED + 7, "items": clutter}, separators=(",", ":"), default=_np))
 
-# ---- Hills around the map and the far ranges -----------------------------------------------
-_tick('Hills around the map and the far ranges')
-# Outside the playable square the same regional model goes on for 1.6 km on every side (the
-# "mid" ring: real valleys and spurs for the ridgelines that close the views), then blends into
-# broad ridged ranges out to 7 km for the horizon.
-FN, FEXT = 257, 14000.0
-def far_field(x, z):
-    r_ = np.hypot(x, z)
-    ang = np.arctan2(x, -z)
-    f = (90 + 330 * ridged(P3, x, z, 2600, 6)) * smoothstep(500, 2600, r_)
-    f = f + (120 + 380 * ridged(P4, x * 1.3, z * 1.3, 1800, 5)) * smoothstep(3000, 6500, r_) * (0.7 + 0.3 * np.cos(ang * 3 + 1))
-    f = f + 40 * fbm(P5, x, z, 300, 4)
-    sector = np.abs(((np.degrees(ang) % 360) - 286.0 + 180) % 360 - 180)
-    gap = 1 - smoothstep(9, 20, sector)
-    return np.clip(f - np.maximum(f - 0.028 * r_, 0) * gap, 0, 1600)
-_edge = np.maximum(np.abs(RX), np.abs(RZ))
-_wb = smoothstep(REGION_EXTENT / 2 - 620, REGION_EXTENT / 2 - 40, _edge)
-mid = (floor_base(RZ) + REGION["M"]) * (1 - _wb) + far_field(RX, RZ) * _wb
-# the river's trench runs on beyond the map, up into the gorge and on down the valley: at its own
-# low terrace level with the scarps rising beside it, so the cut does not end against a wall of
-# valley floor at the edge of the map
-_beyond = smoothstep(HALF - 40.0, HALF + 10.0, np.abs(RZ))
-_tdu = np.abs(RX - river_x(RZ))
-_trench = river_floor(RZ) - 0.6 + np.maximum(_tdu - 16.0, 0.0) * SCARP_RISE
-_in_trench = (_beyond > 0) & (_trench < mid)
-mid = np.where(_in_trench, mid + (_trench - mid) * _beyond, mid)
+# ---- The land beyond the map -----------------------------------------------------------------
+_tick('The land beyond the map')
+# The whole catchment of the river, 14 km square, grown around the map by the same erosion as its
+# hills (tools/world/beyond.py): the river's valley runs on north to where it forks and south down a
+# winding gorge, tributaries come in from both sides, the high ground stands to the north-west and
+# south-west. "mid" is the 4.8 km square around the map at 6.25 m, "far" the 14 km sheet at 18 m.
+import beyond  # noqa: E402
+_bw = beyond.build(beyond_inputs(hq), ROOT / ".cache", log=print)
 MID_MIN, MID_RANGE = -40.0, 1000.0
-Image.fromarray(np.rint(np.clip((mid - MID_MIN) / MID_RANGE, 0, 1) * 65535).astype(np.uint16)).save(OUT / "mid-heightmap.png")
-# land cover of the ring: R = wooded hillside, G = open valley floor (fields beyond the map)
-_cover = np.stack([smoothstep(0.6, 2.5, REGION["M"]), 1 - smoothstep(0.2, 1.2, REGION["M"]), np.zeros_like(mid)], -1)
-# (no wood on the bottom of the river's trench beyond the map: open ground, like its floodplain)
-_tb = _in_trench & (_tdu < 22.0)
-_cover[..., 0] = np.where(_tb, 0.0, _cover[..., 0])
-_cover[..., 1] = np.where(_tb, 1.0, _cover[..., 1])
-Image.fromarray(np.uint8(np.rint(_cover * 255)), "RGB").save(OUT / "mid-cover.png")
-fa = np.linspace(-FEXT / 2, FEXT / 2, FN)
-FX, FZ = np.meshgrid(fa, fa)
-_mid_s = region.sampler(ndimage.gaussian_filter(mid, 3.0), REGION_EXTENT)
-_in = (np.abs(FX) <= REGION_EXTENT / 2) & (np.abs(FZ) <= REGION_EXTENT / 2)
-far = np.where(_in, _mid_s(np.clip(FX, -REGION_EXTENT / 2, REGION_EXTENT / 2), np.clip(FZ, -REGION_EXTENT / 2, REGION_EXTENT / 2)), far_field(FX, FZ))
-far = np.clip(far, 0, 1600)
-Image.fromarray(np.rint(far / 1600 * 65535).astype(np.uint16)).save(OUT / "far-heightmap.png")
-meta_far = {"file": "far-heightmap.png", "resolution": FN, "extent": FEXT, "minHeight": 0, "range": 1600,
-            "mid": {"file": "mid-heightmap.png", "cover": "mid-cover.png", "resolution": REGION_N, "extent": REGION_EXTENT,
+Image.fromarray(np.rint(np.clip((_bw["mid"] - MID_MIN) / MID_RANGE, 0, 1) * 65535).astype(np.uint16)).save(OUT / "mid-heightmap.png")
+# land cover of the square: R = wooded hillside, G = open valley floor (fields beyond the map)
+Image.fromarray(np.uint8(np.rint(_bw["cover"] * 255)), "RGB").save(OUT / "mid-cover.png")
+Image.fromarray(np.rint(np.clip((_bw["far"] - beyond.FAR_MIN) / beyond.FAR_RANGE, 0, 1) * 65535).astype(np.uint16)).save(OUT / "far-heightmap.png")
+meta_far = {"file": "far-heightmap.png", "resolution": beyond.FAR_N, "extent": beyond.FAR_EXTENT,
+            "minHeight": beyond.FAR_MIN, "range": beyond.FAR_RANGE, "meshStride": 2,
+            "mid": {"file": "mid-heightmap.png", "cover": "mid-cover.png", "resolution": beyond.MID_N, "extent": beyond.MID_EXTENT,
                     "minHeight": MID_MIN, "range": MID_RANGE},
-            "note": "Far: ranges for the horizon. Mid: the eroded hills for 1.6 km around the map. The map itself is covered by the detailed terrain."}
+            "note": "The river's whole catchment around the map, grown by stream-power erosion (tools/world/beyond.py). "
+                    "Far: the 14 km sheet (the mesh takes every meshStride-th sample). Mid: the 4.8 km square around the map. "
+                    "The map itself is covered by the detailed terrain."}
 (OUT / "far-terrain.json").write_text(json.dumps(meta_far, indent=1))
 
 counts = {k: len(v) for k, v in trees.items()}

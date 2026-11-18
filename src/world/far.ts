@@ -5,9 +5,10 @@ import type { Landscape, System } from "./landscape";
 import { decodePng16 } from "./grass";
 
 /**
- * The land beyond the map, in two rings. Mid: the same eroded hills as the map itself for
- * 1.6 km on every side (mid-heightmap.png, 12.5 m cells) - the spurs and side valleys that
- * make the ridgelines around the village. Far: broad ranges out to 7 km for the horizon.
+ * The land beyond the map: the river's whole catchment, 14 km square, grown around the map by the
+ * same erosion as its hills (tools/world/beyond.py), in two rings. Mid: 1.6 km on every side
+ * (mid-heightmap.png, every second 6.25 m sample: 12.5 m cells) - the spurs and side valleys right
+ * around the village. Far: out to 7 km (far-heightmap.png, every `meshStride`-th 18 m sample).
  * Inside the map the detailed terrain is used. Shaded as forested slopes (open valley floors
  * outside the map as fields); aerial perspective does most of the work at these distances.
  */
@@ -104,7 +105,8 @@ export class FarTerrain implements System {
       fetch(publicUrl("world/" + meta.mid.file)).then((r) => r.arrayBuffer()).then((b) => decodePng16(b, { minHeight: meta.mid.minHeight, range: meta.mid.range })),
       new T.ImageLoader().loadAsync(publicUrl("world/" + meta.mid.cover)),
     ]);
-    const n = meta.resolution as number, E = meta.extent as number;
+    const n0 = meta.resolution as number, E = meta.extent as number;
+    const fs = (meta.meshStride as number | undefined) ?? 1, n = (n0 - 1) / fs + 1;   // far mesh: every fs-th sample
     const mn = meta.mid.resolution as number, mE = meta.mid.extent as number;
     const h = this.land.world.height, half = this.land.world.data.extent / 2;
     // land cover of the mid ring (G = open valley floor)
@@ -155,7 +157,7 @@ export class FarTerrain implements System {
       for (let i = 0; i < n; i++) {
         const x = (i / (n - 1) - 0.5) * E, z = (j / (n - 1) - 0.5) * E;
         const inside = Math.abs(x) < mE / 2 && Math.abs(z) < mE / 2;
-        pos.push(x, far[j * n + i] - earth(x, z) - (inside ? 14 : 0), z);
+        pos.push(x, far[j * fs * n0 + i * fs] - earth(x, z) - (inside ? 14 : 0), z);
         kind.push(0);
       }
     for (let j = 0; j < n - 1; j++)

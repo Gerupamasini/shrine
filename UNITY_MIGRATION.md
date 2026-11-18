@@ -35,7 +35,7 @@
    - B：稲の内側
    - A：草の密度
 6. `paddy-level.png` は稲がある区画の田面高さ（16-bit、高さマップと同じ変換式）。稲以外のセルは−20（最小値）。
-7. `far-heightmap.png`（257²、14km四方、0〜1600m）は遠景の山並み。別のTerrain、またはLODを粗くしたメッシュとして配置する。
+7. `far-heightmap.png`（769²、14km四方、−60〜1000m。上沢川の流域全体）は遠景。別のTerrain、またはLODを粗くしたメッシュとして配置する（Three.js版は1つおきの頂点、`far-terrain.json` の `meshStride`）。
    - 地図の周囲1.6kmの中景は `mid-heightmap.png` と `mid-cover.png`。形式と範囲は `public/world/far-terrain.json` にある（`src/world/far.ts` の読み込み処理と同じ変換）。中景は地図の外周に接するリング状のTerrain（またはメッシュ）として置き、地図の中は描かない。
 8. 側溝の開口とトンネルの坑口、用水路・三面張り水路・支線水路の開口は、地形を掘らずに地形シェーダーで地面を描かないことで見せている（`scene.json` の `ditch` と `tunnel`、`channels.png`）。地形シェーダーは約35°より急な面だけ横からの投影も混ぜてテクスチャを貼る（Unityでは急な面だけのトライプラナー）。UnityではTerrainのHoles（`TerrainData.SetHoles`）か、地形の上に置くメッシュで同じ形を作る。地図は `map.webp` と `map.json`（地名と位置）をUIに使う。
    - 沢から取水する用水路の開口も同じ方式。`channels.png`（3000²、8-bit、0.5m格子）は開いた水路の中心線までの距離（値/255×2m）で、`scene.json` の `channelMask.openBelow`（0.47m）未満を描かない。TerrainのHolesは高さマップの格子単位なので幅0.9mの水路には粗い。Unityでは地形シェーダーで同じ距離を読んでclipするか、水路の上の地形を壁の天端に置いたまま、水路のメッシュ側を一段上に出して見せる。
