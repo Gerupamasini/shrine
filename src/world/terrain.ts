@@ -2,14 +2,14 @@ import * as T from "three";
 import { publicUrl } from "../urls";
 import type { Library } from "../engine/library";
 import { FAR_CASTER } from "../engine/lighting";
+import { QUALITY, type Quality } from "../engine/quality";
 
 /** the far shadow cascades take the ground from coarse tiles of this many cells (300 m, 4.7 m mesh) */
 const SHADOW_BLOCK = 256, SHADOW_STEP = 4;
-/** chunks per side of a far ground block */
-const FAR_BLOCK = 4;
 import { addHook } from "../engine/hooks";
 import type { Heightfield, WorldData } from "./data";
 import table from "../../public/world/materials.json";
+import { rtinBlock, rtinErrors } from "./rtin";
 
 /** Terrain layers in splat order (splat0..2 RGBA): tile size in metres, albedo tint, the share of
  *  the photo's own colour kept (saturation) and `fixed` = sample without the anti-tiling rotation
@@ -84,15 +84,35 @@ export function normalTexture(h: Heightfield) {
   return t;
 }
 
-const CHUNK = 32; // cells per chunk (37.5 m)
+/** cells per side of a terrain block (150 m); each block is one mesh at a time. Beyond FAR_TIER m
+ *  2 x 2 blocks are drawn as one mesh (300 m) */
+const BLOCK = 128, FAR_TIER = 400;
+/** height errors (m) of the cached meshes of a block, finest first */
+const LEVELS = [0.015, 0.03, 0.06, 0.12, 0.25, 0.5, 1.0, 2.0];
+/** a vertex in cultivated land counts this much more: bund crests and the steps of the terraces keep
+ *  their vertices three times further than the same height difference on a wooded slope */
+const FIELD_WEIGHT = 3;
+
+type Block = {
+  i0: number; j0: number; size: number; x0: number; z0: number; x1: number; z1: number; minY: number; maxY: number;
+  meshes: (T.Mesh | undefined)[]; level: number; want: number; on: boolean;
+  /** a 2 x 2 group: drawn as one mesh while all of it is beyond FAR_TIER, else as its four blocks */
+  kids?: Block[];
+};
 
 export class Terrain {
   group = new T.Group();
-  chunks: { meshes: T.Mesh[]; center: T.Vector3; lod: number }[] = [];
-  blocks: { mesh: T.Mesh; members: number[]; center: T.Vector3; radius: number; far: boolean }[] = [];
+  blocks: Block[] = [];
+  groups: Block[] = [];
+  /** per-vertex height errors of the RTIN grid (src/world/rtin.ts) */
+  errors!: Float32Array;
+  /** blocks waiting for a mesh at a new level (made a few per frame) */
+  private queue = new Set<Block>();
   material!: T.MeshStandardMaterial;
   uniforms: Record<string, T.IUniform> = {};
   normalMap: T.DataTexture;
+  /** triangles in the meshes drawn (for the profile) */
+  stats = { meshes: 0, made: 0, ms: 0 };
   constructor(
     public lib: Library,
     public data: WorldData,
@@ -136,10 +156,18 @@ export class Terrain {
     });
     const m = (this.material = new T.MeshStandardMaterial({ roughness: 1, metalness: 0 }));
     this.lib.finish(m);
-    addHook(m, "terrain-v4", (s) => {
+    this.hook(m, u, "near");
+    this.buildChunks();
+    return this;
+  }
+
+  private hook(m: T.MeshStandardMaterial, u: Record<string, T.IUniform>, variant: string) {
+    addHook(m, "terrain-v5-" + variant, (s) => {
       Object.assign(s.uniforms, u);
       s.vertexShader = s.vertexShader
         .replace("#include <common>", "#include <common>\nvarying vec3 vTW;")
+        // (the meshes carry positions only: the shading normal comes from the normal texture)
+        .replace("#include <beginnormal_vertex>", "vec3 objectNormal = vec3(0.0, 1.0, 0.0);")
         .replace("#include <worldpos_vertex>", "#include <worldpos_vertex>\n vTW = (modelMatrix * vec4(transformed,1.0)).xyz;");
       s.fragmentShader = s.fragmentShader
         .replace(
@@ -231,7 +259,8 @@ export class Terrain {
             tAlb = alb; tNrm = normalize(nrm); tArmV = armv;
             tArmV.r *= mix(1.0, 0.55, veg.r);
             tWorldN = normalize(texture2D(tTerrainNormal, tuv).xyz * 2. - 1.);
-          }`,
+          }
+`,
         )
         .replace("#include <map_fragment>", "groundHoles();\n terrainSample();\n diffuseColor.rgb *= tAlb;")
         .replace("#include <roughnessmap_fragment>", "float roughnessFactor = roughness * mix(0.78, 1.0, tArmV.g);")
@@ -269,8 +298,6 @@ export class Terrain {
           }`,
         );
     });
-    this.buildChunks();
-    return this;
   }
   /** Road axis x(z) every 0.5 m (for the ditch openings) and the tunnel mouth, from scene.json. */
   holeUniforms() {
@@ -297,61 +324,54 @@ export class Terrain {
       uTunnelSize: { value: new T.Vector2(tu?.halfWidth ?? 0, tu?.height ?? 0) },
     };
   }
-  /** Square chunks, three index-shared LODs, skirts to hide cracks. */
+  /**
+   * The ground as 14 x 14 blocks of 150 m, each drawn as one RTIN mesh whose height error follows its
+   * distance (rtin.ts): crests, steps and edges keep their vertices, flat fields and even slopes
+   * become a few large triangles. (Before: 37.5 m chunks of a regular grid - the cultivated ones at
+   * full resolution at every distance so the bunds would not sink - about 210 draws and 120 MB.)
+   */
   buildChunks() {
-    const n = this.height.n - 1;
-    const per = n / CHUNK;
-    const geoCache: T.BufferGeometry[][] = [];
-    for (let cj = 0; cj < per; cj++)
-      for (let ci = 0; ci < per; ci++) {
-        // A 4/8-cell LOD drops narrow bund crests beneath the separately drawn
-        // rice surface. Retain the heightfield in cultivated chunks at all ranges.
-        const x0=ci*CHUNK*this.height.spacing-this.data.extent/2;
-        const z0=cj*CHUNK*this.height.spacing-this.data.extent/2;
-        const span=CHUNK*this.height.spacing;
-        const cultivated=this.data.fields.some(f => f.bounds[0]<=x0+span+2 && f.bounds[2]>=x0-2 && f.bounds[1]<=z0+span+2 && f.bounds[3]>=z0-2);
-        const meshes = (cultivated ? [1] : [1, 4, 8]).map((step) => {
-          const g = this.chunkGeometry(ci * CHUNK, cj * CHUNK, step);
-          const mesh = new T.Mesh(g, this.material);
-          mesh.receiveShadow = true;
-          // (the chunks cast in the near cascade; beyond it the coarse shadow tiles below stand in)
-          mesh.castShadow = step <= 4;
-          mesh.visible = false;
-          mesh.matrixAutoUpdate = false;
-          this.group.add(mesh);
-          return mesh;
-        });
-        geoCache.push(meshes.map((m) => m.geometry));
-        const s = this.height.spacing;
-        const cx = ((ci + 0.5) * CHUNK * s) - this.data.extent / 2;
-        const cz = ((cj + 0.5) * CHUNK * s) - this.data.extent / 2;
-        this.chunks.push({ meshes, center: new T.Vector3(cx, this.height.sample(cx, cz), cz), lod: -1 });
+    const t0 = performance.now();
+    const h = this.height, n = h.n, s = h.spacing, half = this.data.extent / 2;
+    // cultivated land: the fields and a margin around them (their bunds and terrace scarps)
+    const field = new Uint8Array(n * n);
+    for (const f of this.data.fields) {
+      const [x0, z0, x1, z1] = f.bounds;
+      const i0 = Math.max(0, Math.floor((x0 - 3 + half) / s)), i1 = Math.min(n - 1, Math.ceil((x1 + 3 + half) / s));
+      const j0 = Math.max(0, Math.floor((z0 - 3 + half) / s)), j1 = Math.min(n - 1, Math.ceil((z1 + 3 + half) / s));
+      for (let j = j0; j <= j1; j++) field.fill(1, j * n + i0, j * n + i1 + 1);
+    }
+    this.errors = rtinErrors(h, (i, j) => (field[j * n + i] ? FIELD_WEIGHT : 1));
+    const make = (i0: number, j0: number, size: number): Block => {
+      let minY = Infinity, maxY = -Infinity;
+      for (let j = j0; j <= j0 + size; j += 2)
+        for (let i = i0; i <= i0 + size; i += 2) {
+          const y = h.data[j * n + i];
+          if (y < minY) minY = y;
+          if (y > maxY) maxY = y;
+        }
+      return { i0, j0, size, x0: i0 * s - half, z0: j0 * s - half, x1: (i0 + size) * s - half, z1: (j0 + size) * s - half, minY, maxY, meshes: [], level: -1, want: -1, on: false };
+    };
+    const per = (n - 1) / BLOCK;
+    for (let gj = 0; gj < per; gj += 2)
+      for (let gi = 0; gi < per; gi += 2) {
+        const g = make(gi * BLOCK, gj * BLOCK, 2 * BLOCK);
+        g.kids = [];
+        for (const [di, dj] of [[0, 0], [1, 0], [0, 1], [1, 1]]) {
+          const b = make((gi + di) * BLOCK, (gj + dj) * BLOCK, BLOCK);
+          g.kids.push(b);
+          this.blocks.push(b);
+        }
+        this.groups.push(g);
       }
-    // Far away, 4 x 4 chunks are drawn as one mesh (4-cell mesh, skirts): a draw per 150 m instead of
-    // sixteen, for all the ground beyond the middle LOD ring.
-    for (let bj = 0; bj < per; bj += FAR_BLOCK)
-      for (let bi = 0; bi < per; bi += FAR_BLOCK) {
-        const size = Math.min(FAR_BLOCK, per - bi, per - bj) * CHUNK;
-        const mesh = new T.Mesh(this.chunkGeometry(bi * CHUNK, bj * CHUNK, 4, size), this.material);
-        mesh.receiveShadow = true;
-        mesh.castShadow = false;
-        mesh.visible = false;
-        mesh.matrixAutoUpdate = false;
-        mesh.name = "terrain-far";
-        this.group.add(mesh);
-        const members: number[] = [];
-        for (let j = bj; j < Math.min(bj + FAR_BLOCK, per); j++) for (let i = bi; i < Math.min(bi + FAR_BLOCK, per); i++) members.push(j * per + i);
-        const s = this.height.spacing, c = (k: number) => (k + size / CHUNK / 2) * CHUNK * s - this.data.extent / 2;
-        this.blocks.push({ mesh, members, center: new T.Vector3(c(bi), 0, c(bj)), radius: (size * s) / Math.SQRT2, far: false });
-      }
+    this.stats.ms = performance.now() - t0;
     // The hills' long evening shadows in the far cascades: big coarse tiles drawn into the shadow
     // maps only (FAR_CASTER alone, which the view camera does not see), one draw each instead of
     // every 37.5 m chunk again for each cascade.
-    const h = this.height, s = h.spacing, half = this.data.extent / 2;
-    const shadowMat = new T.MeshBasicMaterial();
-    for (let bj = 0; bj < n; bj += SHADOW_BLOCK)
-      for (let bi = 0; bi < n; bi += SHADOW_BLOCK) {
-        const ci = Math.min(SHADOW_BLOCK, n - bi) / SHADOW_STEP, cj = Math.min(SHADOW_BLOCK, n - bj) / SHADOW_STEP, row = ci + 1;
+    const shadowMat = new T.MeshBasicMaterial(), cells = n - 1;
+    for (let bj = 0; bj < cells; bj += SHADOW_BLOCK)
+      for (let bi = 0; bi < cells; bi += SHADOW_BLOCK) {
+        const ci = Math.min(SHADOW_BLOCK, cells - bi) / SHADOW_STEP, cj = Math.min(SHADOW_BLOCK, cells - bj) / SHADOW_STEP, row = ci + 1;
         const pos: number[] = [], idx: number[] = [];
         for (let j = 0; j <= cj; j++)
           for (let i = 0; i <= ci; i++) {
@@ -376,64 +396,105 @@ export class Terrain {
         this.group.add(m);
       }
   }
-  chunkGeometry(i0: number, j0: number, step: number, size = CHUNK) {
-    const h = this.height, s = h.spacing, half = this.data.extent / 2;
-    const cells = size / step, row = cells + 1;
-    const pos: number[] = [];
-    const idx: number[] = [];
-    for (let j = 0; j <= cells; j++)
-      for (let i = 0; i <= cells; i++) {
-        const gi = i0 + i * step, gj = j0 + j * step;
-        pos.push(gi * s - half, h.cell(gi, gj), gj * s - half);
-      }
-    for (let j = 0; j < cells; j++)
-      for (let i = 0; i < cells; i++) {
-        const a = j * row + i;
-        // alternate diagonals for a more isotropic surface
-        if ((i + j) % 2) idx.push(a, a + row, a + 1, a + 1, a + row, a + row + 1);
-        else idx.push(a, a + row, a + row + 1, a, a + row + 1, a + 1);
-      }
-    // skirts
-    const skirt = (list: number[]) => {
-      for (let k = 0; k < list.length - 1; k++) {
-        const a = list[k], b = list[k + 1];
-        const base = pos.length / 3;
-        pos.push(pos[a * 3], pos[a * 3 + 1] - 2.5, pos[a * 3 + 2], pos[b * 3], pos[b * 3 + 1] - 2.5, pos[b * 3 + 2]);
-        idx.push(a, base, b, b, base, base + 1, a, b, base, b, base + 1, base);
-      }
-    };
-    const top = [...Array(row).keys()], bottom = top.map((i) => cells * row + i);
-    const left = top.map((j) => j * row), right = top.map((j) => j * row + cells);
-    if (step > 1) [top, bottom, left, right].forEach(skirt);
+  /** the mesh of a block at a level (made once, kept while the block is near that level) */
+  private mesh(b: Block, level: number) {
+    let m = b.meshes[level];
+    if (m) return m;
+    const t0 = performance.now();
+    const e = LEVELS[level];
+    const r = rtinBlock(this.height, this.errors, b.i0, b.j0, b.size, e, Math.max(1.5, e * 4));
     const g = new T.BufferGeometry();
-    g.setAttribute("position", new T.Float32BufferAttribute(pos, 3));
-    const nrm = new Float32Array(pos.length).fill(0);
-    for (let k = 1; k < nrm.length; k += 3) nrm[k] = 1;
-    g.setAttribute("normal", new T.BufferAttribute(nrm, 3));
-    g.setIndex(idx);
-    g.computeBoundingSphere();
-    g.computeBoundingBox();
-    return g;
+    g.setAttribute("position", new T.BufferAttribute(r.position, 3));
+    g.setIndex(new T.BufferAttribute(r.index, 1));
+    g.boundingBox = new T.Box3(new T.Vector3(b.x0, r.minY, b.z0), new T.Vector3(b.x1, r.maxY, b.z1));
+    g.boundingSphere = g.boundingBox.getBoundingSphere(new T.Sphere());
+    m = new T.Mesh(g, this.material);
+    m.name = "terrain";
+    m.receiveShadow = true;
+    // (the near cascade takes the ground from these; beyond it the coarse shadow tiles stand in)
+    m.castShadow = true;
+    m.matrixAutoUpdate = false;
+    m.visible = false;
+    this.group.add(m);
+    b.meshes[level] = m;
+    this.stats.made++;
+    this.stats.ms += performance.now() - t0;
+    return m;
+  }
+  private show(b: Block, level: number) {
+    const m = this.mesh(b, level);
+    if (b.level === level) return;
+    const old = b.level >= 0 ? b.meshes[b.level] : undefined;
+    if (old) old.visible = false;
+    m.visible = b.on;
+    // keep the level just left (the camera may come back); drop the rest
+    b.meshes.forEach((x, l) => {
+      if (x && l !== level && l !== b.level) {
+        x.geometry.dispose();
+        this.group.remove(x);
+        b.meshes[l] = undefined;
+      }
+    });
+    b.level = level;
+  }
+  /** pixels of height error allowed on a 1080-line screen at 55 degrees (quality setting) */
+  static tolerance(quality: string) {
+    return QUALITY[quality as Quality].terrain.tolerance;
+  }
+  /** distance from a point to a block's box */
+  private static dist(b: Block, c: T.Vector3) {
+    const dx = Math.max(b.x0 - c.x, 0, c.x - b.x1), dz = Math.max(b.z0 - c.z, 0, c.z - b.z1);
+    const dy = Math.max(b.minY - c.y, 0, c.y - b.maxY);
+    return Math.hypot(dx, dy, dz);
+  }
+  private setOn(b: Block, on: boolean) {
+    if (b.on === on) return;
+    b.on = on;
+    const m = b.level >= 0 ? b.meshes[b.level] : undefined;
+    if (m) m.visible = on;
   }
   update(camera: T.Vector3, quality: string) {
-    const near = quality === "low" ? 120 : 220, mid = quality === "low" ? 300 : 480;
-    for (const b of this.blocks) {
-      const far = Math.hypot(b.center.x - camera.x, b.center.z - camera.z) - b.radius > mid;
-      if (far === b.far) continue;
-      b.far = b.mesh.visible = far;
-      for (const k of b.members) {
-        const c = this.chunks[k];
-        if (far) c.meshes.forEach((m) => (m.visible = false));
-        c.lod = far ? -2 : -1;
+    // half the screen-space error (the worst error of a level is about twice its nominal value)
+    const k = 0.5 * Terrain.tolerance(quality) * (2 * Math.tan((55 * Math.PI) / 360)) / 1080;
+    const level = (dist: number) => {
+      let l = 0;
+      while (l < LEVELS.length - 1 && LEVELS[l + 1] <= dist * k) l++;
+      return l;
+    };
+    const visit = (b: Block, d: number) => {
+      let want = level(d);
+      // hysteresis: a block only coarsens once it is 15% beyond the distance that allows it
+      if (b.level >= 0 && want > b.level) want = Math.max(b.level, level(d * 0.85));
+      b.want = want;
+      if (want === b.level) return;
+      // missing or far too coarse (a jump): make it now; otherwise in the queue, a few per frame
+      if (b.level < 0 || b.meshes[want] || want < b.level - 2) this.show(b, want);
+      else this.queue.add(b);
+    };
+    for (const g of this.groups) {
+      const d = Terrain.dist(g, camera);
+      // (a group switches to its four blocks a little before FAR_TIER, back to one mesh a little after)
+      const far = d > FAR_TIER * (g.on ? 0.9 : 1.0);
+      if (far) {
+        visit(g, d);
+        // the group's mesh is ready: it replaces the blocks
+        if (g.level >= 0) {
+          this.setOn(g, true);
+          for (const b of g.kids!) this.setOn(b, false);
+          continue;
+        }
       }
+      for (const b of g.kids!) {
+        visit(b, Terrain.dist(b, camera));
+        this.setOn(b, true);
+      }
+      this.setOn(g, false);
     }
-    for (const c of this.chunks) {
-      if (c.lod === -2) continue;
-      const d = Math.hypot(c.center.x - camera.x, c.center.z - camera.z);
-      const lod = c.meshes.length === 1 ? 0 : d < near ? 0 : d < mid ? 1 : 2;
-      if (lod === c.lod) continue;
-      c.meshes.forEach((m, i) => (m.visible = i === lod));
-      c.lod = lod;
+    const t0 = performance.now();
+    for (const b of this.queue) {
+      this.queue.delete(b);
+      if (b.want !== b.level) this.show(b, b.want);
+      if (performance.now() - t0 > 2) break;
     }
   }
 }

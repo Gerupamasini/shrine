@@ -7,7 +7,7 @@
     "dev": "vite --host 0.0.0.0",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview --host 0.0.0.0",
-    "test": "node --test tests/world.test.mjs tests/driving-physics.test.mjs",
+    "test": "node --test tests/world.test.mjs tests/driving-physics.test.mjs tests/terrain-lod.test.mjs",
     "assets": "python3 tools/assets/fetch.py && python3 tools/assets/process_textures.py && node tools/assets/process_models.mjs && tools/assets/process_audio.sh && npm run world && node tools/trees/build-trees.mjs && node tools/bake/bake-cards.mjs && python3 tools/bake/compose_atlases.py && python3 tools/assets/catalog.py",
     "test:browser": "playwright test",
     "build:pages": "tsc --noEmit && vite build --base=/shrine/",
