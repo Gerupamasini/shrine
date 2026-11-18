@@ -398,7 +398,7 @@ function loop(t: number) {
 }
 /** Offline measurement (tools/perf/profile.mjs): `frames` fixed 1/60 s steps of one motion, each
  *  timed by stage with the draw calls and triangles of the main and shadow passes. */
-type ProfileOpts = { stageSync?: boolean; frames: number; warm?: number; mode: "idle" | "turn" | "move" | "drive"; path?: number[][]; speed?: number; eye?: number; pitch?: number; turnRate?: number };
+type ProfileOpts = { renderEvery?: number; stageSync?: boolean; frames: number; warm?: number; mode: "idle" | "turn" | "move" | "drive"; path?: number[][]; speed?: number; eye?: number; pitch?: number; turnRate?: number };
 let profiler: Profiler | null = null;
 function runProfile(o: ProfileOpts) {
   if (!profiler) {
@@ -440,9 +440,15 @@ function runProfile(o: ProfileOpts) {
       const heading = vehicles.active ? new T.Euler().setFromQuaternion(vehicles.active.sim.rotation, "YXZ").y + Math.PI : yaw;
       villageMap?.update(walker.position.x, walker.position.z, heading, performance.now());
     });
-    renderer.info.reset();
-    post.draw(dt);
-    records.push(JSON.parse(JSON.stringify(p.end(t0))));
+    // (the CPU side runs every step; the GPU draws every `renderEvery`-th: SwiftShader takes seconds a frame)
+    const draw = i % (o.renderEvery ?? 1) === 0 || i < (o.warm ?? 0);
+    if (draw) {
+      renderer.info.reset();
+      post.draw(dt);
+    }
+    const rec = JSON.parse(JSON.stringify(p.end(t0))) as FrameRecord & { drawn?: boolean };
+    rec.drawn = draw;
+    records.push(rec);
     if (i === (o.warm ?? 0) - 1) p.systems.clear();
   }
   p.enabled = false;

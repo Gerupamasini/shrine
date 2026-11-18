@@ -1,14 +1,16 @@
 // Frame profile of fixed scenes and motions (see docs/PERFORMANCE_BUDGET.md).
 //   node tools/perf/profile.mjs <out.json> [scene,...]     (dev server on PORT, default 5173)
-// env: Q=standard|low|high, W/H viewport (1280x720), FRAMES=idle,turn,move (20,40,40), WARM (5),
+// env: Q=standard|low|high, W/H viewport (1280x720), FRAMES=idle,turn,move (4,48,120), WARM (2),
+//      EVERY=idle,turn,move: draw every n-th step (1,4,6; the CPU side runs every step),
 //      STAGESYNC=1: wait for the GPU after every stage (GPU time per pass) instead of only per frame
 //      MODES=idle,turn,move: which motions to run
 import { chromium } from "playwright";
 import fs from "node:fs";
 const [out, only] = process.argv.slice(2);
 const W = +(process.env.W || 1280), H = +(process.env.H || 720), Q = process.env.Q || "standard";
-const [FI, FT, FM] = (process.env.FRAMES || "20,40,40").split(",").map(Number);
-const WARM = +(process.env.WARM ?? 5);
+const [FI, FT, FM] = (process.env.FRAMES || "4,48,120").split(",").map(Number);
+const [EI, ET, EM] = (process.env.EVERY || "1,4,6").split(",").map(Number);
+const WARM = +(process.env.WARM ?? 2);
 const browser = await chromium.launch({
   executablePath: process.env.CHROMIUM_PATH || "/opt/pw-browsers/chromium",
   args: ["--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist", "--enable-precise-memory-info"],
@@ -79,9 +81,9 @@ for (const name of scenes) {
     }
   }, { spec: sc.path });
   result.scenes[name] = { setup };
-  const modes = sc.drive ? [["idle", FI], ["turn", FT], ["drive", FM]] : [["idle", FI], ["turn", FT], ["move", FM]];
+  const modes = [["idle", FI, EI], ["turn", FT, ET], [sc.drive ? "drive" : "move", FM, EM]];
   const want = (process.env.MODES || "idle,turn,move").split(",");
-  for (const [mode, frames] of modes.filter(([m]) => want.includes(m === "drive" ? "move" : m))) {
+  for (const [mode, frames, every] of modes.filter(([m]) => want.includes(m === "drive" ? "move" : m))) {
     if (sc.drive && mode !== "drive") await page.evaluate(() => window.__satoyama.seatDriver(20));
     else if (!sc.drive) await page.evaluate(({ sc }) => {
       const g = window.__satoyama, w = g.world;
@@ -94,10 +96,10 @@ for (const name of scenes) {
       }
     }, { sc });
     const t = Date.now();
-    const r = await page.evaluate(({ mode, frames, path, warm, stageSync }) =>
-      window.__satoyama.profile({ mode, frames, warm, path: path ?? undefined, speed: 7.8, pitch: -4, turnRate: 90, stageSync }), { mode, frames, path, warm: WARM, stageSync: process.env.STAGESYNC === "1" });
+    const r = await page.evaluate(({ mode, frames, every, path, warm, stageSync }) =>
+      window.__satoyama.profile({ mode, frames, warm, renderEvery: every, path: path ?? undefined, speed: 7.8, pitch: -4, turnRate: 90, stageSync }), { mode, frames, every, path, warm: WARM, stageSync: process.env.STAGESYNC === "1" });
     result.scenes[name][mode] = r;
-    const ms = r.records.map((x) => x.ms).sort((a, b) => a - b);
+    const ms = r.records.filter((x) => x.drawn).map((x) => x.ms).sort((a, b) => a - b);
     console.log(name, mode, `${Date.now() - t}ms`, "median", ms[Math.floor(ms.length / 2)].toFixed(0), "main", r.records[0].main.calls, r.records[0].main.tris, "shadow", r.records[0].shadow.calls, r.records[0].shadow.tris);
   }
 }
