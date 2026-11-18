@@ -15,7 +15,7 @@ test('rural lanes: low speed truck traversal and braking',async({page})=>{
  const report=spineSection?'artifacts/valley-after/spine-recheck.json':recheck?'artifacts/valley-after/driving-recheck.json':junctions?'artifacts/valley-after/junction-driving.json':valley?'artifacts/valley-after/driving.json':selected ? 'artifacts/terrain/driving-recheck.json' : 'artifacts/terrain/driving-routes.json';
  for(const id of ids.filter((id:string)=>!selected || id===selected)){
  const result=await page.evaluate(({id,spineSection})=>{
-  const g=(window as any).__satoyama, fleet=g.vehicleSystem,car=fleet.cars[0], sim=car.sim;
+  const g=(window as any).__satoyama, fleet=g.vehicleSystem,car=fleet.cars.find((c:any)=>c.sim.spec.id==='kei-truck')??fleet.cars[0], sim=car.sim;
   const road=(id:string)=>g.world.roads.find((r:any)=>r.id===id).points;
   let route=road(id.startsWith('turn-')?'farm-00':id);
   if(spineSection && id==='farm-00')route=route.filter((p:number[])=>p[2]>=210&&p[2]<=620);

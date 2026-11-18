@@ -103,16 +103,16 @@
  },
  "assets": {
   "road-ditch": {
-   "triangles": 40344,
+   "triangles": 49536,
    "min": [
     -84.092,
-    1.901,
+    0.158,
     -558.969
    ],
    "max": [
-    76.889,
-    9.942,
-    689.14
+    88.769,
+    9.956,
+    988.574
    ],
    "materials": [
     "concrete",
@@ -372,15 +372,15 @@
    ]
   },
   "stream-works": {
-   "triangles": 67104,
+   "triangles": 66672,
    "min": [
-    -674.384,
+    -732.434,
     -4.497,
-    -428.619
+    -426.721
    ],
    "max": [
-    332.036,
-    37.353,
+    331.973,
+    40.789,
     558.2
    ],
    "materials": [
@@ -1510,6 +1510,11 @@
     "file": "kei-truck-lod1.glb",
     "triangles": 52172,
     "distance": 45
+   },
+   "lod2": {
+    "file": "kei-truck-lod2.glb",
+    "triangles": 1550,
+    "distance": 35
    }
   },
   "bus-stop": {
@@ -1603,16 +1608,16 @@
    ]
   },
   "river-works": {
-   "triangles": 16590,
+   "triangles": 17306,
    "min": [
     -189.279,
-    -5.352,
+    -7.116,
     -289.616
    ],
    "max": [
-    -103.064,
+    -81.429,
     2.44,
-    595.516
+    874.585
    ],
    "materials": [
     "revet_block_wet",
@@ -2187,16 +2192,16 @@
    ]
   },
   "road-markings": {
-   "triangles": 15744,
+   "triangles": 19380,
    "min": [
     -85.014,
-    2.391,
+    0.736,
     -560.689
    ],
    "max": [
-    75.629,
+    87.498,
     9.902,
-    729.17
+    1028.759
    ],
    "materials": [
     "road_paint"
@@ -2247,6 +2252,11 @@
     "file": "kei-hatch-lod1.glb",
     "triangles": 35295,
     "distance": 45
+   },
+   "lod2": {
+    "file": "kei-hatch-lod2.glb",
+    "triangles": 1047,
+    "distance": 35
    }
   },
   "crown-sedan": {
@@ -2295,6 +2305,11 @@
     "file": "crown-sedan-lod1.glb",
     "triangles": 39118,
     "distance": 45
+   },
+   "lod2": {
+    "file": "crown-sedan-lod2.glb",
+    "triangles": 1159,
+    "distance": 35
    }
   },
   "light-truck": {
@@ -2341,6 +2356,11 @@
     "file": "light-truck-lod1.glb",
     "triangles": 60027,
     "distance": 45
+   },
+   "lod2": {
+    "file": "light-truck-lod2.glb",
+    "triangles": 1744,
+    "distance": 35
    }
   },
   "utility-wagon": {
@@ -2388,6 +2408,11 @@
     "file": "utility-wagon-lod1.glb",
     "triangles": 36625,
     "distance": 45
+   },
+   "lod2": {
+    "file": "utility-wagon-lod2.glb",
+    "triangles": 1087,
+    "distance": 35
    }
   }
  }

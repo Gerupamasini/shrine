@@ -41,9 +41,22 @@ function fail(e: unknown) {
   $("error").textContent = "風景を開始できませんでした。" + (e instanceof Error ? e.message : String(e));
   $("loading").textContent = "読み込みに失敗しました";
 }
+/** Adaptive resolution: the render scale falls when the frame rate stays under ~45 fps and climbs
+ *  back when there is room (0.6-1 of the quality setting's pixel ratio; ?fixedres turns it off). */
+let resScale = 1, slowFor = 0, fastFor = 0;
+const ADAPT = !params.has("fixedres") && !params.has("capture");
 function pixelRatio() {
   const b = { low: 0.75, standard: 1, high: 1.5 }[quality];
-  return Math.min(devicePixelRatio, b);
+  return Math.min(devicePixelRatio, b) * resScale;
+}
+function adaptResolution(fpsNow: number) {
+  if (!ADAPT || !started || paused()) return;
+  slowFor = fpsNow < 45 ? slowFor + 1 : 0;
+  fastFor = fpsNow > 57 ? fastFor + 1 : 0;
+  const before = resScale;
+  if (slowFor >= 2 && resScale > 0.6) (resScale = Math.max(0.6, resScale * 0.87)), (slowFor = 0);
+  else if (fastFor >= 6 && resScale < 1) (resScale = Math.min(1, resScale * 1.07)), (fastFor = 0);
+  if (resScale !== before) resize();
 }
 function resize() {
   if (!renderer) return;
@@ -151,14 +164,8 @@ addEventListener("keydown", (e) => {
   keys.add(e.code);
   if (e.repeat) return;
   if (ready && started && !paused() && !walker.free) {
-    if (e.code === "KeyE") {
-      if (vehicles.active) {
-        const q = vehicles.active.sim.rotation;
-        if (vehicles.exit()) { yaw = new T.Euler().setFromQuaternion(q, "YXZ").y + Math.PI; pitch = 0; }
-      } else vehicles.enter();
-      keys.clear(); updateCamera(0); updateVehicleHud();
-    }
-    if (e.code === "KeyV" && vehicles.active) { vehicles.toggleView(); updateCamera(0); updateVehicleHud(); }
+    if (e.code === "KeyE") enterOrExit();
+    if (e.code === "KeyV" && vehicles.active) toggleDriveView();
     if (e.code === "KeyR" && vehicles.active) { vehicles.reset(); keys.clear(); updateCamera(0); }
   }
   if (e.code === "KeyF" && ready) setFree(!walker.free);
@@ -327,23 +334,50 @@ function frame(dt: number, wall: number) {
   if (measure > 0.7) {
     fps = Math.round(frames / measure);
     frames = measure = 0;
+    adaptResolution(fps);
     const [n, c] = placeName();
     $("place-name").textContent = n;
     $("place-caption").textContent = c;
     const info = renderer.info.render;
-    $("stats").textContent = `${fps} fps · ${quality}\n${info.triangles.toLocaleString()} tris / ${info.calls} calls\n${camera.position
+    $("stats").textContent = `${fps} fps · ${quality}${resScale < 1 ? ` ×${resScale.toFixed(2)}` : ""}\n${info.triangles.toLocaleString()} tris / ${info.calls} calls\n${camera.position
       .toArray()
       .map((v) => v.toFixed(1))
       .join(", ")}\n${walker.free ? "FREE" : walker.grounded ? "GROUNDED" : "AIR"} · ${audio.status}`;
   }
 }
+function enterOrExit() {
+  if (vehicles.active) {
+    const q = vehicles.active.sim.rotation;
+    if (vehicles.exit()) { yaw = new T.Euler().setFromQuaternion(q, "YXZ").y + Math.PI; pitch = 0; }
+  } else vehicles.enter();
+  keys.clear(); updateCamera(0); updateVehicleHud();
+}
+function toggleDriveView() { vehicles.toggleView(); updateCamera(0); updateVehicleHud(); }
+/** A gamepad (standard mapping) while driving: left stick steers, right trigger drives, left
+ *  trigger brakes and reverses, B is the brake; Y gets in and out, X switches the view. */
+const padWas: boolean[] = [];
+function gamepad() {
+  const pad = [...(navigator.getGamepads?.() ?? [])].find((p) => p && p.connected && p.mapping === "standard");
+  if (!pad) return null;
+  const pressed = (i: number) => { const now = !!pad.buttons[i]?.pressed, edge = now && !padWas[i]; padWas[i] = now; return edge; };
+  if (ready && started && !paused() && !walker.free) {
+    if (pressed(3)) enterOrExit();
+    if (pressed(2) && vehicles.active) toggleDriveView();
+  }
+  const x = pad.axes[0] ?? 0, dead = 0.14;
+  const steer = Math.abs(x) < dead ? 0 : Math.sign(x) * ((Math.abs(x) - dead) / (1 - dead)) ** 1.6;
+  return { steer, throttle: (pad.buttons[7]?.value ?? 0) - (pad.buttons[6]?.value ?? 0), brake: !!pad.buttons[1]?.pressed };
+}
 function simulationStep(dt: number) {
+  const pad = gamepad();
   if (vehicles.active) {
     if (!started || paused()) return;
+    const kThrottle = (keys.has("KeyW") || keys.has("ArrowUp") ? 1 : 0) - (keys.has("KeyS") || keys.has("ArrowDown") ? 1 : 0);
+    const kSteer = (keys.has("KeyD") || keys.has("ArrowRight") ? 1 : 0) - (keys.has("KeyA") || keys.has("ArrowLeft") ? 1 : 0);
     vehicles.step(dt, {
-      throttle: (keys.has("KeyW") || keys.has("ArrowUp") ? 1 : 0) - (keys.has("KeyS") || keys.has("ArrowDown") ? 1 : 0),
-      steer: (keys.has("KeyD") || keys.has("ArrowRight") ? 1 : 0) - (keys.has("KeyA") || keys.has("ArrowLeft") ? 1 : 0),
-      brake: keys.has("Space"),
+      throttle: kThrottle || (pad && Math.abs(pad.throttle) > 0.05 ? pad.throttle : 0),
+      steer: kSteer || (pad?.steer ?? 0),
+      brake: keys.has("Space") || !!pad?.brake,
     });
   } else walker.move(started && !paused() ? intent() : new T.Vector3(), dt, keys.has("ShiftLeft") || keys.has("ShiftRight"));
 }

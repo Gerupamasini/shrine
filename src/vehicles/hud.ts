@@ -36,7 +36,7 @@ export class DrivingHud {
       <circle cx="36" cy="190" r="7" fill="#131b1d" stroke="#344247" stroke-width="2"/>
     </svg>
     <span id="vehicle-speed" class="visually-hidden">0</span>
-    <div class="dial-controls"><span>V <span id="vehicle-view">三人称</span></span><span>E 降車</span></div>
+    <div class="dial-controls"><span>V <span id="vehicle-view">三人称</span></span><span>E 降車</span><span>Space ブレーキ</span><span>R 元の場所へ</span></div>
     <output id="vehicle-notice" aria-live="polite"></output>`;
     this.needle = root.querySelector("#vehicle-needle")!;
     this.odometer = root.querySelector("#vehicle-odometer")!;

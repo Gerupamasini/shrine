@@ -365,22 +365,64 @@ export class GrassField implements System {
 
 /** Distant rice: a canopy sheet at paddy level + 0.85 m, shaded like a closed rice canopy. */
 export class RiceCanopy implements System {
-  update() {}
-  mesh: T.Mesh;
-  shells: T.Mesh;
+  meshes: T.Mesh[] = [];
+  shells: { mesh: T.Mesh; center: T.Vector3; radius: number }[] = [];
   uniforms: Record<string, T.IUniform>;
+  /** the shells are fine leaf layers: past 160 m their fragments are discarded anyway */
+  update(_dt: number, _t: number, cam: T.PerspectiveCamera) {
+    for (const s of this.shells) s.mesh.visible = s.center.distanceTo(cam.position) - s.radius < 170;
+  }
   constructor(land: Landscape, wt: WorldTextures) {
-    const data = land.world.data;
-    const fields = data.fields.filter((f) => f.type === "rice");
-    let x0 = 1e9, z0 = 1e9, x1 = -1e9, z1 = -1e9;
-    for (const f of fields) (x0 = Math.min(x0, f.bounds[0])), (z0 = Math.min(z0, f.bounds[1])), (x1 = Math.max(x1, f.bounds[2])), (z1 = Math.max(z1, f.bounds[3]));
-    const step = land.world.height.spacing;
-    const grid = (k: number) => {
-      const nx = Math.ceil((x1 - x0) / (step * k)) + 1, nz = Math.ceil((z1 - z0) / (step * k)) + 1;
-      const g = new T.PlaneGeometry(nx * step * k, nz * step * k, nx, nz);
-      g.rotateX(-Math.PI / 2);
-      g.translate((x0 + x1) / 2, 0, (z0 + z1) / 2);
-      return g;
+    const step = land.world.height.spacing, n = land.world.height.n, half = land.world.data.extent / 2;
+    const lv = wt.paddy.image.data as Float32Array;
+    const level = (i: number, j: number) => lv[Math.min(Math.max(j, 0), n - 1) * n + Math.min(Math.max(i, 0), n - 1)];
+    // The sheets cover the rice only (the paddy level runs a little beyond each field), in tiles of
+    // about 110 m that the camera can cull: one grid over every field's bounding box was 3 million
+    // triangles a frame, most of them over woods, roads and houses, discarded pixel by pixel.
+    const TILE = 96;
+    const tiles = (k: number) => {
+      const out: T.BufferGeometry[] = [];
+      for (let tj = 0; tj < n - 1; tj += TILE)
+        for (let ti = 0; ti < n - 1; ti += TILE) {
+          const pos: number[] = [], idx: number[] = [], vid = new Map<number, number>();
+          let lo = Infinity, hi = -Infinity;
+          const vert = (i: number, j: number) => {
+            const key = j * n + i;
+            let v = vid.get(key);
+            if (v === undefined) {
+              v = pos.length / 3;
+              vid.set(key, v);
+              const y = level(i, j);
+              pos.push(i * step - half, y > -15 ? y : 0, j * step - half);
+            }
+            return v;
+          };
+          for (let j = tj; j < Math.min(tj + TILE, n - 1); j += k)
+            for (let i = ti; i < Math.min(ti + TILE, n - 1); i += k) {
+              const i1 = Math.min(i + k, n - 1), j1 = Math.min(j + k, n - 1);
+              const ls = [level(i, j), level(i1, j), level(i, j1), level(i1, j1)].filter((y) => y > -15);
+              if (!ls.length) continue;
+              for (const y of ls) (lo = Math.min(lo, y)), (hi = Math.max(hi, y));
+              const a = vert(i, j), b = vert(i1, j), c = vert(i, j1), d = vert(i1, j1);
+              idx.push(a, c, b, b, c, d);
+            }
+          if (!idx.length) continue;
+          // (vertices just outside a field take a neighbour's level in the shader: keep them in range)
+          for (let q = 1; q < pos.length; q += 3) pos[q] = Math.min(Math.max(pos[q], lo), hi + 1);
+          const g = new T.BufferGeometry();
+          g.setAttribute("position", new T.Float32BufferAttribute(pos, 3));
+          const nrm = new Float32Array(pos.length);
+          for (let q = 1; q < nrm.length; q += 3) nrm[q] = 1;
+          g.setAttribute("normal", new T.BufferAttribute(nrm, 3));
+          g.setAttribute("uv", new T.BufferAttribute(new Float32Array((pos.length / 3) * 2), 2));
+          g.setIndex(idx);
+          g.computeBoundingBox();
+          g.boundingBox!.max.y += 1.0;
+          g.computeBoundingSphere();
+          g.boundingSphere!.radius += 1.0;
+          out.push(g);
+        }
+      return out;
     };
     // near the camera the 3D rice hills (photo clumps, full density within ~10 m) are the rice; the
     // sheet, its shells and the edge curtain take over beyond them
@@ -474,21 +516,29 @@ export class RiceCanopy implements System {
       });
       return mat;
     };
-    this.mesh = new T.Mesh(grid(1), make(false));
-    this.mesh.receiveShadow = true;
-    this.mesh.frustumCulled = false;
-    land.scene.add(this.mesh);
-    // three upper shells on a coarser grid, as instances of one geometry
-    const base = grid(2);
-    const sg = new T.InstancedBufferGeometry();
-    for (const k of ["position", "normal", "uv"]) sg.setAttribute(k, base.getAttribute(k));
-    sg.setIndex(base.getIndex());
-    sg.setAttribute("aShell", new T.InstancedBufferAttribute(new Float32Array([1, 2, 3]), 1));
-    sg.instanceCount = 3;
-    this.shells = new T.Mesh(sg, make(true));
-    this.shells.receiveShadow = true;
-    this.shells.frustumCulled = false;
-    land.scene.add(this.shells);
+    const baseMat = make(false), shellMat = make(true);
+    for (const g of tiles(1)) {
+      const m = new T.Mesh(g, baseMat);
+      m.receiveShadow = true;
+      m.name = "rice-canopy";
+      this.meshes.push(m);
+      land.scene.add(m);
+    }
+    // three upper shells on a coarser grid, as instances of one geometry per tile
+    for (const base of tiles(2)) {
+      const sg = new T.InstancedBufferGeometry();
+      for (const k of ["position", "normal", "uv"]) sg.setAttribute(k, base.getAttribute(k));
+      sg.setIndex(base.getIndex());
+      sg.setAttribute("aShell", new T.InstancedBufferAttribute(new Float32Array([1, 2, 3]), 1));
+      sg.instanceCount = 3;
+      sg.boundingBox = base.boundingBox;
+      sg.boundingSphere = base.boundingSphere;
+      const m = new T.Mesh(sg, shellMat);
+      m.receiveShadow = true;
+      m.name = "rice-shells";
+      this.shells.push({ mesh: m, center: base.boundingSphere!.center.clone(), radius: base.boundingSphere!.radius });
+      land.scene.add(m);
+    }
     this.curtain = this.buildCurtain(land, wt);
     if (this.curtain) land.scene.add(this.curtain);
   }

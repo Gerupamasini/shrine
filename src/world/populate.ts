@@ -35,6 +35,7 @@ export async function populate(land: Landscape, progress: (p: number, label: str
     under.load(land),
   ]);
   land.add(veg);
+  land.add(under);                  // (keeps the shrub and crop card tiles near the camera)
   // forest on the ranges beyond the map: billboards out to ~2.6 km (1.8 km at low quality)
   {
     const low = land.quality === "low";
@@ -53,12 +54,13 @@ export async function populate(land: Landscape, progress: (p: number, label: str
     if (o instanceof T.Mesh) geos.push(o.geometry.clone().applyMatrix4(o.matrixWorld));
   });
   geos.forEach((geometry, i) =>
-    land.add(new GrassField(land, wt, { rice: false, spacing: 0.85, radius: 20, blades: 0, seed: i * 7.3, clump: { geometry, map, height: 0.3, scale: 2.2 } })),
+    land.add(new GrassField(land, wt, { rice: false, spacing: 0.85, radius: 16, blades: 0, seed: i * 7.3, clump: { geometry, map, height: 0.3, scale: 2.2 } })),
   );
-  land.add(new GrassField(land, wt, { rice: false, spacing: 0.4, radius: 42, inner: 14, blades: 4 }));
+  land.add(new GrassField(land, wt, { rice: false, spacing: 0.4, radius: 42, inner: 11, blades: 4 }));
   // rice hills: the photographed grass clump scaled to rice height (rice is a grass), in rows
-  // (hills 30 cm apart, about a metre tall by early August, the canopy closed between the rows)
-  land.add(new GrassField(land, wt, { rice: true, spacing: 0.3, radius: 15, blades: 0, seed: 3.1, clump: { geometry: geos[0], map, height: 0.32, scale: 3.25 } }));
+  // (hills 30 cm apart, about a metre tall by early August, the canopy closed between the rows; only
+  // as far as the canopy sheet fades in, about 10 m - beyond it they were hidden under the sheet)
+  land.add(new GrassField(land, wt, { rice: true, spacing: 0.3, radius: 11.5, blades: 0, seed: 3.1, clump: { geometry: geos[0], map, height: 0.32, scale: 3.25 } }));
   land.add(new RiceCanopy(land, wt));
   land.add(new River(land, wt));
   land.add(smoke);

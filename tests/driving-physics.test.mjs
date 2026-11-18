@@ -74,3 +74,27 @@ test('surface query uses road width and paved priority at shared junctions',()=>
  const data={roads:[{surface:'gravel',width:4,points:[[0,0,0],[0,0,20]]},{surface:'asphalt',width:6,points:[[-10,0,10],[10,0,10]]}]};
  assert.equal(surfaceAt(data,0,10),'asphalt');assert.equal(surfaceAt(data,0,3),'gravel');assert.equal(surfaceAt(data,5,3),'grass');
 });
+test('a car left on its side is set back on its wheels',()=>{
+ const {world,sim,step}=fixture();
+ try{
+  const p=sim.body.translation();
+  sim.body.setTranslation({x:p.x,y:p.y+.6,z:p.z},true);
+  sim.body.setRotation({x:0,y:0,z:Math.sin(Math.PI/4),w:Math.cos(Math.PI/4)},true);
+  step(180);
+  const q=sim.rotation, up=sim.position.clone().set(0,1,0).applyQuaternion(q);
+  assert.ok(up.y>.9,`upright ${up.y}`);
+ }finally{world.free();}
+});
+test('a held steering key at speed turns the car without spinning it',()=>{
+ const {world,sim,step}=fixture();
+ try{
+  step(600,{throttle:1,steer:0,brake:false});
+  assert.ok(sim.speed>12,`speed ${sim.speed}`);
+  let maxYaw=0;
+  for(let i=0;i<120;i++){step(1,{throttle:1,steer:1,brake:false});maxYaw=Math.max(maxYaw,Math.abs(sim.body.angvel().y));}
+  assert.ok(maxYaw<1.0,`yaw rate ${maxYaw}`);
+  assert.ok(sim.speed>8,`kept its speed ${sim.speed}`);
+  const up=sim.position.clone().set(0,1,0).applyQuaternion(sim.rotation);
+  assert.ok(up.y>.95,`stayed upright ${up.y}`);
+ }finally{world.free();}
+});

@@ -680,7 +680,7 @@ body:not(.exploring) #minimap-wrap,
 .dial-odometer { fill: #183d35; font: 18px 'Courier New', monospace; letter-spacing: .2px; text-anchor: end; }
 .dial-trip { fill: #254b40; font: 13px 'Courier New', monospace; text-anchor: end; }
 .dial-trip-label { fill: #34554b; font: 6px Arial, sans-serif; }
-.dial-controls { display: flex; gap: 16px; justify-content: center; margin-top: -9px; font-size: 10px; letter-spacing: .08em; color: #e1e5daaf; text-shadow: 0 1px 3px #000; }
+.dial-controls { display: flex; flex-wrap: wrap; gap: 3px 12px; justify-content: center; margin-top: -9px; font-size: 10px; letter-spacing: .08em; color: #e1e5daaf; text-shadow: 0 1px 3px #000; }
 #vehicle-notice { position: absolute; right: 0; bottom: 100%; width: 280px; padding-bottom: 8px; text-align: right; color: #f3e2b8; font-size: 12px; text-shadow: 0 1px 4px #000; }
 #vehicle-notice:empty { display: none; }
 .vehicle-destination { width: 100%; padding: 9px; margin-bottom: 10px; }

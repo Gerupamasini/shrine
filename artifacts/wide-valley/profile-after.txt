@@ -1,0 +1,30 @@
+foot: main 544 calls 421万 | shadow 687 calls 466万 | frame 22ms
+  main tris: props 65万/70, grass-field 64万/1, grass-clumps 62万/3, architecture 42万/68, far-terrain-stands 36万/1, far-forest 26万/1, sugi_lod1 25万/8, impostor 24万/1, sugi_lod0 17万/8, terrain-v4 13万/209
+  main calls: terrain-v4 209, props 70, architecture 68, terrain-far 33, onBeforeCompile(){} 30, understory 19, sugi_lod0 8, sugi_lod1 8
+  shadow tris: architecture 170万/124, sugi_lod1 74万/24, props 62万/37, sugi_lod0 52万/24, terrain-shadow 30万/37, onBeforeCompile(){} 18万/140, hinoki_lod1 18万/24, hinoki_lod0 17万/24, broadleaf_lod1 14万/24, understory 3万/25
+  shadow calls: onBeforeCompile(){} 140, architecture 124, props 37, terrain-shadow 37, understory 25, sugi_lod0 24, sugi_lod1 24, hinoki_lod0 24
+lookout: main 749 calls 487万 | shadow 705 calls 470万 | frame 17ms
+  main tris: props 70万/70, grass-field 64万/1, grass-clumps 62万/3, architecture 43万/72, far-terrain-stands 36万/1, terrain-v4 35万/219, rice-canopy 32万/47, far-forest 26万/1, impostor 24万/1, sugi_lod0 23万/8
+  main calls: terrain-v4 219, onBeforeCompile(){} 134, architecture 72, props 70, terrain-far 49, rice-canopy 47, understory 18, (t,n)=>{Object.assign(t.uniforms,Yt),e.call(u,t,n)} 11
+  shadow tris: architecture 167万/127, sugi_lod0 68万/24, props 60万/37, terrain-shadow 42万/51, broadleaf_lod0 37万/24, onBeforeCompile(){} 23万/161, sugi_lod1 22万/24, hinoki_lod0 21万/24, keyaki_lod0 9万/24, broadleaf_lod1 7万/24
+  shadow calls: onBeforeCompile(){} 161, architecture 127, terrain-shadow 51, props 37, understory 26, sugi_lod0 24, sugi_lod1 24, hinoki_lod0 24
+paddies: main 613 calls 425万 | shadow 665 calls 287万 | frame 19ms
+  main tris: rice-field 83万/1, grass-field 64万/1, grass-clumps 62万/3, architecture 40万/59, far-terrain-stands 36万/1, far-forest 26万/1, impostor 24万/1, terrain-v4 22万/212, rice-canopy 16万/23, props 10万/70
+  main calls: terrain-v4 212, onBeforeCompile(){} 77, props 70, architecture 59, terrain-far 31, rice-canopy 23, sugi_lod1 8, sugi_lod0 8
+  shadow tris: architecture 160万/87, terrain-shadow 39万/48, props 34万/37, onBeforeCompile(){} 23万/152, sugi_lod1 13万/24, broadleaf_lod1 5万/24, crop-3 4万/8, understory 2万/21, bamboo_lod1 2万/24, hinoki_lod1 2万/24
+  shadow calls: onBeforeCompile(){} 152, architecture 87, terrain-shadow 48, props 37, sugi_lod0 24, sugi_lod1 24, hinoki_lod0 24, hinoki_lod1 24
+river: main 621 calls 555万 | shadow 708 calls 382万 | frame 16ms
+  main tris: props 118万/70, rice-field 83万/1, grass-field 64万/1, grass-clumps 62万/3, architecture 40万/69, far-terrain-stands 36万/1, far-forest 26万/1, impostor 24万/1, terrain-v4 21万/211, rice-canopy 13万/25
+  main calls: terrain-v4 211, props 70, architecture 69, onBeforeCompile(){} 62, terrain-far 48, rice-canopy 25, understory 14, sugi_lod0 8
+  shadow tris: architecture 174万/130, terrain-shadow 45万/55, props 38万/37, sugi_lod1 29万/24, onBeforeCompile(){} 28万/165, sugi_lod0 18万/24, broadleaf_lod0 16万/24, broadleaf_lod1 13万/24, hinoki_lod1 7万/24, keyaki_lod0 2万/24
+  shadow calls: onBeforeCompile(){} 165, architecture 130, terrain-shadow 55, props 37, sugi_lod0 24, sugi_lod1 24, hinoki_lod0 24, hinoki_lod1 24
+village: main 649 calls 442万 | shadow 693 calls 313万 | frame 17ms
+  main tris: rice-field 83万/1, grass-field 64万/1, grass-clumps 62万/3, architecture 42万/69, far-terrain-stands 36万/1, far-forest 26万/1, terrain-v4 25万/219, impostor 24万/1, sugi_lod1 15万/8, props 15万/70
+  main calls: terrain-v4 219, onBeforeCompile(){} 73, props 70, architecture 69, terrain-far 42, rice-canopy 21, understory 14, sugi_lod0 8
+  shadow tris: architecture 176万/126, sugi_lod1 45万/24, terrain-shadow 39万/48, onBeforeCompile(){} 21万/154, props 14万/37, hinoki_lod1 8万/24, sugi_lod0 3万/24, understory 1万/18, hinoki_lod0 1万/24, crop-1 1万/5
+  shadow calls: onBeforeCompile(){} 154, architecture 126, terrain-shadow 48, props 37, sugi_lod0 24, sugi_lod1 24, hinoki_lod0 24, hinoki_lod1 24
+sawa: main 581 calls 445万 | shadow 624 calls 317万 | frame 18ms
+  main tris: rice-field 83万/1, grass-field 64万/1, grass-clumps 62万/3, architecture 36万/49, far-terrain-stands 36万/1, far-forest 26万/1, impostor 24万/1, sugi_lod1 21万/8, props 16万/70, terrain-v4 14万/215
+  main calls: terrain-v4 215, props 70, onBeforeCompile(){} 55, architecture 49, terrain-far 29, understory 18, sugi_lod0 8, sugi_lod1 8
+  shadow tris: architecture 100万/61, sugi_lod1 63万/24, terrain-shadow 30万/37, props 26万/37, onBeforeCompile(){} 20万/140, bamboo_lod0 17万/24, hinoki_lod1 16万/24, broadleaf_lod0 14万/24, sugi_lod0 13万/24, broadleaf_lod1 4万/24
+  shadow calls: onBeforeCompile(){} 140, architecture 61, props 37, terrain-shadow 37, understory 28, sugi_lod0 24, sugi_lod1 24, hinoki_lod0 24

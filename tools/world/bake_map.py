@@ -28,7 +28,7 @@ veg = json.loads((W_ / "vegetation.json").read_text())
 EXT = scene["extent"]
 NG = scene["resolution"]
 CELL = EXT / (NG - 1)
-R = 2560                     # map pixels
+R = int(round(2560 * EXT / 1500 / 64)) * 64   # map pixels (1.7 px a metre)
 S = R / EXT                  # px per metre
 SS = 2                       # supersampling of the vector layer
 enc = scene["heightEncoding"]
@@ -457,7 +457,7 @@ out = out.convert("RGB")
 out.save(W_ / "map.webp", quality=88, method=6)
 
 # ---- names
-NAMES = {"kaminosawa": "奥沢", "nakazato": "中里", "miyashita": "宮下", "shimojuku": "下宿", "minamizawa": "南沢", "kawamuko": "川向"}
+NAMES = {"kaminosawa": "奥沢", "nakazato": "中里", "miyashita": "宮下", "shimojuku": "下宿", "minamizawa": "南沢", "shimohara": "下原", "kawamuko": "川向"}
 _machi = next((hm for hm in scene.get("hamlets", []) if hm["name"] == "machi"), None)
 groups = {}
 for o in scene["objects"]:
