@@ -341,7 +341,9 @@ const FRAG_ROOM = /* glsl */ `
     vec2 f = vec2( lx, p.z );
     vec2 m = fract( f / vec2( 0.91, 1.82 ) );
     float heri = step( m.x, 0.03 ) + step( 0.97, m.x ) + step( m.y, 0.015 ) + step( 0.985, m.y );
-    vec3 tatami = mix( vec3( 0.48, 0.42, 0.24 ), vec3( 0.42, 0.44, 0.26 ), rnd ) * ( 0.92 + 0.08 * sin( f.y * 600.0 ) );
+    // the rush weave (1 cm) fades out before it is smaller than a pixel
+    float weave = 1.0 - smoothstep( 0.003, 0.012, fwidth( f.y ) );
+    vec3 tatami = mix( vec3( 0.48, 0.42, 0.24 ), vec3( 0.42, 0.44, 0.26 ), rnd ) * ( 0.96 + 0.06 * weave * sin( f.y * 600.0 ) );
     alb = mix( tatami, vec3( 0.05, 0.05, 0.05 ), clamp( heri, 0.0, 1.0 ) );
     if ( type < 0.5 && p.z < 0.9 ) alb = vec3( 0.34, 0.21, 0.12 ) * ( 0.85 + 0.25 * fcHash( vec2( floor( p.z / 0.11 ), 3.0 ) ) );
     alb = mix( alb, vec3( 0.11, 0.1, 0.09 ) * ( 0.8 + 0.4 * fcNoise( f * 3.0 ) ), doma );
