@@ -67,6 +67,20 @@ export class Profiler {
     const k = (m.customProgramCacheKey?.() ?? "").split("|").pop() ?? "";
     return k && !k.includes("(") && !k.includes("{") ? k : m.type;
   }
+  /** Time each stage of the frame through Post's hook (the main pass's time excludes the shadow maps). */
+  wrapPost(post: { time: (stage: never, fn: () => void) => void }) {
+    const p = post as unknown as { time: (stage: Stage, fn: () => void) => void };
+    const plain = p.time;
+    p.time = (stage, fn) => {
+      if (!this.enabled) return plain(stage, fn);
+      this.stageWait();
+      const t = performance.now();
+      const s0 = this.frame.stages.shadow ?? 0;
+      fn();
+      this.stageWait();
+      this.add(stage, performance.now() - t - ((this.frame.stages.shadow ?? 0) - s0));
+    };
+  }
   /** Time each pass of the post chain (the render pass's time excludes the shadow maps). */
   wrapComposer(composer: EffectComposer, names: Stage[]) {
     composer.passes.forEach((p, i) => {

@@ -4,7 +4,7 @@ import "./style.css";
 import * as T from "three";
 import { installAtmosphere } from "./engine/atmosphere";
 import { Post } from "./engine/post";
-import type { Quality } from "./engine/lighting";
+import { QUALITY, type Quality } from "./engine/quality";
 import { loadWorld } from "./world/data";
 import { Landscape } from "./world/landscape";
 import { populate } from "./world/populate";
@@ -47,7 +47,7 @@ function fail(e: unknown) {
 let resScale = 1, slowFor = 0, fastFor = 0;
 const ADAPT = !params.has("fixedres") && !params.has("capture");
 function pixelRatio() {
-  const b = { low: 0.75, standard: 1, high: 1.5 }[quality];
+  const b = QUALITY[quality].pixelRatio;
   return Math.min(devicePixelRatio, b) * resScale;
 }
 function adaptResolution(fpsNow: number) {
@@ -403,7 +403,7 @@ let profiler: Profiler | null = null;
 function runProfile(o: ProfileOpts) {
   if (!profiler) {
     profiler = new Profiler(renderer);
-    profiler.wrapComposer(post.composer, ["main", "ssao", "rays", "bloom", "output", "finish"]);
+    profiler.wrapPost(post);
   }
   const p = profiler, dt = 1 / 60;
   p.stageSync = o.stageSync ?? true;
@@ -427,6 +427,7 @@ function runProfile(o: ProfileOpts) {
   };
   const records: FrameRecord[] = [];
   const total = (o.warm ?? 0) + o.frames;
+  let farDraws = 0;
   p.systems.clear();
   for (let i = 0; i < total; i++) {
     p.enabled = true;
@@ -449,16 +450,19 @@ function runProfile(o: ProfileOpts) {
     const rec = JSON.parse(JSON.stringify(p.end(t0))) as FrameRecord & { drawn?: boolean };
     rec.drawn = draw;
     records.push(rec);
-    if (i === (o.warm ?? 0) - 1) p.systems.clear();
+    if (i === (o.warm ?? 0) - 1) (p.systems.clear(), (farDraws = land.lighting.farDraws));
   }
+  farDraws = land.lighting.farDraws - farDraws;
   p.enabled = false;
   const n = o.frames, systems: Record<string, number[]> = {};
   for (const [k, v] of p.systems) systems[k] = v.map((x) => Math.round(x / n));
   const targets = [
     ...land.lighting.csm.lights.map((l) => l.shadow.map).filter(Boolean),
-    post.composer.renderTarget1, post.composer.renderTarget2, post.ssao.aoRT, post.ssao.blurRT,
+    post.target, post.aoRT, post.blurRT, post.raysRT, ...post.bloomDown, ...post.bloomUp,
   ] as T.WebGLRenderTarget[];
-  return { warm: records.slice(0, o.warm ?? 0), records: records.slice(o.warm ?? 0), systems, memory: p.memory(land.scene, targets), position: camera.position.toArray(), vehicle: vehicles.state.speed };
+  return { warm: records.slice(0, o.warm ?? 0), records: records.slice(o.warm ?? 0), systems, memory: p.memory(land.scene, targets), position: camera.position.toArray(), vehicle: vehicles.state.speed,
+    /** far shadow cascades redrawn during the recorded frames; terrain blocks made so far */
+    farDraws, terrain: { ...land.terrain.stats } };
 }
 async function boot() {
   renderer = new T.WebGLRenderer({ canvas, antialias: false, powerPreference: "high-performance", stencil: false });
