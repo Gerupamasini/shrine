@@ -5,7 +5,7 @@ import { addHook } from "../engine/hooks";
 import { darkenFringe } from "../engine/library";
 import type { Landscape, System } from "./landscape";
 import type { InstanceRow } from "./data";
-import type { Quality } from "../engine/lighting";
+import { FAR_CASTER, type Quality } from "../engine/lighting";
 
 export const SPECIES = ["sugi", "hinoki", "akamatsu", "broadleaf", "keyaki", "bamboo"] as const;
 const VARIANTS = 4;
@@ -52,7 +52,10 @@ export function windHook(m: T.Material, amount = 1) {
 }
 
 type Part = { geometry: T.BufferGeometry; material: T.Material; mesh?: T.InstancedMesh };
-type Variant = { species: string; v: number; rows: InstanceRow[]; lods: Part[][]; cell: number; size: [number, number]; height: number };
+type Variant = { species: string; v: number; rows: InstanceRow[]; lods: Part[][]; cell: number; size: [number, number]; height: number; grid?: Map<number, InstanceRow[]> };
+
+/** side of the cells the trees are bucketed in, so an update visits only those near the camera */
+const GRID = 48;
 
 export class Vegetation implements System {
   variants: Variant[] = [];
@@ -169,6 +172,7 @@ export class Vegetation implements System {
           const m = new T.InstancedMesh(p.geometry, p.material, Math.max(1, v.rows.length));
           m.count = 0;
           m.castShadow = true;
+          m.layers.enable(FAR_CASTER);                  // (trees shade the slopes far off)
           m.receiveShadow = true;
           m.frustumCulled = false;
           m.instanceMatrix.setUsage(T.DynamicDrawUsage);
@@ -178,6 +182,17 @@ export class Vegetation implements System {
         }),
       );
     this.total = this.variants.reduce((s, v) => s + v.rows.length, 0);
+    const half = this.land.world.data.extent / 2, gn = Math.ceil((2 * half) / GRID);
+    this.gridN = gn;
+    for (const v of this.variants) {
+      v.grid = new Map();
+      for (const r of v.rows) {
+        const key = Math.floor((r[2] + half) / GRID) * gn + Math.floor((r[0] + half) / GRID);
+        let list = v.grid.get(key);
+        if (!list) v.grid.set(key, (list = []));
+        list.push(r);
+      }
+    }
     await this.bakeImpostors();
     this.buildImpostorMesh();
   }
@@ -256,17 +271,19 @@ export class Vegetation implements System {
     const g = new T.PlaneGeometry(1, 1);
     g.translate(0, 0.5, 0);
     const n = this.total;
+    // Every tree of the map is in this one static buffer, written once; the vertex shader folds away
+    // the billboards of the trees near enough to be drawn as meshes. (Rewriting it whenever the
+    // camera moved meant every frame of driving: 57,000 trees looped over and 3.6 MB sent to the GPU.)
     this.impostorCell = new T.InstancedBufferAttribute(new Float32Array(n), 1);
     this.impostorSize = new T.InstancedBufferAttribute(new Float32Array(n * 2), 2);
     this.impostorTint = new T.InstancedBufferAttribute(new Float32Array(n), 1);
-    for (const a of [this.impostorCell, this.impostorSize, this.impostorTint]) a.setUsage(T.DynamicDrawUsage);
     g.setAttribute("aCell", this.impostorCell);
     g.setAttribute("aSize", this.impostorSize);
     g.setAttribute("aTint", this.impostorTint);
     const m = new T.MeshStandardMaterial({ map: this.atlas.albedo, roughness: 0.85, alphaTest: 0.42, side: T.DoubleSide, alphaToCoverage: true });
     (m as unknown as { defines: Record<string, string> }).defines = { FOLIAGE: "" };
     this.land.lib.finish(m);
-    const u = { tImpNormal: { value: this.atlas.normal }, uAtlasGrid: { value: new T.Vector2(ATLAS_COLS, rows) } };
+    const u = { tImpNormal: { value: this.atlas.normal }, uAtlasGrid: { value: new T.Vector2(ATLAS_COLS, rows) }, uNearCut: this.nearCut };
     addHook(m, "impostor", (s) => {
       Object.assign(s.uniforms, u, windUniforms);
       s.vertexShader = s.vertexShader
@@ -274,7 +291,7 @@ export class Vegetation implements System {
           "#include <common>",
           `#include <common>
           attribute float aCell; attribute vec2 aSize; attribute float aTint;
-          uniform vec2 uAtlasGrid; uniform float uWindTime, uWindStrength; uniform vec2 uWindDir;
+          uniform vec2 uAtlasGrid; uniform float uWindTime, uWindStrength, uNearCut; uniform vec2 uWindDir;
           varying vec2 vImpUv; varying vec3 vRight; varying vec3 vToCam; varying float vTint;`,
         )
         .replace(
@@ -293,7 +310,9 @@ export class Vegetation implements System {
           vec2 cellXY = vec2(mod(aCell, uAtlasGrid.x), floor(aCell / uAtlasGrid.x));
           vImpUv = (cellXY + vec2(position.x + 0.5, 1.0 - position.y)) / uAtlasGrid;
           vImpUv.y = 1.0 - vImpUv.y;
-          vTint = aTint;`,
+          vTint = aTint;
+          // near trees are meshes: their billboard collapses to a point
+          if (distance(ipos.xz, cameraPosition.xz) < uNearCut) transformed = vec3(0.0);`,
         );
       s.fragmentShader = s.fragmentShader
         .replace(
@@ -316,11 +335,24 @@ export class Vegetation implements System {
         );
     });
     const mesh = new T.InstancedMesh(g, m, Math.max(1, n));
-    mesh.count = 0;
+    const im = mesh.instanceMatrix.array as Float32Array;
+    let k = 0;
+    for (const v of this.variants)
+      for (const r of v.rows) {
+        const sc = r[3], o = k * 16;
+        im[o] = sc; im[o + 5] = sc; im[o + 10] = sc; im[o + 15] = 1;
+        im[o + 12] = r[0]; im[o + 13] = r[1] - 0.3 * sc; im[o + 14] = r[2];
+        (this.impostorCell.array as Float32Array)[k] = v.cell;
+        (this.impostorSize.array as Float32Array)[k * 2] = v.size[0];
+        (this.impostorSize.array as Float32Array)[k * 2 + 1] = v.size[1];
+        (this.impostorTint.array as Float32Array)[k] = ((r[0] * 12.9898 + r[2] * 78.233) % 1 + 1) % 1;
+        k++;
+      }
+    mesh.count = n;
     mesh.frustumCulled = false;
     mesh.castShadow = false;
     mesh.receiveShadow = true;
-    mesh.instanceMatrix.setUsage(T.DynamicDrawUsage);
+    mesh.name = "impostor";
     this.impostor = mesh;
     this.land.scene.add(mesh);
   }
@@ -357,8 +389,11 @@ export class Vegetation implements System {
     this.land.scene.add(mesh);
     this.farForest = mesh;
   }
+  gridN = 1;
+  nearCut = { value: 140 };
   setQuality(q: Quality) {
     this.dist = q === "low" ? { lod0: 26, lod1: 90, max: 1600 } : q === "high" ? { lod0: 70, lod1: 210, max: 2600 } : { lod0: 45, lod1: 140, max: 2200 };
+    this.nearCut.value = this.dist.lod1;
     this.lastPos.set(1e9, 0, 0);
   }
   private m = new T.Matrix4();
@@ -378,50 +413,40 @@ export class Vegetation implements System {
     this.lastQuat.copy(cam.quaternion);
     cam.updateMatrixWorld();
     this.frustum.setFromProjectionMatrix(new T.Matrix4().multiplyMatrices(cam.projectionMatrix, cam.matrixWorldInverse));
-    const { lod0, lod1, max } = this.dist;
+    const { lod0, lod1 } = this.dist;
     const cx = cam.position.x, cz = cam.position.z;
-    let imp = 0;
-    const im = this.impostor.instanceMatrix.array as Float32Array;
+    // only the grid cells within reach of the mesh LODs (the billboards beyond are static)
+    const half = this.land.world.data.extent / 2, gn = this.gridN, reach = lod1 + 2;
+    const i0 = Math.max(0, Math.floor((cx - reach + half) / GRID)), i1 = Math.min(gn - 1, Math.floor((cx + reach + half) / GRID));
+    const j0 = Math.max(0, Math.floor((cz - reach + half) / GRID)), j1 = Math.min(gn - 1, Math.floor((cz + reach + half) / GRID));
     for (const v of this.variants) {
       const counts = [0, 0];
       const parts0 = v.lods[0], parts1 = v.lods[1];
-      for (const r of v.rows) {
-        const dx = r[0] - cx, dz = r[2] - cz;
-        const d2 = dx * dx + dz * dz;
-        if (d2 > max * max) continue;
-        const sc = r[3];
-        this.sphere.center.set(r[0], r[1] + v.height * sc * 0.5, r[2]);
-        this.sphere.radius = v.height * sc * 0.6 + 2;
-        const inView = this.frustum.intersectsSphere(this.sphere);
-        const d = Math.sqrt(d2);
-        const lod = d < lod0 ? 0 : d < lod1 ? 1 : 2;
-        // near trees outside the view still cast shadows into it
-        if (!inView && (lod === 2 || d > 70)) continue;
-        if (lod < 2) {
-          this.e.set(r[6] ?? 0, r[4], 0, "YXZ");
-          this.q.setFromEuler(this.e);
-          this.m.compose(this.p.set(r[0], r[1] - 0.2 * sc, r[2]), this.q, this.s.setScalar(sc));
-          const parts = lod === 0 ? parts0 : parts1;
-          const i = counts[lod]++;
-          for (const p of parts) p.mesh!.setMatrixAt(i, this.m);
-        } else {
-          const k = imp * 16;
-          im[k] = sc; im[k + 1] = 0; im[k + 2] = 0; im[k + 3] = 0;
-          im[k + 4] = 0; im[k + 5] = sc; im[k + 6] = 0; im[k + 7] = 0;
-          im[k + 8] = 0; im[k + 9] = 0; im[k + 10] = sc; im[k + 11] = 0;
-          im[k + 12] = r[0]; im[k + 13] = r[1] - 0.3 * sc; im[k + 14] = r[2]; im[k + 15] = 1;
-          (this.impostorCell.array as Float32Array)[imp] = v.cell;
-          (this.impostorSize.array as Float32Array)[imp * 2] = v.size[0];
-          (this.impostorSize.array as Float32Array)[imp * 2 + 1] = v.size[1];
-          (this.impostorTint.array as Float32Array)[imp] = ((r[0] * 12.9898 + r[2] * 78.233) % 1 + 1) % 1;
-          imp++;
+      for (let gj = j0; gj <= j1; gj++)
+        for (let gi = i0; gi <= i1; gi++) {
+          const rows = v.grid!.get(gj * gn + gi);
+          if (!rows) continue;
+          for (const r of rows) {
+            const dx = r[0] - cx, dz = r[2] - cz;
+            const d2 = dx * dx + dz * dz;
+            if (d2 >= lod1 * lod1) continue;
+            const sc = r[3];
+            this.sphere.center.set(r[0], r[1] + v.height * sc * 0.5, r[2]);
+            this.sphere.radius = v.height * sc * 0.6 + 2;
+            const d = Math.sqrt(d2);
+            // near trees outside the view still cast shadows into it
+            if (d > 70 && !this.frustum.intersectsSphere(this.sphere)) continue;
+            const lod = d < lod0 ? 0 : 1;
+            this.e.set(r[6] ?? 0, r[4], 0, "YXZ");
+            this.q.setFromEuler(this.e);
+            this.m.compose(this.p.set(r[0], r[1] - 0.2 * sc, r[2]), this.q, this.s.setScalar(sc));
+            const parts = lod === 0 ? parts0 : parts1;
+            const i = counts[lod]++;
+            for (const p of parts) p.mesh!.setMatrixAt(i, this.m);
+          }
         }
-      }
       parts0.forEach((p) => ((p.mesh!.count = counts[0]), (p.mesh!.instanceMatrix.needsUpdate = true)));
       parts1.forEach((p) => ((p.mesh!.count = counts[1]), (p.mesh!.instanceMatrix.needsUpdate = true)));
     }
-    this.impostor.count = imp;
-    this.impostor.instanceMatrix.needsUpdate = true;
-    this.impostorCell.needsUpdate = this.impostorSize.needsUpdate = this.impostorTint.needsUpdate = true;
   }
 }

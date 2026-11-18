@@ -1,8 +1,8 @@
 {
  "_doc": "Map sheet for the minimap and the full map: the image covers the playable square (extent), north up; labels are lettered at runtime.",
  "image": "map.webp",
- "size": 2560,
- "extent": 1500.0,
+ "size": 3584,
+ "extent": 2100.0,
  "title": "上沢地区",
  "date": "平成六年八月",
  "labels": [
@@ -73,45 +73,45 @@
    "kind": "facility"
   },
   {
+   "text": "198",
+   "x": 649.2,
+   "z": -990.5,
+   "kind": "height"
+  },
+  {
+   "text": "180",
+   "x": -953.9,
+   "z": 869.8,
+   "kind": "height"
+  },
+  {
+   "text": "179",
+   "x": 866.6,
+   "z": -194.2,
+   "kind": "height"
+  },
+  {
+   "text": "169",
+   "x": -728.9,
+   "z": -961.2,
+   "kind": "height"
+  },
+  {
+   "text": "167",
+   "x": 1004.9,
+   "z": 416.3,
+   "kind": "height"
+  },
+  {
+   "text": "166",
+   "x": 994.9,
+   "z": 762.0,
+   "kind": "height"
+  },
+  {
    "text": "155",
    "x": 670.9,
    "z": -254.6,
-   "kind": "height"
-  },
-  {
-   "text": "139",
-   "x": 583.0,
-   "z": 451.5,
-   "kind": "height"
-  },
-  {
-   "text": "114",
-   "x": 653.3,
-   "z": -27.2,
-   "kind": "height"
-  },
-  {
-   "text": "112",
-   "x": 477.6,
-   "z": -678.2,
-   "kind": "height"
-  },
-  {
-   "text": "93",
-   "x": 355.7,
-   "z": -293.3,
-   "kind": "height"
-  },
-  {
-   "text": "80",
-   "x": -45.7,
-   "z": -721.0,
-   "kind": "height"
-  },
-  {
-   "text": "66",
-   "x": 377.9,
-   "z": -60.6,
    "kind": "height"
   },
   {
@@ -157,27 +157,33 @@
    "kind": "hamlet"
   },
   {
+   "text": "下原",
+   "x": 154.6,
+   "z": 873.1,
+   "kind": "hamlet"
+  },
+  {
    "text": "川向",
-   "x": -389.0,
-   "z": 253.7,
+   "x": -385.6,
+   "z": 242.2,
    "kind": "hamlet"
   },
   {
    "text": "東山林道",
-   "x": 241.7,
-   "z": 366.9,
+   "x": 242.8,
+   "z": 372.8,
    "kind": "facility"
   },
   {
    "text": "奥沢林道",
-   "x": 159.3,
-   "z": -361.5,
+   "x": 162.8,
+   "z": -362.9,
    "kind": "facility"
   },
   {
    "text": "棚田農道",
-   "x": -249.7,
-   "z": 209.6,
+   "x": -250.9,
+   "z": 208.4,
    "kind": "facility"
   },
   {

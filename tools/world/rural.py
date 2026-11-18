@@ -5,7 +5,7 @@ import numpy as np
 from scipy import ndimage
 
 
-def route(height, blocked, start, end, cell, half):
+def route(height, blocked, start, end, cell, half, open_=None, max_grade=.22):
     """A* on a ~6 m lattice, penalising earthworks and steep longitudinal grades.
 
     Test intermediate cells too: diagonal edges must not cut across a stream or yard.
@@ -14,6 +14,10 @@ def route(height, blocked, start, end, cell, half):
     stride = 5
     hh = height[::stride, ::stride]
     bb = ndimage.maximum_filter(blocked, 3)[::stride, ::stride]
+    # (existing paved roads stay passable on the coarse lattice: the dilation above closed a narrow lane
+    # between two yards, and a lane's end could be shut in)
+    if open_ is not None:
+        bb &= ~ndimage.maximum_filter(open_, 5)[::stride, ::stride]
     size = hh.shape[0]
     step = cell * stride
     def ij(p):
@@ -40,7 +44,7 @@ def route(height, blocked, start, end, cell, half):
             if not (2 <= v[0] < size-2 and 2 <= v[1] < size-2) or bb[v]:
                 continue
             grade = abs(hh[v]-hh[u])/length
-            if grade > .22:
+            if grade > max_grade:
                 continue
             ii = np.rint(np.linspace(u[0]*stride, v[0]*stride, math.ceil(length/cell)*2+1)).astype(int)
             jj = np.rint(np.linspace(u[1]*stride, v[1]*stride, math.ceil(length/cell)*2+1)).astype(int)
@@ -52,6 +56,10 @@ def route(height, blocked, start, end, cell, half):
                 heuristic = math.hypot(v[0]-b[0], v[1]-b[1])*step
                 heapq.heappush(queue, (cost+heuristic, v))
     if b not in parent:
+        import os
+        os.makedirs('.cache', exist_ok=True)
+        np.savez_compressed('.cache/rural-route-failed.npz', blocked=bb, height=hh, a=np.array(a), b=np.array(b),
+                            visited=np.array(sorted(visited)))
         raise ValueError(f'No rural route from {start} to {end}')
     nodes = [b]
     while nodes[-1] != a:

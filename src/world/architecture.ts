@@ -7,6 +7,8 @@ import { MATERIALS } from "./materials";
 import { applyFacade, type FacadeKind } from "../engine/facade";
 import type { Library } from "../engine/library";
 import { isVehicle } from "../vehicles/specs";
+import { FAR_CASTER, SHADOW_ONLY } from "../engine/lighting";
+import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 
 export type DuskRamp = { m: T.MeshStandardMaterial; base: number; ramp: number[] };
 
@@ -39,8 +41,13 @@ type Inst = { file: string; matrix: T.Matrix4 };
 export class Architecture implements System {
   materials = new Map<string, T.Material>();
   dusk: DuskRamp[] = [];
-  /** lod: 0 / 1 for buildings with a far model (houses, barns): they swap at `lodDist` */
-  meshes: { mesh: T.InstancedMesh; centers: T.Vector3[]; far: number; near?: number; matrices: T.Matrix4[]; lod?: number }[] = [];
+  /** the shadow stand-ins (instanced) */
+  meshes: { mesh: T.InstancedMesh; centers: T.Vector3[]; far: number; matrices: T.Matrix4[] }[] = [];
+  /** every placed part in the material batches. lod: 0 / 1 for buildings with a far model (houses,
+   *  barns): the near parts show inside `lodDist`, the far parts beyond it, in the same batches */
+  items: { batch: T.BatchedMesh; id: number; center: T.Vector3; far: number; shown: boolean; lod?: number }[] = [];
+  /** stand-in shadow casters are drawn depth-only: any opaque material does */
+  shadowMaterial = new T.MeshBasicMaterial();
   /** distance at which houses and barns change to their far model (quality setting) */
   lodDist = 60;
   constructor(public land: Landscape) {}
@@ -126,33 +133,92 @@ export class Architecture implements System {
     const loader = new GLTFLoader();
     const registry = (await fetch(publicUrl("assets/models/architecture/index.json")).then((r) => r.json())).assets as Record<string, { lod1?: boolean }>;
     let done = 0;
+    type Part = { material: T.Material; geometry: T.BufferGeometry; matrices: T.Matrix4[]; far: number; lod?: number };
+    const parts: Part[] = [];
     await Promise.all(
       [...byFile].map(async ([file, mats]) => {
-        const vehicle = /architecture\/(kei-truck|kei-hatch|crown-sedan|light-truck|utility-wagon)$/.test(file);
-        const lodded = !vehicle && !!registry[file.replace(/^architecture\//, "")]?.lod1;
-        const levels = vehicle || lodded ? [0, 1] : [0];
+        const lodded = !!registry[file.replace(/^architecture\//, "")]?.lod1;
+        const levels = lodded ? [0, 1] : [0];
         for (const level of levels) {
         const g = await loader.loadAsync(publicUrl(`assets/models/${file}${level ? "-lod1" : ""}.glb`));
         g.scene.updateMatrixWorld(true);
+        // buildings and other big pieces shade the ground beyond the first shadow cascade; props,
+        // posts, signs, low walls and the channel linings only near the camera
+        const size = new T.Box3().setFromObject(g.scene).getSize(new T.Vector3());
+        const farCaster = !file.includes("props") && !/road-ditch|road-markings|stream-works/.test(file) && Math.max(size.x, size.y, size.z) > 3.5 && size.y > 2.2;
+        // The shadow of each model comes from one stand-in: all its opaque parts merged (positions
+        // only), drawn into the shadow maps alone. A house is some twenty parts, one per material,
+        // and each part was drawn again for every cascade: most of the shadow draw calls.
+        const shadowParts: T.BufferGeometry[] = [];
+        let reach = 0;
+        const casts = !/road-markings/.test(file);
         g.scene.traverse((o) => {
           if (!(o instanceof T.Mesh)) return;
-          const matrices = mats.map((m) => m.clone().multiply(o.matrixWorld));
-          const mesh = new T.InstancedMesh(o.geometry, this.material(o.material as T.Material), matrices.length);
-          matrices.forEach((m, k) => mesh.setMatrixAt(k, m));
-          mesh.instanceMatrix.needsUpdate = true;
-          mesh.castShadow = !(mesh.material as T.Material).transparent;
-          mesh.receiveShadow = true;
-          mesh.name = file;
-          mesh.computeBoundingSphere();
-          o.geometry.computeBoundingSphere();
-          const r = o.geometry.boundingSphere!.radius;
-          this.meshes.push({ mesh, matrices, lod: lodded ? level : undefined, near: level ? 45 : 0, centers: matrices.map((m) => new T.Vector3().setFromMatrixPosition(m)), far: vehicle && !level ? 45 : file.includes("props") ? 120 : file.includes("stairs") || file.includes("road-ditch") || file.includes("river-works") || file.includes("road-markings") || file.includes("stream-works") ? 1e9 : 400 + r * 40 });
-          this.land.scene.add(mesh);
+          const material = this.material(o.material as T.Material);
+          const geometry = bake(o.geometry, o.matrixWorld);
+          // the shadow stand-in of a house comes from its far model (the near one only adds sash
+          // bars, grilles and rafters to it)
+          if (casts && !material.transparent && level === levels.length - 1) {
+            const sg = new T.BufferGeometry().setAttribute("position", geometry.getAttribute("position"));
+            sg.setIndex(geometry.index);
+            shadowParts.push(sg);
+          }
+          geometry.computeBoundingSphere();
+          const r = geometry.boundingSphere!.radius;
+          const far = file.includes("props") ? 120 : /stairs|road-ditch|river-works|road-markings|stream-works/.test(file) ? 1e9 : 400 + r * 40;
+          reach = Math.max(reach, far);
+          parts.push({ material, geometry, matrices: mats, far, lod: lodded ? level : undefined });
         });
+        if (shadowParts.length) {
+          const merged = mergeGeometries(shadowParts, false);
+          if (merged) {
+            const proxy = new T.InstancedMesh(merged, this.shadowMaterial, mats.length);
+            mats.forEach((m, k) => proxy.setMatrixAt(k, m));
+            proxy.instanceMatrix.needsUpdate = true;
+            proxy.castShadow = true;
+            proxy.receiveShadow = false;
+            proxy.layers.set(SHADOW_ONLY);
+            if (farCaster) proxy.layers.enable(FAR_CASTER);
+            proxy.name = file + "#shadow";
+            proxy.computeBoundingSphere();
+            this.meshes.push({ mesh: proxy, matrices: mats, centers: mats.map((m) => new T.Vector3().setFromMatrixPosition(m)), far: reach });
+            this.land.scene.add(proxy);
+          }
+        }
         }
         progress(++done / byFile.size);
       }),
     );
+    // Every part of every model, batched by material: one BatchedMesh per material (and attribute
+    // set) holds each part's geometry once and an instance per placement, culled per instance and
+    // drawn with one multi-draw. With an instanced mesh per model part the village was 300-540 draw
+    // calls; this is about one per material.
+    const groups = new Map<string, Part[]>();
+    for (const p of parts) {
+      const key = p.material.uuid + "|" + Object.keys(p.geometry.attributes).sort().join(",");
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key)!.push(p);
+    }
+    for (const list of groups.values()) {
+      let verts = 0, idx = 0, insts = 0;
+      for (const p of list) (verts += p.geometry.getAttribute("position").count), (idx += p.geometry.index!.count), (insts += p.matrices.length);
+      const material = list[0].material;
+      const batch = new T.BatchedMesh(insts, verts, idx, material);
+      batch.sortObjects = material.transparent;
+      batch.perObjectFrustumCulled = true;
+      batch.castShadow = false;
+      batch.receiveShadow = true;
+      batch.name = `architecture/${material.name}`;
+      for (const p of list) {
+        const gid = batch.addGeometry(p.geometry);
+        for (const m of p.matrices) {
+          const id = batch.addInstance(gid);
+          batch.setMatrixAt(id, m);
+          this.items.push({ batch, id, center: new T.Vector3().setFromMatrixPosition(m), far: p.far, shown: true, lod: p.lod });
+        }
+      }
+      this.land.scene.add(batch);
+    }
     this.buildWires();
   }
   /** Lit windows, vending machines and street lamps brighten as the evening darkens. */
@@ -199,14 +265,18 @@ export class Architecture implements System {
     // every 15th frame, or at once when the view has jumped (a teleport, a capture)
     if (this.frame++ % 15 && cam.position.distanceToSquared(this.culledAt) < 64) return;
     this.culledAt.copy(cam.position);
-    // distance culling of small instanced parts (props, far houses keep rendering)
+    // distance culling of small parts (props, far houses keep rendering)
+    for (const it of this.items) {
+      if (it.far > 1e8) continue;
+      const d = it.center.distanceTo(cam.position);
+      const show = it.lod === 0 ? d < this.lodDist : it.lod === 1 ? d >= this.lodDist && d < it.far : d < it.far;
+      if (show !== it.shown) (it.shown = show), it.batch.setVisibleAt(it.id, show);
+    }
     for (const m of this.meshes) {
       if (m.far > 1e8) continue;
       let n = 0;
-      const near = m.lod === 1 ? this.lodDist : (m.near ?? 0), far = m.lod === 0 ? this.lodDist : m.far;
       for (let k = 0; k < m.matrices.length; k++) {
-        const distance = m.centers[k].distanceTo(cam.position);
-        if (distance >= far || distance < near) continue;
+        if (m.centers[k].distanceTo(cam.position) >= m.far) continue;
         m.mesh.setMatrixAt(n++, m.matrices[k]);
       }
       m.mesh.count = n;
@@ -215,4 +285,22 @@ export class Architecture implements System {
       m.mesh.instanceMatrix.needsUpdate = true;
     }
   }
+}
+
+/** A model part as float attributes (the GLBs are quantized: int16 positions, int8 normals) with the
+ *  node's transform baked in, indexed: what a BatchedMesh needs of every geometry it takes. */
+function bake(src: T.BufferGeometry, matrix: T.Matrix4) {
+  const g = new T.BufferGeometry();
+  // _occl: the sky occlusion baked into the buildings (src/engine/facade.ts)
+  for (const name of ["position", "normal", "uv", "uv1", "color", "_occl"]) {
+    const a = src.getAttribute(name);
+    if (!a) continue;
+    const n = a.itemSize, out = new Float32Array(a.count * n);
+    for (let i = 0; i < a.count; i++) for (let c = 0; c < n; c++) out[i * n + c] = a.getComponent(i, c);
+    g.setAttribute(name, new T.BufferAttribute(out, n));
+  }
+  if (!g.getAttribute("normal")) g.computeVertexNormals();
+  const count = g.getAttribute("position").count;
+  g.setIndex(src.index ? new T.BufferAttribute(Uint32Array.from(src.index.array as ArrayLike<number>), 1) : new T.BufferAttribute(Uint32Array.from({ length: count }, (_, i) => i), 1));
+  return g.applyMatrix4(matrix);
 }

@@ -1,0 +1,51 @@
+foot: main 860 calls 878万 | shadow 3026 calls 1106万 | frame 21ms
+  main tris: rice-canopy 171万/1, rice-shells 129万/1, grass-clumps 96万/3, understory 92万/2, props 77万/77, grass-field 64万/1, architecture 59万/318, far-terrain-stands 39万/1, sugi_lod1 35万/8, far-forest 30万/1
+  main calls: architecture 318, terrain-v4 313, props 77, onBeforeCompile() {
+  } 34, sugi_lod0 8, sugi_lod1 8, hinoki_lod0 8, hinoki_lod1 8
+  shadow tris: understory 275万/6, architecture 202万/1391, props 192万/117, sugi_lod1 105万/24, onBeforeCompile() {
+  } 99万/780, sugi_lod0 68万/24, crop-3 27万/3, hinoki_lod1 27万/24, crop-1 13万/3, bamboo_lod0 12万/24
+  shadow calls: architecture 1391, onBeforeCompile() {
+  } 780, props 117, Cylinder021 60, Cylinder037 60, commercial_tire002 60, Cylinder057 60, sugi_lod0 24
+lookout: main 1463 calls 917万 | shadow 3112 calls 1093万 | frame 31ms
+  main tris: rice-canopy 171万/1, rice-shells 129万/1, grass-clumps 96万/3, understory 92万/2, props 66万/77, grass-field 64万/1, architecture 56万/540, terrain-v4 53万/529, sugi_lod0 44万/8, far-terrain-stands 39万/1
+  main calls: architecture 540, terrain-v4 529, onBeforeCompile() {
+  } 145, props 77, (s, r) => {
+    Object.assign(s.uniforms, atmosphereUniforms);
+    prev.call(m, s, r);
+  } 11, sugi_lod1 8, sugi_lod0 8, hinoki_lod1 8
+  shadow tris: understory 275万/6, architecture 184万/1519, props 170万/117, onBeforeCompile() {
+  } 142万/990, sugi_lod0 131万/24, sugi_lod1 57万/24, hinoki_lod0 31万/24, crop-3 27万/3, hinoki_lod1 13万/24, crop-1 13万/3
+  shadow calls: architecture 1519, onBeforeCompile() {
+  } 990, props 117, Cylinder021 25, Cylinder037 25, commercial_tire002 25, Cylinder057 25, sugi_lod0 24
+paddies: main 921 calls 933万 | shadow 2715 calls 776万 | frame 22ms
+  main tris: rice-canopy 171万/1, rice-field 141万/1, rice-shells 129万/1, grass-clumps 96万/3, understory 92万/2, grass-field 64万/1, props 54万/77, architecture 50万/283, far-terrain-stands 39万/1, far-forest 30万/1
+  main calls: terrain-v4 318, architecture 283, onBeforeCompile() {
+  } 81, props 77, sugi_lod1 8, sugi_lod0 8, hinoki_lod1 8, hinoki_lod0 8
+  shadow tris: understory 275万/6, architecture 161万/1169, onBeforeCompile() {
+  } 123万/907, props 112万/117, crop-3 27万/3, crop-1 13万/3, sugi_lod1 13万/24, crop-2 6万/3, broadleaf_lod1 5万/24, crop-0 5万/3
+  shadow calls: architecture 1169, onBeforeCompile() {
+  } 907, props 117, Cylinder021 30, Cylinder037 30, commercial_tire002 30, Cylinder057 30, sugi_lod0 24
+river: main 1169 calls 1043万 | shadow 3181 calls 894万 | frame 16ms
+  main tris: rice-canopy 171万/1, rice-field 141万/1, rice-shells 129万/1, props 117万/77, grass-clumps 96万/3, understory 92万/2, grass-field 64万/1, architecture 56万/363, far-terrain-stands 39万/1, far-forest 30万/1
+  main calls: terrain-v4 496, architecture 363, props 77, onBeforeCompile() {
+  } 70, sugi_lod0 8, sugi_lod1 8, hinoki_lod0 8, hinoki_lod1 8
+  shadow tris: understory 275万/6, architecture 185万/1591, onBeforeCompile() {
+  } 116万/915, props 115万/117, sugi_lod1 43万/24, crop-3 27万/3, sugi_lod0 21万/24, broadleaf_lod0 16万/24, crop-1 13万/3, hinoki_lod0 11万/24
+  shadow calls: architecture 1591, onBeforeCompile() {
+  } 915, props 117, Cylinder021 35, Cylinder037 35, commercial_tire002 35, Cylinder057 35, sugi_lod0 24
+village: main 1216 calls 965万 | shadow 2997 calls 776万 | frame 21ms
+  main tris: rice-canopy 171万/1, rice-field 141万/1, rice-shells 129万/1, grass-clumps 96万/3, understory 92万/2, grass-field 64万/1, architecture 57万/366, props 42万/77, far-terrain-stands 39万/1, far-forest 30万/1
+  main calls: terrain-v4 430, architecture 366, props 77, onBeforeCompile() {
+  } 62, Cylinder021 20, Cylinder037 20, commercial_tire002 20, Cylinder057 20
+  shadow tris: understory 275万/6, architecture 202万/1407, onBeforeCompile() {
+  } 105万/879, sugi_lod1 48万/24, props 39万/117, crop-3 27万/3, crop-1 13万/3, hinoki_lod1 8万/24, crop-2 6万/3, cab_pressed_lower_shell 5万/8
+  shadow calls: architecture 1407, onBeforeCompile() {
+  } 879, props 117, Cylinder021 40, Cylinder037 40, commercial_tire002 40, Cylinder057 40, sugi_lod0 24
+sawa: main 689 calls 767万 | shadow 2119 calls 751万 | frame 20ms
+  main tris: rice-canopy 171万/1, rice-shells 129万/1, grass-clumps 96万/3, understory 92万/2, grass-field 64万/1, far-terrain-stands 39万/1, far-forest 30万/1, props 23万/77, architecture 23万/119, sugi_lod1 21万/8
+  main calls: terrain-v4 287, architecture 119, props 77, onBeforeCompile() {
+  } 48, sugi_lod0 8, sugi_lod1 8, hinoki_lod0 8, hinoki_lod1 8
+  shadow tris: understory 275万/6, architecture 91万/676, onBeforeCompile() {
+  } 81万/732, props 66万/117, sugi_lod1 64万/24, crop-3 27万/3, bamboo_lod0 26万/24, sugi_lod0 17万/24, hinoki_lod1 15万/24, crop-1 13万/3
+  shadow calls: onBeforeCompile() {
+  } 732, architecture 676, props 117, Cylinder021 40, Cylinder037 40, commercial_tire002 40, Cylinder057 40, sugi_lod0 24

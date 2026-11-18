@@ -21,7 +21,7 @@
 
 `public/world/scene.json` の `heightEncoding` を参照します。
 
-1. `TerrainData.heightmapResolution = 1281`（Unityは2^n+1のみ対応のため、2049へ補間して読み込む）、`size = (1500, 420, 1500)` にし、Terrainの位置を `(−600, −20, −600)` にする。
+1. `TerrainData.heightmapResolution = 1793`（Unityは2^n+1のみ対応のため、2049へ補間して読み込む）、`size = (2100, 420, 2100)` にし、Terrainの位置を `(−1050, −20, −1050)` にする。
 2. `heightmap.r16` を読む。ヘッダーなし、uint16 little-endian、行優先、1行目がz=−750（北端）、1列目がx=−750。
    - 高さは `y = raw / 65535 × 420 − 20`、Unityに入れる値は `raw / 65535f`。
 3. Z反転のため、`heights[row, col]` に入れる際に行を逆順にする（Unityの行0は南端になる）。
@@ -70,6 +70,7 @@
 - `denchu` → 3つに1つが `denchu-trans`
 - `prop-*` → `props/` 内のPoly Havenモデル
 - `block-wall` と `ishigaki` → 2mのモジュールを `length` に沿って並べる（`ishigaki` は高さ方向に `height` 倍）
+- 車（`kei-truck`・`kei-hatch`・`crown-sedan`・`light-truck`・`utility-wagon`）→ `<asset>.glb`（近景、車輪・ハンドルが別ノード）、`<asset>-lod1.glb`（中景）、`<asset>-lod2.glb`（遠景：全部品を1メッシュにまとめ、色を頂点カラーに焼いたもの、約1,000〜1,750三角形）。Three.js版はLODGroup相当を12m・35m・320mで切り替える。寸法・軸距・車輪半径は `tools/vehicles/source/designs.json`
 
 次の3つは**ワールド座標のまま**入っています。原点に置いてください。
 

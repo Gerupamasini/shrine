@@ -15,9 +15,9 @@ const H = (x, z) => {
   return (c(i, j) * (1 - a) + c(i + 1, j) * a) * (1 - b) + (c(i, j + 1) * (1 - a) + c(i + 1, j + 1) * a) * b;
 };
 
-test("16-bit heightmap is a complete 1281² little-endian raster in metres", () => {
-  assert.equal(N, 1281);
-  assert.equal(E, 1500);
+test("16-bit heightmap is a complete 1793² little-endian raster in metres", () => {
+  assert.equal(N, 1793);
+  assert.equal(E, 2100);
   assert.ok(Math.abs(E / (N - 1) - 1.171875) < 1e-9, "1.17 m cells");
   assert.equal(raw.length, N * N * 2);
   let lo = Infinity, hi = -Infinity;
@@ -338,8 +338,11 @@ test("hills and valley: eroded relief, a winding floor, side streams, temple and
   assert.ok(data.objects.filter((o) => o.asset === "haka" && o.cemetery).length >= 10, "the communal graveyard on the hill foot");
   const clinic = data.objects.find((o) => o.asset === "shinryojo");
   assert.ok(clinic && clinic.signs, "clinic with its name board");
-  const houses = data.objects.filter((o) => o.group && o.group !== "kawamuko" && o.group !== "sankyo" && o.group !== "tera");
-  assert.ok(houses.every((o) => o.position[2] <= clinic.position[2] + 1), "the clinic is the last building to the south");
+  // (the clinic closes the village to the south; Shimohara lies apart on the floor downstream)
+  const houses = data.objects.filter((o) => o.group && o.group !== "kawamuko" && o.group !== "sankyo" && o.group !== "tera" && o.group !== "shimohara");
+  assert.ok(houses.every((o) => o.position[2] <= clinic.position[2] + 1), "the clinic is the last building of the village to the south");
+  const shimohara = data.objects.filter((o) => o.group === "shimohara");
+  assert.ok(shimohara.length >= 6 && shimohara.every((o) => o.position[2] > clinic.position[2] + 250), `Shimohara downstream (${shimohara.length} houses)`);
   // the houses gather around the centre (dwellings and shops; the branch school serves the upper valley)
   const dwellings = houses.filter((o) => o.group === "machi" || o.asset.startsWith("minka-"));
   const nearD = dwellings.filter((o) => Math.abs(o.position[2] - data.hamlets.find((hm) => hm.name === "machi").z) < 330).length;
@@ -504,6 +507,15 @@ test("rural terrain retains the old-road settlement, traditional plots and farm 
   assert.ok(oldPlots.some(f => f.area < 300), 'small traditional plots retain their own area threshold');
   for (const asset of ['bunko', 'shobo-tsumesho', 'mizuguchi', 'kei-truck']) {
     assert.ok(data.objects.some(o => o.asset === asset), `${asset} retained after regeneration`);
+  }
+  // every prepared car model is parked somewhere: farm yards, the clinic, the co-op, the post office
+  const cars = data.objects.filter(o => ['kei-truck', 'kei-hatch', 'crown-sedan', 'light-truck', 'utility-wagon'].includes(o.asset));
+  for (const model of ['kei-truck', 'kei-hatch', 'crown-sedan', 'light-truck', 'utility-wagon']) assert.ok(cars.some(o => o.asset === model), `${model} parked`);
+  assert.ok(cars.length >= 20, `${cars.length} cars`);
+  // no two cars overlap, and none stands on a road
+  for (let i = 0; i < cars.length; i++) for (let j = i + 1; j < cars.length; j++) {
+    const a = cars[i].position, b = cars[j].position;
+    assert.ok(Math.hypot(a[0] - b[0], a[2] - b[2]) > 2.2, `${cars[i].id} and ${cars[j].id} overlap`);
   }
 });
 

@@ -69,7 +69,10 @@ varying vec3 vFcCam;
 
 const VERT_UV = /* glsl */ `
 {
-  #ifdef USE_INSTANCING
+  #if defined( USE_BATCHING )
+    mat4 fcB = getBatchingMatrix( getIndirectIndex( gl_DrawID ) );
+    vec3 fcI = vec3( fcB[ 3 ].x, fcB[ 3 ].y, fcB[ 3 ].z );
+  #elif defined( USE_INSTANCING )
     vec3 fcI = vec3( instanceMatrix[ 3 ].x, instanceMatrix[ 3 ].y, instanceMatrix[ 3 ].z );
   #else
     vec3 fcI = vec3( 0.0 );
@@ -102,7 +105,9 @@ vFcN = objectNormal;
 vFcOccl = _occl;
 {
   mat4 fcM = modelMatrix;
-  #ifdef USE_INSTANCING
+  #if defined( USE_BATCHING )
+    fcM = modelMatrix * batchingMatrix;
+  #elif defined( USE_INSTANCING )
     fcM = modelMatrix * instanceMatrix;
   #endif
   vFcWN = normalize( mat3( fcM ) * objectNormal );
