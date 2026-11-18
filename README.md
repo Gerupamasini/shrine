@@ -132,6 +132,7 @@ python3 tools/assets/catalog.py               # docs/asset-manifest.json と ASS
 - `node tools/shot.mjs <出力先> name:place:方位:俯角[:時刻]`：任意視点の撮影
 - `node tools/walk-test.mjs`：登坂テスト
 - `python3 tools/world/preview.py`：地図の俯瞰
+- `python3 tools/world/contour_map.py [出力先] [region|surroundings|map ...]`：地図・周りの山・遠景の山並みの3つの高さ場をつないだ等高線図（全域14km・周囲4.8km・地図内2.1km。既定は `artifacts/terrain/contours-*.webp` に全域と周囲。matplotlib が必要）
 - `/tools/house-lab/`（開発サーバー）と `node tools/house-lab/shot.mjs <出力先> name:x,y,z:方位:俯角[:時刻]`：谷を読み込まずに、ゲームと同じ光・影・空・ポストエフェクトで家だけを並べて見る（建物の見た目の調整用、1枚数秒）。`?noao` で焼き込んだ遮蔽を切る
 - `ONLY=<正規表現> node tools/architecture/build.mjs`：一致する建物だけを作り直す
 
