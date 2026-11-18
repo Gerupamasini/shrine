@@ -27,7 +27,8 @@ const VIEWS = [
   ["village", "village", 12, 1],
   ["river", "river", 352, -9],
 ];
-for (const [name, place, az, pitch] of VIEWS) {
+const ONLY = process.env.VIEWS?.split(",");
+for (const [name, place, az, pitch] of VIEWS.filter(([n]) => !ONLY || ONLY.includes(n))) {
   const st = await page.evaluate(({ place, az, pitch, TIME }) => {
     const g = window.__satoyama;
     g.setFree(true);
@@ -48,8 +49,10 @@ for (const [name, place, az, pitch] of VIEWS) {
   console.log(name, JSON.stringify({ p: st.position.map((v) => +v.toFixed(1)), tris: st.triangles, calls: st.calls }));
 }
 // the driver's seat on the prefectural road
-await page.evaluate(({ TIME }) => { const g = window.__satoyama; g.setFree(false); g.seatDriver(20); g.setTime(TIME); return g.renderFrames(3); }, { TIME });
-await page.screenshot({ path: `${out}/cockpit.png`, timeout: 600000 });
-console.log("cockpit", JSON.stringify(await page.evaluate(() => window.__satoyama.state.vehicle.position)));
+if (!ONLY || ONLY.includes("cockpit")) await page.evaluate(({ TIME }) => { const g = window.__satoyama; g.setFree(false); g.seatDriver(20); g.setTime(TIME); return g.renderFrames(3); }, { TIME });
+if (!ONLY || ONLY.includes("cockpit")) {
+  await page.screenshot({ path: `${out}/cockpit.png`, timeout: 600000 });
+  console.log("cockpit", JSON.stringify(await page.evaluate(() => window.__satoyama.state.vehicle.position)));
+}
 console.log("errors:", errors.slice(0, 10));
 await browser.close();

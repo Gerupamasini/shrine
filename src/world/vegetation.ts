@@ -295,7 +295,7 @@ export class Vegetation implements System {
   impostorChunks: { mesh: T.InstancedMesh; n: number; x0: number; z0: number; x1: number; z1: number; far: boolean }[] = [];
   impostorMaterial!: T.MeshStandardMaterial;
   /** thinning of distant billboards: x = distance (m) from which they thin, y = least share kept */
-  thin = { value: new T.Vector2(450, 0.2) };
+  thin = { value: new T.Vector2(900, 0.4) };
   buildImpostorMaterial() {
     const rows = (this as unknown as { atlasRows: number }).atlasRows;
     const m = new T.MeshStandardMaterial({ map: this.atlas.albedo, roughness: 0.85, alphaTest: 0.42, side: T.DoubleSide, alphaToCoverage: true });
@@ -310,7 +310,7 @@ export class Vegetation implements System {
           `#include <common>
           attribute float aCell; attribute vec2 aSize; attribute float aTint; attribute float aRank;
           uniform vec2 uAtlasGrid, uThin; uniform float uWindTime, uWindStrength, uNearCut; uniform vec2 uWindDir;
-          varying vec2 vImpUv; varying vec3 vRight; varying vec3 vToCam; varying float vTint; varying float vImpFar;`,
+          varying vec2 vImpUv; varying vec3 vRight; varying vec3 vToCam; varying float vTint;`,
         )
         .replace(
           "#include <beginnormal_vertex>",
@@ -328,7 +328,7 @@ export class Vegetation implements System {
           // ragged ridgelines with fewer billboards
           float keep = clamp(uThin.x * uThin.x / max(idist * idist, 1.0), uThin.y, 1.0);
           float stay = 1.0 - smoothstep(keep * 0.88, keep, aRank);
-          vec2 grow = vec2(pow(keep, -0.42), pow(keep, -0.16)) * stay;
+          vec2 grow = vec2(pow(keep, -0.3), pow(keep, -0.1)) * stay;
           vec3 transformed = vRight * position.x * aSize.x * grow.x + vec3(0.0, position.y * aSize.y * grow.y, 0.0);
           float sway = position.y * position.y * uWindStrength * 0.25 * (0.6 + 0.4 * sin(uWindTime * 0.5 + ipos.x * 0.07));
           transformed.xz += uWindDir * sway;
@@ -336,7 +336,6 @@ export class Vegetation implements System {
           vImpUv = (cellXY + vec2(position.x + 0.5, 1.0 - position.y)) / uAtlasGrid;
           vImpUv.y = 1.0 - vImpUv.y;
           vTint = aTint;
-          vImpFar = smoothstep(500.0, 700.0, idist);
           // near trees are meshes: their billboard collapses to a point
           if (idist < uNearCut || stay <= 0.0) transformed = vec3(0.0);`,
         );
@@ -344,7 +343,7 @@ export class Vegetation implements System {
         .replace(
           "#include <common>",
           `#include <common>
-          uniform sampler2D tImpNormal; uniform vec2 uAtlasGrid; varying vec2 vImpUv; varying vec3 vRight; varying vec3 vToCam; varying float vTint; varying float vImpFar;`,
+          uniform sampler2D tImpNormal; varying vec2 vImpUv; varying vec3 vRight; varying vec3 vToCam; varying float vTint;`,
         )
         .replace(
           "#include <map_fragment>",
@@ -355,9 +354,8 @@ export class Vegetation implements System {
         .replace("#include <alphatest_fragment>", "if (diffuseColor.a < alphaTest) discard; diffuseColor.a = 1.0;")
         .replace(
           "#include <normal_fragment_maps>",
-          `{ // (far off the baked crown normal is no longer seen: a rounded crown facing the camera)
-            vec3 ln = vImpFar < 0.99 ? texture2D(tImpNormal, vImpUv).xyz * 2.0 - 1.0 : vec3(0.0);
-            ln = mix(ln, vec3((vImpUv.x * uAtlasGrid.x - floor(vImpUv.x * uAtlasGrid.x)) * 1.2 - 0.6, 0.45, 0.65), vImpFar);
+          `{ // (the baked crown normals give the woods their sunlit and shaded crowns at every distance)
+            vec3 ln = texture2D(tImpNormal, vImpUv).xyz * 2.0 - 1.0;
             vec3 wn = normalize(vRight * ln.x + vec3(0.0, 1.0, 0.0) * ln.y + vToCam * ln.z);
             normal = normalize((viewMatrix * vec4(wn, 0.0)).xyz); }`,
         );
