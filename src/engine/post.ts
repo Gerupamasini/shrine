@@ -205,7 +205,6 @@ export class Post {
         },
         fragmentShader: /* glsl */ `
           #include <tonemapping_pars_fragment>
-          #include <colorspace_pars_fragment>
           uniform sampler2D tScene, tAO, tRays, tBloom; uniform float uAO, uRays, uBloom, uTime, uGrain, uVignette; uniform vec2 uBloomTexel;
           varying vec2 vUv;
           float h(vec2 p){ return fract(sin(dot(p, vec2(12.9898,78.233))) * 43758.5453); }
@@ -234,7 +233,9 @@ export class Post {
           }`,
       }),
     );
-    (this.final.material as T.ShaderMaterial).defines = { TONE_MAPPING: "", ACES_FILMIC_TONE_MAPPING: "" };
+    // (the tone mapping is this pass's own: three.js must not add its own to it; the sRGB conversion
+    // comes from the prefix three.js gives every ShaderMaterial)
+    (this.final.material as T.ShaderMaterial).toneMapped = false;
   }
   setQuality(q: Quality) {
     this.q = QUALITY[q].post;
