@@ -26,7 +26,8 @@ export type PbrDef = {
   /** share of the albedo texture's tone variation that is kept around its mean (1 = as photographed).
    *  A low value keeps a photographed set as fine surface detail without its blotches. */
   contrast?: number;
-  /** true: the texture is divided by its mean, so `color` is the surface's average albedo */
+  /** true: the texture is divided by its mean colour, so `color` is the surface's average albedo
+   *  (hue included) and the photograph only adds its relative detail */
   normalize?: boolean;
   /** building-surface shading branch (src/engine/facade.ts) */
   facade?: string;
@@ -111,8 +112,9 @@ export class Library {
     const sat = def.saturation ?? 1, con = def.contrast ?? 1;
     if (m.map && (sat !== 1 || con !== 1 || def.normalize)) {
       const key = `tone${sat.toFixed(3)}/${con.toFixed(3)}/${def.normalize ? 1 : 0}`;
+      // (chunks are resolved after onBeforeCompile: expand map_fragment here to edit its body)
       addHook(m, key, (s) => {
-        s.fragmentShader = s.fragmentShader.replace(
+        s.fragmentShader = s.fragmentShader.replace("#include <map_fragment>", T.ShaderChunk.map_fragment.replace(
           "diffuseColor *= sampledDiffuseColor;",
           `{
             // the coarsest mip level is the texture's mean colour
@@ -122,11 +124,11 @@ export class Library {
             c = mix( vec3( dot( c, vec3( 0.2126, 0.7152, 0.0722 ) ) ), c, ${sat.toFixed(3)} );
             mean = mix( vec3( ml ), mean, ${sat.toFixed(3)} );
             c = max( mean + ( c - mean ) * ${con.toFixed(3)}, vec3( 0.0 ) );
-            ${def.normalize ? "c /= max( ml, 1e-3 );" : ""}
+            ${def.normalize ? "c /= max( mean, vec3( 1e-3 ) );" : ""}
             sampledDiffuseColor.rgb = c;
           }
           diffuseColor *= sampledDiffuseColor;`,
-        );
+        ));
       });
     }
     return m;

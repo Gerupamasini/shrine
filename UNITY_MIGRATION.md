@@ -86,11 +86,13 @@
 
 | 種類 | ファイル | 内容 |
 |---|---|---|
-| 建築 | `public/assets/models/architecture/*.glb` | 位置と法線をKHR_mesh_quantizationで量子化。glTFastは対応済み |
+| 建築 | `public/assets/models/architecture/*.glb` | 位置と法線をKHR_mesh_quantizationで量子化。glTFastは対応済み。家と納屋は遠景用の `<名前>-lod1.glb` を持つ（`index.json` の `lod1: true`）。頂点属性 `_OCCL`（8bit、0=空が開けている、1=遮られている）に空の遮蔽を焼き込み済み |
 | 樹木 | `public/assets/models/trees/<樹種>_<0-3>.glb` | 1ファイルに `_lod0` と `_lod1` の2メッシュ |
 | 小物 | `public/assets/models/props/*.glb` | Poly HavenのCC0素材を軽量化したもの。テクスチャを内蔵 |
 
 - 寸法・三角形数は `architecture/index.json` と `trees/trees.json` にあります。家の間口・奥行き・階数・曲り家の翼屋は `tools/architecture/presets.json` です（配置JSONの `wing` は翼屋の衝突判定用の箱で、家のローカル座標）。
+- 家と納屋はLODGroupにし、LOD0とLOD1の切り替え距離（軽量35m / 標準60m / 高品質90m）を画面占有率に換算してください。LOD1は窓のさん・面格子・垂木・押縁・基礎の換気口・小物を省いた同じ家です。
+- `_OCCL` は建物の環境光（IBL）だけに掛けます（`1 − _OCCL` を拡散の環境光に、その2乗を鏡面の環境光に）。直射光は影で扱うので掛けません。glTFastはカスタム属性を読まないので、インポーター側でUV2などに移してください。
 - 樹木はLODGroupにし、LOD0とLOD1の切り替え距離（標準45m / 140m）を画面占有率に換算してください。遠景は、Unityで再生成したビルボード（Impostor）を使ってください。
 - 樹木の頂点カラー `COLOR_0` は風の重みです。R=幹の揺れ、G=枝のしなり、B=葉の揺れの位相。SpeedTree風の風シェーダーを作る際の入力にしてください。
 
@@ -107,6 +109,9 @@
 - **color**：albedoに乗算する色（sRGBの16進）。
 - **葉**：アルファカットオフ0.5、両面描画、半透過（HDRPならTranslucent / Subsurface）。
 - **saturation**：albedoテクスチャの彩度をどれだけ残すか（1＝写真のまま）。ベージュ色の `white_plaster_rough_01` を白漆喰や灰色のコンクリートとして使うため、彩度を下げてから `color`・`gain` を掛ける。地形の層にも同じ項目がある（林床の `forest_leaves_02`）。
+- **contrast / normalize**：`contrast` はalbedoテクスチャの濃淡を平均のまわりにどれだけ残すか。`normalize: true` のときはテクスチャを平均の色で割るので、`color` がそのまま表面の平均アルベド（色味を含む）になり、写真は相対的な濃淡だけを足す。平均はテクスチャの最小のミップで取れる。
+- **facade**：建物の表面の種類（`plaster`・`clay`・`wood`・`siding`・`stone`・`concrete`・`tile`・`ridge`・`tin`・`thatch`・`metal`・`glass`・`room`）。`src/engine/facade.ts` の汚れ・風化・瓦の凹凸・ガラス・窓の奥の部屋を、Unityではシェーダーグラフのサブグラフとして作り直す。入力はオブジェクト空間の位置（家のローカルyが地面からの高さ）、`_OCCL`、インスタンスごとの乱数（配置位置から作る）だけ。
+- **room**：窓の奥の部屋（インテリアマッピング）を描く板。UVは `(部屋の種類, 床の高さ)` で、0=縁側と障子のある座敷、1=レースのカーテンのある部屋、2=土間。種類に10を足した部屋は、夕方に天井の照明が点く（材質の `dusk` の発光）。Unityでは視線をオブジェクト空間に移して箱の部屋と交差させる。
 - **dusk**：`[開始時刻, 最大時刻, 最大の発光強度]`。窓明かり・自販機・街灯の発光を時刻で上げる（Unityでは時刻スクリプトから材質のEmissionを制御）。
 
 ## 環境（照明の再現）

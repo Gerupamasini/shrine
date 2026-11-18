@@ -299,7 +299,9 @@ const FRAG_ROOM = /* glsl */ `
   vec3 V = normalize( vFcObj - vFcCam );
   vec3 rd = vec3( dot( V, Tn ), V.y, -dot( V, N ) );
   rd.z = max( rd.z, 1e-3 );
-  float type = floor( vFcUv.x + 0.5 );
+  // u = room type, + 10 where the room's lamp comes on at dusk
+  float lit = step( 9.5, vFcUv.x );
+  float type = floor( vFcUv.x - lit * 10.0 + 0.5 );
   float doma = step( 1.5, type ) * step( type, 2.5 );
   vec3 ro = vec3( dot( vFcObj, Tn ), vFcObj.y - vFcUv.y, 0.0 );
   float W = 3.64, H = mix( 2.4, 3.2, doma ), D = mix( 3.6, 4.6, doma );
@@ -312,7 +314,7 @@ const FRAG_ROOM = /* glsl */ `
   // (sky light only: the sun's shadow pattern on the glass plane must not be painted into the room)
   vec3 Lin = reflectedLight.indirectDiffuse * 2.2;
   // fluorescent ring lamps (cool daylight white) in most rooms, a few warm bulbs
-  vec3 lamp = totalEmissiveRadiance * ( fcHash( vec2( cell, 5.0 ) + vFcSeed * 23.0 ) < 0.6 ? vec3( 0.82, 0.95, 1.18 ) : vec3( 1.1, 0.95, 0.75 ) );
+  vec3 lamp = lit * totalEmissiveRadiance * ( fcHash( vec2( cell, 5.0 ) + vFcSeed * 23.0 ) < 0.6 ? vec3( 0.82, 0.95, 1.18 ) : vec3( 1.1, 0.95, 0.75 ) );
   float tx = rd.x > 0.0 ? ( x0 + W - ro.x ) / rd.x : ( x0 - ro.x ) / min( rd.x, -1e-4 );
   float ty = rd.y > 0.0 ? ( H - ro.y ) / rd.y : -ro.y / min( rd.y, -1e-4 );
   float tz = D / rd.z;
@@ -450,9 +452,10 @@ export function applyFacade(m: T.MeshStandardMaterial, kind: FacadeKind) {
       .replace("#include <begin_vertex>", "#include <begin_vertex>\n" + VERT_POS);
     s.fragmentShader = s.fragmentShader
       .replace("#include <common>", "#include <common>\n" + FRAG_PARS + (kind === "glass" ? "float fcGlassA = 1.0;\n" : ""))
-      .replace("#include <map_fragment>", "#include <map_fragment>\n" + FRAG_ALBEDO)
+      // after the albedo (anchored on the next chunk: map_fragment may already be expanded)
+      .replace("#include <color_fragment>", FRAG_ALBEDO + "\n#include <color_fragment>")
       .replace("#include <roughnessmap_fragment>", "#include <roughnessmap_fragment>\nroughnessFactor = clamp( roughnessFactor + fcRough, 0.04, 1.0 );")
-      .replace("mapN.xy *= normalScale;", "mapN.xy *= normalScale;\n\tmapN.xy -= fcGrad;")
+      .replace("#include <normal_fragment_maps>", T.ShaderChunk.normal_fragment_maps.replace("mapN.xy *= normalScale;", "mapN.xy *= normalScale;\n\tmapN.xy -= fcGrad;"))
       .replace("#include <aomap_fragment>", FRAG_AO)
       .replace("#include <opaque_fragment>", FRAG_ROOM + (kind === "glass" ? FRAG_GLASS : "#include <opaque_fragment>"))
       .replace("#include <fog_fragment>", kind === "glass" ? FRAG_GLASS_FOG : "#include <fog_fragment>");

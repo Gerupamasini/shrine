@@ -356,14 +356,14 @@ function hemisphere(n) {
  * `occluders`: the model whose surfaces cast the occlusion (defaults to `model`; a simplified LOD
  * passes its detailed parent so both levels darken alike). Returns stats.
  */
-export function bakeOcclusion(model, { occluders = model, rays = 48, maxDist = 4.5, groundDist = 1.6, maxLen = 8.0, minLen = 0.45, minArea = 0.2, tol = 0.1, groundWeight = 0.5, cull = true, fine = /^(room_|glass)/, fineLen = 0.55 } = {}) {
+export function bakeOcclusion(model, { occluders = model, rays = 48, maxDist = 4.5, groundDist = 1.6, maxLen = 8.0, minLen = 0.45, minArea = 0.2, tol = 0.1, groundWeight = 0.5, cull = true, fine = /^(room|glass)/, fineLen = 0.55 } = {}) {
   // occluder soup + a ground plane at y = 0. Glass lets the light through. The opaque room planes
   // behind windows block from both sides: they close the openings, so the inside of the walls is
   // never seen (and dropped) while whatever shows through glass is kept.
   const soup = [], flags = [];
   for (const [mat, gs] of occluders.parts) {
     if (NON_OCCLUDERS.test(mat)) continue;
-    const two = /cloth|paper|rope|^room_/.test(mat) ? 1 : 0;
+    const two = /cloth|paper|rope|^room/.test(mat) ? 1 : 0;
     for (const g of gs) {
       const p = g.attributes.position.array;
       for (let i = 0; i < p.length; i++) soup.push(p[i]);

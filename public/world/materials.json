@@ -1,5 +1,5 @@
 {
- "_doc": "Material name (as written into GLBs) -> photographic PBR texture set in public/assets/textures/<tex>/{albedo,normal,arm}.jpg. size = metres per texture repeat (GLB UVs are in metres). arm = R ambient occlusion, G roughness, B metalness (glTF ORM). Normal maps use the OpenGL (+Y) convention. colour multiplies the albedo (sRGB hex). gain = extra multiplier on the albedo (linear) to reach measured-looking reflectance. terrainLayers.fixed = sample without anti-tiling rotation (directional furrows, rows along world X). dusk = [startHour, fullHour, emissiveIntensity at full]: emissive ramps up with the time of day. saturation = share of the albedo texture's own colour that is kept (1 = as photographed; the beige white_plaster_rough_01 set stands in for white lime plaster and grey concrete with its cast removed). contrast = share of the albedo texture's tone variation kept around its mean; normalize = the texture is divided by its mean, so colour is the average albedo. facade = building-surface shading branch (src/engine/facade.ts: weathering, baked sky occlusion, roof relief, glass, window rooms). room_* planes carry UV = (room type, floor height) for the interior seen through windows.",
+ "_doc": "Material name (as written into GLBs) -> photographic PBR texture set in public/assets/textures/<tex>/{albedo,normal,arm}.jpg. size = metres per texture repeat (GLB UVs are in metres). arm = R ambient occlusion, G roughness, B metalness (glTF ORM). Normal maps use the OpenGL (+Y) convention. colour multiplies the albedo (sRGB hex). gain = extra multiplier on the albedo (linear) to reach measured-looking reflectance. terrainLayers.fixed = sample without anti-tiling rotation (directional furrows, rows along world X). dusk = [startHour, fullHour, emissiveIntensity at full]: emissive ramps up with the time of day. saturation = share of the albedo texture's own colour that is kept (1 = as photographed; the beige white_plaster_rough_01 set stands in for white lime plaster and grey concrete with its cast removed). contrast = share of the albedo texture's tone variation kept around its mean; normalize = the texture is divided by its mean colour, so colour is the average albedo (hue included). facade = building-surface shading branch (src/engine/facade.ts: weathering, baked sky occlusion, roof relief, glass, window rooms). room planes carry UV = (room type, floor height) for the interior seen through windows; room type + 10 = a room whose lamp is lit at dusk (the emissive ramp).",
  "architecture": {
   "stone_granite": {
    "tex": "rock_surface",
@@ -107,7 +107,7 @@
   "roof_thatch": {
    "tex": "thatch_roof_angled",
    "size": 2.2,
-   "color": "#6c5b46",
+   "color": "#635849",
    "normalScale": 1.4,
    "normalize": true,
    "facade": "thatch"
@@ -115,7 +115,7 @@
   "roof_tin": {
    "tex": "rusty_corrugated_iron",
    "size": 1.4,
-   "color": "#864838",
+   "color": "#6f483e",
    "metalness": 0.25,
    "contrast": 0.55,
    "normalize": true,
@@ -707,12 +707,7 @@
    "opacity": 0.7,
    "facade": "glass"
   },
-  "room_dark": {
-   "color": "#ffffff",
-   "roughness": 1,
-   "facade": "room"
-  },
-  "room_lit": {
+  "room": {
    "color": "#ffffff",
    "roughness": 1,
    "emissive": "#ffe2bc",

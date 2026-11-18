@@ -459,7 +459,7 @@ const wallAt = (x, z, ry) => new THREE.Matrix4().compose(V(x, 0, z), new THREE.Q
 function opening(m, d, M, { w, h, y0, floorY, room = "room_dark", type = ROOM.window, frame = "aluminium", panes = 2, glass = "glass", lites = 1, grille = false, sill = true, open = -1 }) {
   const a = new Model("opening"), b = new Model("opening-detail");
   const fw = frame === "wood_frame" ? 0.06 : 0.045;
-  panel(a, room, w, h, 0, y0 + h / 2, 0.012, 0, [type, floorY]);
+  panel(a, "room", w, h, 0, y0 + h / 2, 0.012, 0, [type + (room === "room_lit" ? 10 : 0), floorY]);
   a.box(frame, w + 2 * fw, fw, 0.085, 0, y0 - fw / 2, 0.0425);
   a.box(frame, w + 2 * fw, fw, 0.085, 0, y0 + h + fw / 2, 0.0425);
   for (const s of [-1, 1]) a.box(frame, fw, h, 0.085, s * (w / 2 + fw / 2), y0 + h / 2, 0.0425);
@@ -515,7 +515,7 @@ function minka(type, v, lod = 0) {
     m.box("stone_moss", W + 0.4, 0.9, D + 0.4, 0, F + 0.45, 0);
     m.box("plaster_white", W, 4.2, D, 0, F + 0.9 + 2.1, 0);
     // door: frame, heavy plastered leaves stood open, the dark wooden inner door
-    panel(m, "room_dark", 1.4, 1.9, -W / 4, F + 0.9 + 0.95, D / 2 + 0.012, 0, [ROOM.doma, F + 0.9]);
+    panel(m, "room", 1.4, 1.9, -W / 4, F + 0.9 + 0.95, D / 2 + 0.012, 0, [ROOM.doma, F + 0.9]);
     m.box("wood_dark", 1.3, 1.85, 0.06, -W / 4, F + 1.85, D / 2 + 0.05);
     for (const s of [-1, 1]) m.box("plaster_white", 0.2, 2.25, 0.24, -W / 4 + s * 0.82, F + 0.9 + 1.12, D / 2 + 0.12);
     m.box("plaster_white", 2.0, 0.28, 0.32, -W / 4, F + 0.9 + 2.32, D / 2 + 0.16);
@@ -587,8 +587,8 @@ function minka(type, v, lod = 0) {
     opening(m, d, wallAt(backX[1], -D / 2 - 0.05, Math.PI), { w: Math.min(0.9, wb), h: 0.6, y0: F + 1.35, floorY: F, room: "room_dark", frame, glass: "glass_frosted", grille: true });
     // kitchen fan hood, a vent cap, the electricity meter by the front corner
     d.box("metal_grey", 0.32, 0.3, 0.2, backX[0] + (wb / 2 + 0.45) * (backX[0] < 0 ? 1 : -1), F + 2.05, -D / 2 - 0.15);
-    d.box("porcelain", 0.2, 0.32, 0.12, W / 2 + 0.11, F + 1.5, D / 2 - 0.6);
-    d.box("glass_dark", 0.14, 0.14, 0.02, W / 2 + 0.18, F + 1.55, D / 2 - 0.6, { ry: Math.PI / 2 });
+    d.box("tank_cream", 0.2, 0.32, 0.12, W / 2 + 0.11, F + 1.5, D / 2 - 0.6);
+    d.box("glass", 0.02, 0.14, 0.14, W / 2 + 0.18, F + 1.55, D / 2 - 0.6);
   }
   // ---- front: engawa deck, sliding glass doors (or shoji, amado, open bays on thatched houses)
   const front = D / 2;
@@ -608,7 +608,7 @@ function minka(type, v, lod = 0) {
       opening(m, d, M, { w: bayW - 0.12, h: 1.8, y0: F + 0.05, floorY: F, room, type: ROOM.veranda, frame, lites: alu ? 1 : 3, sill: false, open: open ? 1 : -1 });
     } else {
       const pick = r2();
-      if (open) panel(m, room, bayW - 0.12, 1.8, cx, F + 0.95, front + 0.012, 0, [ROOM.veranda, F]);
+      if (open) panel(m, "room", bayW - 0.12, 1.8, cx, F + 0.95, front + 0.012, 0, [ROOM.veranda + (room === "room_lit" ? 10 : 0), F]);
       else if (pick < 0.55) opening(m, d, M, { w: bayW - 0.12, h: 1.8, y0: F + 0.05, floorY: F, room, type: ROOM.veranda, frame: "wood_frame", lites: 4, sill: false });
       else if (pick < 0.85) {
         // shoji straight onto the veranda
@@ -635,9 +635,9 @@ function minka(type, v, lod = 0) {
     opening(m, d, wallAt(ex, front, 0), { w: bayW - 0.12, h: doorTop - 0.2, y0: 0.2, floorY: 0.1, room: r2() < 0.5 ? "room_lit" : "room_dark", type: ROOM.doma, frame, glass: "glass_frosted", lites: 6, sill: false });
     m.box("concrete", bayW + 0.5, 0.16, 1.1, ex, 0.08, front + 0.55);
     d.box("lamp_bulb", 0.13, 0.17, 0.11, ex + bayW / 2 - 0.25, doorTop + 0.22, front + 0.08);
-    d.box("wood_light", 0.09, 0.3, 0.02, ex - bayW / 2 + 0.02, F + 1.3, front + 0.08);
+    d.box("tank_cream", 0.09, 0.3, 0.02, ex - bayW / 2 + 0.02, F + 1.3, front + 0.08);
   } else {
-    panel(m, "room_dark", bayW - 0.1, doorTop - 0.1, ex, (doorTop + 0.1) / 2, front - 0.25 + 0.012, 0, [ROOM.doma, 0.1]);
+    panel(m, "room", bayW - 0.1, doorTop - 0.1, ex, (doorTop + 0.1) / 2, front - 0.25 + 0.012, 0, [ROOM.doma, 0.1]);
     m.box("wood_dark", bayW * 0.52, doorTop - 0.12, 0.06, -W / 2 + bayW * 0.3, doorTop / 2 + 0.03, front + 0.03);
     for (let k = 0; k < 4; k++) d.box("wood_frame", bayW * 0.52, 0.05, 0.03, -W / 2 + bayW * 0.3, 0.4 + k * 0.55, front + 0.07);
     m.box("stone_granite", 0.8, 0.25, 0.5, ex, 0.125, front + 0.5);
@@ -693,7 +693,7 @@ function minka(type, v, lod = 0) {
     for (const sx of [-1, 0, 1]) for (const zz of [z0, z0 + wd]) m.box("wood_frame", 0.15, wh, 0.15, wx + sx * ww / 2, F + wh / 2, zz);
     // big stable doorway with a slatted window above
     const side = wx > 0 ? -1 : 1;
-    panel(m, "room_dark", 1.8, 1.9, wx + side * (ww / 2 + 0.062), F + 0.95, wz + 0.6, side * Math.PI / 2, [ROOM.doma, F]);
+    panel(m, "room", 1.8, 1.9, wx + side * (ww / 2 + 0.062), F + 0.95, wz + 0.6, side * Math.PI / 2, [ROOM.doma, F]);
     for (let k = 0; k < 7; k++) m.box("wood_frame", 0.04, 0.45, 0.05, wx - 0.9 + k * 0.3, F + 1.8, z0 + wd + 0.06);
     const wr = new Model("wing-roof");
     const roofMat = thatched ? "roof_thatch" : "roof_tin_blue";
@@ -761,15 +761,15 @@ function minka(type, v, lod = 0) {
   // home tank (490 L, on legs) that feeds the bath boiler and the winter stoves
   {
     const s = lean ? -lean : r() < 0.5 ? -1 : 1, gx = s * (W / 2 + 0.42), gz = -D / 2 + 1.1;
-    m.box("concrete_old", 0.6, 0.08, 1.05, gx, 0.04, gz);
+    m.box("concrete", 0.6, 0.08, 1.05, gx, 0.04, gz);
     for (const dz of [-0.24, 0.24]) {
       m.cyl("lpg_grey", 0.18, 0.18, 1.02, gx, 0.08, gz + dz, seg(14));
       m.cyl("lpg_grey", 0.18, 0.12, 0.1, gx, 1.1, gz + dz, seg(14));
       d.cyl("metal_dark", 0.1, 0.1, 0.16, gx, 1.2, gz + dz, 10, { open: true });
     }
     d.box("metal_dark", 0.04, 0.04, 0.62, gx - s * 0.2, 0.9, gz);                 // chain
-    d.box("brass", 0.1, 0.14, 0.08, gx - s * 0.16, 1.45, gz);                     // regulator
-    d.cyl("brass", 0.012, 0.012, 1.05, gx - s * 0.28, 0.4, gz, 4);
+    d.box("metal_grey", 0.1, 0.14, 0.08, gx - s * 0.16, 1.45, gz);                     // regulator
+    d.cyl("metal_dark", 0.012, 0.012, 1.05, gx - s * 0.28, 0.4, gz, 4);
     if (!thatched || r() < 0.5) {
       const tz = gz + 1.9;
       for (const lx of [-0.22, 0.22]) for (const lz of [-0.6, 0.6]) m.box("metal_dark", 0.05, 0.42, 0.05, s * (W / 2 + 0.5) + lx, 0.21, tz + lz);
@@ -783,7 +783,7 @@ function minka(type, v, lod = 0) {
     const ax = backX[0] > 0 ? backX[0] - wb / 2 - 0.75 : backX[0] + wb / 2 + 0.75, az = -D / 2 - 0.5;
     d.box("tank_cream", 0.78, 0.56, 0.27, ax, 0.4, az);
     d.cyl("metal_dark", 0.2, 0.2, 0.02, ax - 0.1, 0.39, az - 0.135, 16, { rx: Math.PI / 2 });
-    for (const dx of [-0.28, 0.28]) d.box("concrete_old", 0.1, 0.12, 0.32, ax + dx, 0.06, az);
+    for (const dx of [-0.28, 0.28]) d.box("concrete", 0.1, 0.12, 0.32, ax + dx, 0.06, az);
     d.box("tank_cream", 0.07, 0.07, 0.42, ax + 0.3, 0.5, az + 0.3);
   }
   // where evening smoke rises: the bath-stove chimney at the back (a galvanised pipe with a rain
