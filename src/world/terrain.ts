@@ -95,7 +95,7 @@ const FIELD_WEIGHT = 3;
 
 type Block = {
   i0: number; j0: number; size: number; x0: number; z0: number; x1: number; z1: number; minY: number; maxY: number;
-  meshes: (T.Mesh | undefined)[]; level: number; want: number; on: boolean;
+  meshes: (T.Mesh | undefined)[]; level: number; want: number; on: boolean; mat?: T.Material;
   /** a 2 x 2 group: drawn as one mesh while all of it is beyond FAR_TIER, else as its four blocks */
   kids?: Block[];
 };
@@ -149,18 +149,72 @@ export class Terrain {
       uLayerFixed: { value: [...TERRAIN_LAYERS.map((l) => (l.fixed ? 1 : 0)), ...Array(NL - TERRAIN_LAYERS.length).fill(0)] },
       uLayerSat: { value: [...TERRAIN_LAYERS.map((l) => l.saturation ?? 1), ...Array(NL - TERRAIN_LAYERS.length).fill(1)] },
       uWet: { value: 0.0 },
+      tFarAlbedo: { value: null as T.Texture | null },
       ...this.holeUniforms(),
       // openings of the brook-fed canals: distance to the nearest open channel (x = metres at 1.0, y = open below)
       tChannels: { value: channels ? dataTexture(channels) : new T.DataTexture(new Uint8Array([255, 255, 255, 255]), 1, 1) },
       uChannel: { value: new T.Vector2(chan?.range ?? 0, chan?.openBelow ?? -1) },
     });
-    const m = (this.material = new T.MeshStandardMaterial({ roughness: 1, metalness: 0 }));
-    this.lib.finish(m);
-    this.hook(m, u, "near");
+    // three variants of one shader: the full one near the camera; a light one far off that reads the
+    // ground's colour from a texture baked from the full one at load (one fetch instead of up to 72
+    // over twelve layers and three projections, and no detail normal); and the bake itself
+    const make = (variant: "near" | "far" | "bake") => {
+      const m = new T.MeshStandardMaterial({ roughness: 1, metalness: 0 });
+      if (variant !== "bake") this.lib.finish(m);
+      else m.side = T.DoubleSide;
+      if (variant !== "near") (m as unknown as { defines: Record<string, string> }).defines = { [variant === "far" ? "TERRAIN_FAR" : "TERRAIN_BAKE"]: "" };
+      this.hook(m, u, variant);
+      return m;
+    };
+    this.material = make("near");
+    this.farMaterial = make("far");
+    this.bakeMaterial = make("bake");
     this.buildChunks();
+    u.tFarAlbedo.value = this.bakeFar(quality === "low" ? 1024 : 2048);
     return this;
   }
-
+  /**
+   * The ground's colour and ambient occlusion as the full shader computes them, seen from above, into
+   * one texture for the far material (2048² over the 2.1 km map, about a metre a texel). Drawn once at
+   * load from coarse blocks (only the height matters, for the side-projected steep faces).
+   */
+  bakeFar(size: number) {
+    const r = this.lib.renderer, E = this.data.extent;
+    const rt = new T.WebGLRenderTarget(size, size, { colorSpace: T.SRGBColorSpace, generateMipmaps: true, minFilter: T.LinearMipmapLinearFilter, magFilter: T.LinearFilter, depthBuffer: true });
+    rt.texture.anisotropy = this.lib.anisotropy;
+    const scene = new T.Scene();
+    const geos: T.BufferGeometry[] = [];
+    for (const b of this.blocks) {
+      const m = rtinBlock(this.height, this.errors, b.i0, b.j0, b.size, 0.25, 0);
+      const g = new T.BufferGeometry();
+      g.setAttribute("position", new T.BufferAttribute(m.position, 3));
+      g.setIndex(new T.BufferAttribute(m.index, 1));
+      geos.push(g);
+      const mesh = new T.Mesh(g, this.bakeMaterial);
+      mesh.frustumCulled = false;
+      scene.add(mesh);
+    }
+    // looking down; the view's up is -z and its top and bottom swapped, so texel rows run with +z as
+    // the shaders read them (uv = xz / extent + 0.5)
+    const cam = new T.OrthographicCamera(-E / 2, E / 2, -E / 2, E / 2, 1, 4000);
+    cam.position.set(0, 2000, 0);
+    cam.up.set(0, 0, -1);
+    cam.lookAt(0, 0, 0);
+    cam.updateMatrixWorld();
+    const prev = r.getRenderTarget(), tone = r.toneMapping, clear = r.getClearColor(new T.Color()), alpha = r.getClearAlpha();
+    r.toneMapping = T.NoToneMapping;
+    r.setRenderTarget(rt);
+    r.setClearColor(0x000000, 1);
+    r.clear();
+    r.render(scene, cam);
+    r.setRenderTarget(prev);
+    r.toneMapping = tone;
+    r.setClearColor(clear, alpha);
+    for (const g of geos) g.dispose();
+    return rt.texture;
+  }
+  farMaterial!: T.MeshStandardMaterial;
+  bakeMaterial!: T.MeshStandardMaterial;
   private hook(m: T.MeshStandardMaterial, u: Record<string, T.IUniform>, variant: string) {
     addHook(m, "terrain-v5-" + variant, (s) => {
       Object.assign(s.uniforms, u);
@@ -260,9 +314,30 @@ export class Terrain {
             tArmV.r *= mix(1.0, 0.55, veg.r);
             tWorldN = normalize(texture2D(tTerrainNormal, tuv).xyz * 2. - 1.);
           }
-`,
+          uniform sampler2D tFarAlbedo;
+          // far off: the baked colour (rgb) and ambient occlusion (a), the large-scale normal only
+          void terrainFar() {
+            vec2 tuv = vTW.xz / uExtent + 0.5;
+            vec4 b = texture2D(tFarAlbedo, tuv);
+            tAlb = b.rgb; tNrm = vec3(0.0, 0.0, 1.0); tArmV = vec3(b.a, 1.0, 0.0);
+            tWorldN = normalize(texture2D(tTerrainNormal, tuv).xyz * 2. - 1.);
+          }`,
         )
-        .replace("#include <map_fragment>", "groundHoles();\n terrainSample();\n diffuseColor.rgb *= tAlb;")
+        .replace(
+          "#include <map_fragment>",
+          `#if defined( TERRAIN_BAKE )
+            terrainSample();
+            gl_FragColor = vec4(tAlb, tArmV.r);
+            return;
+          #elif defined( TERRAIN_FAR )
+            groundHoles();
+            terrainFar();
+          #else
+            groundHoles();
+            terrainSample();
+          #endif
+          diffuseColor.rgb *= tAlb;`,
+        )
         .replace("#include <roughnessmap_fragment>", "float roughnessFactor = roughness * mix(0.78, 1.0, tArmV.g);")
         .replace("#include <metalnessmap_fragment>", "float metalnessFactor = 0.0;")
         .replace(
@@ -408,7 +483,7 @@ export class Terrain {
     g.setIndex(new T.BufferAttribute(r.index, 1));
     g.boundingBox = new T.Box3(new T.Vector3(b.x0, r.minY, b.z0), new T.Vector3(b.x1, r.maxY, b.z1));
     g.boundingSphere = g.boundingBox.getBoundingSphere(new T.Sphere());
-    m = new T.Mesh(g, this.material);
+    m = new T.Mesh(g, b.mat ?? this.material);
     m.name = "terrain";
     m.receiveShadow = true;
     // (the near cascade takes the ground from these; beyond it the coarse shadow tiles stand in)
@@ -461,7 +536,11 @@ export class Terrain {
       while (l < LEVELS.length - 1 && LEVELS[l + 1] <= dist * k) l++;
       return l;
     };
+    const farAt = QUALITY[quality as Quality].terrain.farMaterial;
     const visit = (b: Block, d: number) => {
+      // the light material past farAt (the block's nearest point)
+      b.mat = d > farAt ? this.farMaterial : this.material;
+      for (const m of b.meshes) if (m && m.material !== b.mat) m.material = b.mat;
       let want = level(d);
       // hysteresis: a block only coarsens once it is 15% beyond the distance that allows it
       if (b.level >= 0 && want > b.level) want = Math.max(b.level, level(d * 0.85));

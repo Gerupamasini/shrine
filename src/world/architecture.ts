@@ -4,10 +4,11 @@ import { publicUrl } from "../urls";
 import type { Landscape, System } from "./landscape";
 import type { Placement } from "./data";
 import { MATERIALS } from "./materials";
-import { applyFacade, type FacadeKind } from "../engine/facade";
+import { applyFacade, facadeUniforms, type FacadeKind } from "../engine/facade";
 import type { Library } from "../engine/library";
 import { isVehicle } from "../vehicles/specs";
 import { FAR_CASTER, SHADOW_ONLY } from "../engine/lighting";
+import { QUALITY, type Quality } from "../engine/quality";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 
 export type DuskRamp = { m: T.MeshStandardMaterial; base: number; ramp: number[] };
@@ -272,8 +273,9 @@ export class Architecture implements System {
     const lines = new T.LineSegments(g, this.land.lib.finish(m));
     this.land.scene.add(lines);
   }
-  setQuality(q: "low" | "standard" | "high") {
-    this.lodDist = q === "low" ? 35 : q === "high" ? 90 : 60;
+  setQuality(q: Quality) {
+    this.lodDist = QUALITY[q].buildings.lod;
+    facadeUniforms.uFcDetail.value = QUALITY[q].buildings.detail;
     this.culledAt.set(1e9, 0, 0);
   }
   frame = 0;
