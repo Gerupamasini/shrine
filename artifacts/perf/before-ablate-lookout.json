@@ -1,0 +1,453 @@
+{
+ "all": {
+  "main": 11977.700000000186,
+  "shadow": 1874.9999999990687,
+  "frame": 14122.200000000186
+ },
+ "rows": [
+  {
+   "system": "terrain-v4",
+   "objects": 8494,
+   "main": 2716.5,
+   "shadow": 76.60000000149012
+  },
+  {
+   "system": "impostor",
+   "objects": 1,
+   "main": 2423.7999999998137,
+   "shadow": 62.19999999832362
+  },
+  {
+   "system": "far-forest",
+   "objects": 1,
+   "main": 1948.800000000745,
+   "shadow": 68.49999999627471
+  },
+  {
+   "system": "architecture",
+   "objects": 98,
+   "main": 735.7000000001863,
+   "shadow": 65.29999999888241
+  },
+  {
+   "system": "rice-canopy",
+   "objects": 78,
+   "main": 726.1000000005588,
+   "shadow": 35.60000000335276
+  },
+  {
+   "system": "terrain-far",
+   "objects": 196,
+   "main": 657.7999999998137,
+   "shadow": -46.20000000298023
+  },
+  {
+   "system": "grass-field",
+   "objects": 1,
+   "main": 641.7999999998137,
+   "shadow": 37.79999999888241
+  },
+  {
+   "system": "grass-clumps",
+   "objects": 3,
+   "main": 482.40000000037253,
+   "shadow": 42.09999999869615
+  },
+  {
+   "system": "far-terrain-stands",
+   "objects": 1,
+   "main": 406.0000000009313,
+   "shadow": 1.4999999990686774
+  },
+  {
+   "system": "rice-shells",
+   "objects": 78,
+   "main": 294.29999999981374,
+   "shadow": 83.89999999850988
+  },
+  {
+   "system": "river2",
+   "objects": 7,
+   "main": 285.6000000005588,
+   "shadow": 29.49999999627471
+  },
+  {
+   "system": "Cylinder057",
+   "objects": 130,
+   "main": 250.20000000018626,
+   "shadow": -41.79999999888241
+  },
+  {
+   "system": "trees",
+   "objects": 96,
+   "main": 232.2000000011176,
+   "shadow": 998.8999999975786
+  },
+  {
+   "system": "props",
+   "objects": 75,
+   "main": 216.20000000018626,
+   "shadow": 81.5
+  },
+  {
+   "system": "dragonflies",
+   "objects": 1,
+   "main": 209.90000000037253,
+   "shadow": 71.39999999757856
+  },
+  {
+   "system": "steering_rim",
+   "objects": 4,
+   "main": 178.90000000037253,
+   "shadow": 49.199999996460974
+  },
+  {
+   "system": "crop-1",
+   "objects": 32,
+   "main": 152.3999999994412,
+   "shadow": 46.09999999962747
+  },
+  {
+   "system": "arch-shadow",
+   "objects": 72,
+   "main": 151.70000000018626,
+   "shadow": 243.59999999962747
+  },
+  {
+   "system": "rice-curtain",
+   "objects": 1,
+   "main": 125.5,
+   "shadow": -3.500000001862645
+  },
+  {
+   "system": "cloth_cushion",
+   "objects": 22,
+   "main": 120.40000000037253,
+   "shadow": 63.40000000037253
+  },
+  {
+   "system": "rice-field",
+   "objects": 1,
+   "main": 110.3999999994412,
+   "shadow": 91.5
+  },
+  {
+   "system": "LineBasicMaterial",
+   "objects": 1,
+   "main": 98.19999999925494,
+   "shadow": 59.30000000167638
+  },
+  {
+   "system": "crop-3",
+   "objects": 33,
+   "main": 82.6000000005588,
+   "shadow": 138.2000000011176
+  },
+  {
+   "system": "reflector_housing",
+   "objects": 26,
+   "main": 68.30000000074506,
+   "shadow": -2.000000001862645
+  },
+  {
+   "system": "formed_steel_body",
+   "objects": 33,
+   "main": 51.19999999925494,
+   "shadow": 65.59999999869615
+  },
+  {
+   "system": "windshield",
+   "objects": 22,
+   "main": 47.89999999944121,
+   "shadow": 50.29999999888241
+  },
+  {
+   "system": "anti_slip_step_bar",
+   "objects": 6,
+   "main": 39.299999999813735,
+   "shadow": -3.9000000031664968
+  },
+  {
+   "system": "windshield_rubber_surround",
+   "objects": 32,
+   "main": 30.59999999962747,
+   "shadow": -2.299999998882413
+  },
+  {
+   "system": "door_lock",
+   "objects": 32,
+   "main": 4.7999999998137355,
+   "shadow": 41.6999999973923
+  },
+  {
+   "system": "fluted_headlamp_cover",
+   "objects": 22,
+   "main": -3.900000000372529,
+   "shadow": 16.599999996833503
+  },
+  {
+   "system": "bumper",
+   "objects": 4,
+   "main": -29.40000000037253,
+   "shadow": 92.89999999664724
+  },
+  {
+   "system": "rear_indicator",
+   "objects": 32,
+   "main": -35.200000000186265,
+   "shadow": 49.299999999813735
+  },
+  {
+   "system": "crop-2",
+   "objects": 32,
+   "main": -37.89999999944121,
+   "shadow": 24.79999999795109
+  },
+  {
+   "system": "embossed_registration",
+   "objects": 22,
+   "main": -44.5,
+   "shadow": 60.99999999906868
+  },
+  {
+   "system": "registration_plate",
+   "objects": 54,
+   "main": -47.19999999925494,
+   "shadow": 13.999999998137355
+  },
+  {
+   "system": "square_halogen",
+   "objects": 6,
+   "main": -65.69999999925494,
+   "shadow": -51.40000000409782
+  },
+  {
+   "system": "headrest_post",
+   "objects": 22,
+   "main": -82.30000000074506,
+   "shadow": 0.1999999973922968
+  },
+  {
+   "system": "windshield_glass",
+   "objects": 32,
+   "main": -85.49999999906868,
+   "shadow": 24.90000000130385
+  },
+  {
+   "system": "MeshStandardMaterial",
+   "objects": 227,
+   "main": -85.59999999962747,
+   "shadow": 44.69999999459833
+  },
+  {
+   "system": "belt_molding",
+   "objects": 22,
+   "main": -89.3999999994412,
+   "shadow": 62.499999998137355
+  },
+  {
+   "system": "halogen_lens",
+   "objects": 26,
+   "main": -98,
+   "shadow": -12.099999997764826
+  },
+  {
+   "system": "cab_pressed_lower_shell",
+   "objects": 48,
+   "main": -108.20000000018626,
+   "shadow": 11.700000002980232
+  },
+  {
+   "system": "black_pull_handle",
+   "objects": 32,
+   "main": -114.79999999981374,
+   "shadow": 46.89999999944121
+  },
+  {
+   "system": "windshield_gasket",
+   "objects": 22,
+   "main": -119.5,
+   "shadow": 59.09999999497086
+  },
+  {
+   "system": "wheel_rl",
+   "objects": 134,
+   "main": -125.20000000018626,
+   "shadow": -10.300000002607703
+  },
+  {
+   "system": "interior_floor",
+   "objects": 22,
+   "main": -142.29999999981374,
+   "shadow": 101.29999999888241
+  },
+  {
+   "system": "headlamp_reflector",
+   "objects": 22,
+   "main": -148.69999999925494,
+   "shadow": 28.700000001117587
+  },
+  {
+   "system": "reverse_lamp",
+   "objects": 22,
+   "main": -154.00000000093132,
+   "shadow": 39.399999998509884
+  },
+  {
+   "system": "Cylinder037",
+   "objects": 130,
+   "main": -154.49999999906868,
+   "shadow": -106.10000000335276
+  },
+  {
+   "system": "wheel_fl",
+   "objects": 134,
+   "main": -160.59999999962747,
+   "shadow": -32.099999997764826
+  },
+  {
+   "system": "rear_combination_lamp",
+   "objects": 22,
+   "main": -171.80000000074506,
+   "shadow": -69.70000000111759
+  },
+  {
+   "system": "lamp_fluting",
+   "objects": 6,
+   "main": -172.30000000074506,
+   "shadow": -59.399999998509884
+  },
+  {
+   "system": "steering_wheel",
+   "objects": 26,
+   "main": -181.79999999981374,
+   "shadow": -20.99999999627471
+  },
+  {
+   "system": "mirror_glass",
+   "objects": 18,
+   "main": -182.20000000018626,
+   "shadow": -67.00000000093132
+  },
+  {
+   "system": "ShaderMaterial",
+   "objects": 1,
+   "main": -194.69999999925494,
+   "shadow": 41.59999999869615
+  },
+  {
+   "system": "floor",
+   "objects": 32,
+   "main": -196.29999999981374,
+   "shadow": 18.59999999962747
+  },
+  {
+   "system": "understory",
+   "objects": 937,
+   "main": -205.29999999981374,
+   "shadow": 352
+  },
+  {
+   "system": "crop-0",
+   "objects": 21,
+   "main": -205.8999999994412,
+   "shadow": 124.99999999720603
+  },
+  {
+   "system": "commercial_tire",
+   "objects": 6,
+   "main": -210.8999999994412,
+   "shadow": 44.1999999973923
+  },
+  {
+   "system": "wheel_rr",
+   "objects": 134,
+   "main": -232.29999999981374,
+   "shadow": 2.4999999990686774
+  },
+  {
+   "system": "wheel_fr",
+   "objects": 134,
+   "main": -240.79999999981374,
+   "shadow": 30.800000000745058
+  },
+  {
+   "system": "seat_cushion",
+   "objects": 32,
+   "main": -272.09999999962747,
+   "shadow": -9.900000002235174
+  },
+  {
+   "system": "steel_front_bumper",
+   "objects": 6,
+   "main": -347.20000000018626,
+   "shadow": -20.400000002235174
+  },
+  {
+   "system": "Cylinder021",
+   "objects": 130,
+   "main": -369.79999999981374,
+   "shadow": -6.600000001490116
+  },
+  {
+   "system": "clear_corner_indicator",
+   "objects": 26,
+   "main": -399,
+   "shadow": 24.200000000186265
+  },
+  {
+   "system": "chassis_rail",
+   "objects": 26,
+   "main": -437.3999999994412,
+   "shadow": 30.899999999441206
+  },
+  {
+   "system": "rear_stop_lamp",
+   "objects": 32,
+   "main": -451.7999999988824,
+   "shadow": -115.10000000149012
+  },
+  {
+   "system": "front_indicator",
+   "objects": 22,
+   "main": -473.90000000037253,
+   "shadow": -14.099999998696148
+  },
+  {
+   "system": "terrain-shadow",
+   "objects": 49,
+   "main": -476.29999999981374,
+   "shadow": 110.40000000223517
+  },
+  {
+   "system": "gauge_tick",
+   "objects": 26,
+   "main": -551.1999999992549,
+   "shadow": 55.5999999968335
+  },
+  {
+   "system": "smoke",
+   "objects": 1,
+   "main": -609,
+   "shadow": -42.60000000335276
+  },
+  {
+   "system": "mud_flap",
+   "objects": 26,
+   "main": -697.7999999988824,
+   "shadow": -78.40000000130385
+  },
+  {
+   "system": "commercial_tire002",
+   "objects": 130,
+   "main": -747.7000000001863,
+   "shadow": -35.300000003539026
+  },
+  {
+   "system": "plate_text",
+   "objects": 32,
+   "main": -2675.5999999996275,
+   "shadow": 18.200000001117587
+  }
+ ]
+}
