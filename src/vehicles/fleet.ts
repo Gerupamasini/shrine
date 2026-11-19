@@ -116,6 +116,8 @@ export class VehicleFleet {
     const previous = this.active.sim.position;
     const ground = surfaceAt(this.land.world.data, this.active.sim.position.x, this.active.sim.position.z);
     this.active.sim.beforeStep(dt, input, this.walker.collider, ground);
+    // (the tree trunks around the car are the ones in the physics world while it is driven)
+    this.walker.streamTrunks(this.active.sim.position.x, this.active.sim.position.z);
     this.walker.world.timestep = dt; this.walker.world.step();
     const p = this.active.sim.position, half = this.land.world.data.extent / 2 - 3;
     this.active.sim.distance += Math.hypot(p.x - previous.x, p.z - previous.z);

@@ -3,7 +3,7 @@ import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { publicUrl } from "../urls";
 import type { Landscape, System } from "./landscape";
 import type { InstanceRow } from "./data";
-import type { Quality } from "../engine/lighting";
+import { QUALITY, type Quality } from "../engine/quality";
 import { windHook } from "./vegetation";
 import { addHook } from "../engine/hooks";
 
@@ -36,7 +36,11 @@ const KINDS: Record<string, KindDef> = {
 };
 
 type Specimen = { parts: { geometry: T.BufferGeometry; material: T.Material; local: T.Matrix4 }[]; size: number };
-type Batch = { rows: InstanceRow[]; meshes: { mesh: T.InstancedMesh; local: T.Matrix4 }[]; far: number; mul: number; stretch: number; grid?: Map<string, InstanceRow[]> };
+type Batch = {
+  rows: InstanceRow[]; meshes: { mesh: T.InstancedMesh; local: T.Matrix4; mats?: Float32Array }[]; far: number; mul: number; stretch: number;
+  /** row indices by grid cell */
+  grid?: Map<number, number[]>;
+};
 /** side (m) of the cells the clutter rows are bucketed in */
 const CLUTTER_CELL = 32;
 
@@ -168,30 +172,39 @@ export class Clutter implements System {
       );
     }
     await Promise.all(jobs);
-    // bucket each batch's rows in a grid, so an update visits only the cells within reach
+    // bucket each batch's rows in a grid, so an update visits only the cells within reach; and compose
+    // every instance's matrix once (nothing here moves): an update only copies them
+    const up = new T.Vector3(0, 1, 0), m = new T.Matrix4(), q = new T.Quaternion(), v = new T.Vector3(), sc = new T.Vector3(), tmp = new T.Matrix4();
     for (const b of this.batches) {
       b.grid = new Map();
-      for (const r of b.rows) {
-        const key = `${Math.floor(r[0] / CLUTTER_CELL)},${Math.floor(r[2] / CLUTTER_CELL)}`;
-        if (!b.grid.has(key)) b.grid.set(key, []);
-        b.grid.get(key)!.push(r);
+      b.rows.forEach((r, i) => {
+        const key = Clutter.cell(Math.floor(r[0] / CLUTTER_CELL), Math.floor(r[2] / CLUTTER_CELL));
+        let list = b.grid!.get(key);
+        if (!list) b.grid!.set(key, (list = []));
+        list.push(i);
+      });
+      for (const p of b.meshes) {
+        p.mats = new Float32Array(b.rows.length * 16);
+        b.rows.forEach((r, i) => {
+          const s = r[3] * b.mul;
+          m.compose(v.set(r[0], r[1], r[2]), q.setFromAxisAngle(up, r[4]), sc.set(s * b.stretch, s, s * b.stretch));
+          tmp.copy(m).multiply(p.local).toArray(p.mats!, i * 16);
+        });
+        p.mesh.instanceMatrix.setUsage(T.DynamicDrawUsage);
       }
     }
   }
   setQuality(q: Quality) {
-    this.scale = q === "low" ? 0.55 : q === "high" ? 1.4 : 1;
+    this.scale = QUALITY[q].clutter;
     this.last.set(1e9, 0, 0);
   }
   last = new T.Vector3(1e9, 0, 0);
-  private m = new T.Matrix4();
-  private q = new T.Quaternion();
-  private v = new T.Vector3();
-  private s = new T.Vector3();
-  private tmp = new T.Matrix4();
+  static cell(i: number, j: number) {
+    return (j + 1024) * 2048 + i + 1024;
+  }
   update(_dt: number, _t: number, cam: T.PerspectiveCamera) {
     if (cam.position.distanceToSquared(this.last) < 4) return;
     this.last.copy(cam.position);
-    const up = new T.Vector3(0, 1, 0);
     const cx = cam.position.x, cz = cam.position.z;
     for (const b of this.batches) {
       const far = b.far * this.scale;
@@ -200,21 +213,25 @@ export class Clutter implements System {
       const j0 = Math.floor((cz - far) / CLUTTER_CELL), j1 = Math.floor((cz + far) / CLUTTER_CELL);
       for (let j = j0; j <= j1; j++)
         for (let i = i0; i <= i1; i++) {
-          const rows = b.grid?.get(`${i},${j}`);
+          const rows = b.grid?.get(Clutter.cell(i, j));
           if (!rows) continue;
-          for (const r of rows) {
+          for (const k of rows) {
+            const r = b.rows[k];
             const dx = r[0] - cx, dz = r[2] - cz;
             if (dx * dx + dz * dz > far * far) continue;
-            this.q.setFromAxisAngle(up, r[4]);
-            const sc = r[3] * b.mul;
-            this.m.compose(this.v.set(r[0], r[1], r[2]), this.q, this.s.set(sc * b.stretch, sc, sc * b.stretch));
-            for (const p of b.meshes) p.mesh.setMatrixAt(n, this.tmp.copy(this.m).multiply(p.local));
+            for (const p of b.meshes) (p.mesh.instanceMatrix.array as Float32Array).set(p.mats!.subarray(k * 16, k * 16 + 16), n * 16);
             n++;
           }
         }
       for (const p of b.meshes) {
         p.mesh.count = n;
-        p.mesh.instanceMatrix.needsUpdate = true;
+        // only the part in use is sent (the buffers hold every instance of the map)
+        const a = p.mesh.instanceMatrix;
+        a.clearUpdateRanges();
+        if (n) {
+          a.addUpdateRange(0, n * 16);
+          a.needsUpdate = true;
+        }
       }
     }
   }

@@ -113,13 +113,16 @@ export class VillageMap {
     this.miniWrap.hidden = false;
   }
 
+  private drawnAt = { x: 1e9, z: 1e9, yaw: 0 };
   /** Called every frame with the walker's position and the camera yaw (0 = facing north). */
   update(x: number, z: number, yaw: number, now: number, force = false) {
     this.pose = { x, z, yaw };
     if (!this.ready) return;
-    if (force || now - this.lastMini > 1000 / 30) {
+    // (redrawn only when the walker has moved or turned: standing still it is the same picture)
+    const d = this.drawnAt;
+    if (force || (now - this.lastMini > 1000 / 30 && (Math.abs(d.x - x) > 0.05 || Math.abs(d.z - z) > 0.05 || Math.abs(d.yaw - yaw) > 0.002))) {
       this.lastMini = now;
-      this.drawMini();
+      if (this.drawMini()) this.drawnAt = { x, z, yaw };
     }
     if (this.open) this.drawFull();
   }
@@ -139,10 +142,10 @@ export class VillageMap {
   }
 
   // ------------------------------------------------------------------ minimap (heading up)
-  private drawMini() {
+  private drawMini(): boolean {
     const cv = this.mini, dpr = Math.min(devicePixelRatio || 1, 2);
     const size = cv.clientWidth;
-    if (!size || !cv.getClientRects().length) return;      // hidden (welcome screen, H, or switched off)
+    if (!size || !cv.getClientRects().length) return false;      // hidden (welcome screen, H, or switched off)
     if (cv.width !== Math.round(size * dpr)) cv.width = cv.height = Math.round(size * dpr);
     const g = cv.getContext("2d")!;
     const m = this.meta!, S = m.size / m.extent;
@@ -212,6 +215,7 @@ export class VillageMap {
     g.textAlign = "center";
     g.textBaseline = "middle";
     g.fillText("北", nx, ny + 0.5);
+    return true;
   }
 
   // ------------------------------------------------------------------ full sheet

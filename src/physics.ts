@@ -4,6 +4,8 @@ import type { World } from "./world/data";
 import { isVehicle } from "./vehicles/specs";
 
 const EYE = 1.62;
+/** tree-trunk colliders: cell size (m) and the cells kept on every side of the walker or the car */
+const TRUNK_CELL = 32, TRUNK_REACH = 3;
 const HALF = 0.55, RADIUS = 0.3; // capsule: total 1.7 m
 
 /**
@@ -141,13 +143,17 @@ export class Walker {
     const lk = data.landmarks.lookout;
     box(lk[0] - 4, p.y + 0.5, lk[2] + 4.5, 7, 0.5, 0.08, Math.PI / 4);
     // Tree trunks, every tree: radius at eye height measured from the tree models (scale 1), so
-    // the walker cannot step into a trunk and see it from inside.
+    // the walker cannot step into a trunk and see it from inside. Listed per 32 m cell and only
+    // those around the walker (or the car being driven) are in the physics world, see streamTrunks.
     const TRUNK: Record<string, number> = { sugi: 0.38, hinoki: 0.34, akamatsu: 0.34, broadleaf: 0.3, keyaki: 0.46, bamboo: 0.06 };
     for (const [kind, rows] of Object.entries(w.trees)) {
       const r = TRUNK[kind] ?? 0.3;
       for (const t of rows) {
         const [x, y, z, sc] = t;
-        this.world.createCollider(RAPIER.ColliderDesc.cylinder(3, r * sc).setTranslation(x, y + 3, z));
+        const key = Walker.cell(Math.floor(x / TRUNK_CELL), Math.floor(z / TRUNK_CELL));
+        let c = this.trunks.get(key);
+        if (!c) this.trunks.set(key, (c = { rows: [], colliders: null }));
+        c.rows.push(x, y, z, r * sc);
       }
     }
     this.body = this.world.createRigidBody(RAPIER.RigidBodyDesc.kinematicPositionBased().setTranslation(0, 10, 0));
@@ -161,8 +167,51 @@ export class Walker {
     this.teleport(data.landmarks.foot);
     this.world.step();
   }
+  /** tree trunks by 32 m cell; `colliders` while the cell is in the physics world */
+  private trunks = new Map<number, { rows: number[]; colliders: RAPIER.Collider[] | null }>();
+  private trunkAt = { i: 1e9, j: 1e9 };
+  private static cell(i: number, j: number) {
+    return (j + 1024) * 2048 + i + 1024;
+  }
+  /**
+   * Keep the trunk colliders of the cells around (x, z) - TRUNK_REACH cells on every side (at least
+   * 96 m) - in the physics world and drop those further away. Every step of the world cost time in
+   * proportion to all its colliders: with all 120,000 trunks it was ~11 ms a step (Node, this
+   * container), with the trunks around the walker ~0.1 ms. Called before every step with the walker
+   * or the active car; colliders near it are exactly the ones they always were.
+   */
+  streamTrunks(x: number, z: number) {
+    const ci = Math.floor(x / TRUNK_CELL), cj = Math.floor(z / TRUNK_CELL);
+    if (ci === this.trunkAt.i && cj === this.trunkAt.j) return;
+    this.trunkAt = { i: ci, j: cj };
+    for (let j = cj - TRUNK_REACH; j <= cj + TRUNK_REACH; j++)
+      for (let i = ci - TRUNK_REACH; i <= ci + TRUNK_REACH; i++) {
+        const c = this.trunks.get(Walker.cell(i, j));
+        if (!c || c.colliders) continue;
+        c.colliders = [];
+        for (let k = 0; k < c.rows.length; k += 4) {
+          const [tx, ty, tz, r] = [c.rows[k], c.rows[k + 1], c.rows[k + 2], c.rows[k + 3]];
+          c.colliders.push(this.world.createCollider(RAPIER.ColliderDesc.cylinder(3, r).setTranslation(tx, ty + 3, tz)));
+        }
+      }
+    // (one cell of slack before a cell is dropped: no add/remove churn on a cell border)
+    for (const [key, c] of this.trunks) {
+      if (!c.colliders) continue;
+      const i = (key % 2048) - 1024, j = Math.floor(key / 2048) - 1024;
+      if (Math.abs(i - ci) <= TRUNK_REACH + 1 && Math.abs(j - cj) <= TRUNK_REACH + 1) continue;
+      for (const col of c.colliders) this.world.removeCollider(col, false);
+      c.colliders = null;
+    }
+  }
+  /** trunk colliders in the physics world now (for the profile and the tests) */
+  get trunkColliders() {
+    let n = 0;
+    for (const c of this.trunks.values()) n += c.colliders?.length ?? 0;
+    return n;
+  }
   /** p = [x, eyeY, z, ...] */
   teleport(p: number[]) {
+    this.streamTrunks(p[0], p[2]);
     const ground = this.w.height.sample(p[0], p[2]);
     const y = Math.max(p[1] - EYE, ground) + HALF + RADIUS + 0.02;
     this.body.setTranslation({ x: p[0], y, z: p[2] }, true);
@@ -222,6 +271,7 @@ export class Walker {
     const g = this.w.height.sample(p.x, p.z) + HALF + RADIUS;
     if (p.y < g - 0.6) p.y = g;
     this.body.setNextKinematicTranslation(p);
+    this.streamTrunks(p.x, p.z);
     this.world.timestep = dt;
     this.world.step();
     const horiz = Math.hypot(m.x, m.z) / dt;

@@ -4,10 +4,11 @@ import { publicUrl } from "../urls";
 import type { Landscape, System } from "./landscape";
 import type { Placement } from "./data";
 import { MATERIALS } from "./materials";
-import { applyFacade, type FacadeKind } from "../engine/facade";
+import { applyFacade, facadeUniforms, type FacadeKind } from "../engine/facade";
 import type { Library } from "../engine/library";
 import { isVehicle } from "../vehicles/specs";
 import { FAR_CASTER, SHADOW_ONLY } from "../engine/lighting";
+import { QUALITY, type Quality } from "../engine/quality";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 
 export type DuskRamp = { m: T.MeshStandardMaterial; base: number; ramp: number[] };
@@ -41,8 +42,9 @@ type Inst = { file: string; matrix: T.Matrix4 };
 export class Architecture implements System {
   materials = new Map<string, T.Material>();
   dusk: DuskRamp[] = [];
-  /** the shadow stand-ins (instanced) */
-  meshes: { mesh: T.InstancedMesh; centers: T.Vector3[]; far: number; matrices: T.Matrix4[] }[] = [];
+  /** the shadow stand-ins: one batch for the big casters (drawn into the far cascades too), one for
+   *  the rest; every placement an instance, culled against each cascade on its own */
+  shadowItems: { batch: T.BatchedMesh; id: number; center: T.Vector3; far: number; shown: boolean }[] = [];
   /** every placed part in the material batches. lod: 0 / 1 for buildings with a far model (houses,
    *  barns): the near parts show inside `lodDist`, the far parts beyond it, in the same batches */
   items: { batch: T.BatchedMesh; id: number; center: T.Vector3; far: number; shown: boolean; lod?: number }[] = [];
@@ -135,6 +137,7 @@ export class Architecture implements System {
     let done = 0;
     type Part = { material: T.Material; geometry: T.BufferGeometry; matrices: T.Matrix4[]; far: number; lod?: number };
     const parts: Part[] = [];
+    const proxies: { geometry: T.BufferGeometry; matrices: T.Matrix4[]; far: number; farCaster: boolean }[] = [];
     await Promise.all(
       [...byFile].map(async ([file, mats]) => {
         const lodded = !!registry[file.replace(/^architecture\//, "")]?.lod1;
@@ -171,19 +174,7 @@ export class Architecture implements System {
         });
         if (shadowParts.length) {
           const merged = mergeGeometries(shadowParts, false);
-          if (merged) {
-            const proxy = new T.InstancedMesh(merged, this.shadowMaterial, mats.length);
-            mats.forEach((m, k) => proxy.setMatrixAt(k, m));
-            proxy.instanceMatrix.needsUpdate = true;
-            proxy.castShadow = true;
-            proxy.receiveShadow = false;
-            proxy.layers.set(SHADOW_ONLY);
-            if (farCaster) proxy.layers.enable(FAR_CASTER);
-            proxy.name = file + "#shadow";
-            proxy.computeBoundingSphere();
-            this.meshes.push({ mesh: proxy, matrices: mats, centers: mats.map((m) => new T.Vector3().setFromMatrixPosition(m)), far: reach });
-            this.land.scene.add(proxy);
-          }
+          if (merged) proxies.push({ geometry: merged, matrices: mats, far: reach, farCaster });
         }
         }
         progress(++done / byFile.size);
@@ -217,6 +208,33 @@ export class Architecture implements System {
           this.items.push({ batch, id, center: new T.Vector3().setFromMatrixPosition(m), far: p.far, shown: true, lod: p.lod });
         }
       }
+      this.land.scene.add(batch);
+    }
+    // The shadow stand-ins in two batches. As an instanced mesh per model they were drawn whole into
+    // every cascade they touched (all the houses of the village into the near one); in a batch each
+    // placement is culled against each cascade's own frustum, and a cascade is one multi-draw.
+    for (const big of [true, false]) {
+      const list = proxies.filter((p) => p.farCaster === big);
+      if (!list.length) continue;
+      let verts = 0, idx = 0, insts = 0;
+      for (const p of list) (verts += p.geometry.getAttribute("position").count), (idx += p.geometry.index!.count), (insts += p.matrices.length);
+      const batch = new T.BatchedMesh(insts, verts, idx, this.shadowMaterial);
+      batch.perObjectFrustumCulled = true;
+      batch.sortObjects = false;
+      batch.castShadow = true;
+      batch.receiveShadow = false;
+      batch.layers.set(SHADOW_ONLY);
+      if (big) batch.layers.enable(FAR_CASTER);
+      batch.name = big ? "architecture#shadow-far" : "architecture#shadow-near";
+      for (const p of list) {
+        const gid = batch.addGeometry(p.geometry);
+        for (const m of p.matrices) {
+          const id = batch.addInstance(gid);
+          batch.setMatrixAt(id, m);
+          this.shadowItems.push({ batch, id, center: new T.Vector3().setFromMatrixPosition(m), far: p.far, shown: true });
+        }
+      }
+      batch.computeBoundingSphere();
       this.land.scene.add(batch);
     }
     this.buildWires();
@@ -255,15 +273,16 @@ export class Architecture implements System {
     const lines = new T.LineSegments(g, this.land.lib.finish(m));
     this.land.scene.add(lines);
   }
-  setQuality(q: "low" | "standard" | "high") {
-    this.lodDist = q === "low" ? 35 : q === "high" ? 90 : 60;
+  setQuality(q: Quality) {
+    this.lodDist = QUALITY[q].buildings.lod;
+    facadeUniforms.uFcDetail.value = QUALITY[q].buildings.detail;
     this.culledAt.set(1e9, 0, 0);
   }
   frame = 0;
   private culledAt = new T.Vector3(1e9, 0, 0);
   update(_dt: number, _t: number, cam: T.PerspectiveCamera) {
-    // every 15th frame, or at once when the view has jumped (a teleport, a capture)
-    if (this.frame++ % 15 && cam.position.distanceToSquared(this.culledAt) < 64) return;
+    // after every 2 m of movement (standing still nothing changes; a quality change resets culledAt)
+    if (cam.position.distanceToSquared(this.culledAt) < 4) return;
     this.culledAt.copy(cam.position);
     // distance culling of small parts (props, far houses keep rendering)
     for (const it of this.items) {
@@ -272,17 +291,10 @@ export class Architecture implements System {
       const show = it.lod === 0 ? d < this.lodDist : it.lod === 1 ? d >= this.lodDist && d < it.far : d < it.far;
       if (show !== it.shown) (it.shown = show), it.batch.setVisibleAt(it.id, show);
     }
-    for (const m of this.meshes) {
-      if (m.far > 1e8) continue;
-      let n = 0;
-      for (let k = 0; k < m.matrices.length; k++) {
-        if (m.centers[k].distanceTo(cam.position) >= m.far) continue;
-        m.mesh.setMatrixAt(n++, m.matrices[k]);
-      }
-      m.mesh.count = n;
-      // nothing to draw: skip the mesh (and its shadow passes) entirely
-      m.mesh.visible = n > 0;
-      m.mesh.instanceMatrix.needsUpdate = true;
+    for (const it of this.shadowItems) {
+      if (it.far > 1e8) continue;
+      const show = it.center.distanceTo(cam.position) < it.far;
+      if (show !== it.shown) (it.shown = show), it.batch.setVisibleAt(it.id, show);
     }
   }
 }

@@ -4,7 +4,7 @@ import "./style.css";
 import * as T from "three";
 import { installAtmosphere } from "./engine/atmosphere";
 import { Post } from "./engine/post";
-import type { Quality } from "./engine/lighting";
+import { QUALITY, type Quality } from "./engine/quality";
 import { loadWorld } from "./world/data";
 import { Landscape } from "./world/landscape";
 import { populate } from "./world/populate";
@@ -13,6 +13,7 @@ import { Soundscape } from "./audio";
 import { VillageMap } from "./map";
 import { VehicleFleet } from "./vehicles/fleet";
 import { DrivingHud } from "./vehicles/hud";
+import { Profiler, type FrameRecord } from "./engine/profiler";
 
 installAtmosphere();
 const $ = <E extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as E;
@@ -46,7 +47,7 @@ function fail(e: unknown) {
 let resScale = 1, slowFor = 0, fastFor = 0;
 const ADAPT = !params.has("fixedres") && !params.has("capture");
 function pixelRatio() {
-  const b = { low: 0.75, standard: 1, high: 1.5 }[quality];
+  const b = QUALITY[quality].pixelRatio;
   return Math.min(devicePixelRatio, b) * resScale;
 }
 function adaptResolution(fpsNow: number) {
@@ -395,6 +396,74 @@ function loop(t: number) {
   }
   requestAnimationFrame(loop);
 }
+/** Offline measurement (tools/perf/profile.mjs): `frames` fixed 1/60 s steps of one motion, each
+ *  timed by stage with the draw calls and triangles of the main and shadow passes. */
+type ProfileOpts = { renderEvery?: number; stageSync?: boolean; frames: number; warm?: number; mode: "idle" | "turn" | "move" | "drive"; path?: number[][]; speed?: number; eye?: number; pitch?: number; turnRate?: number };
+let profiler: Profiler | null = null;
+function runProfile(o: ProfileOpts) {
+  if (!profiler) {
+    profiler = new Profiler(renderer);
+    profiler.wrapPost(post);
+  }
+  const p = profiler, dt = 1 / 60;
+  p.stageSync = o.stageSync ?? true;
+  // arc-length walk along the path (x, y, z ground points), eye height above it
+  const pts = o.path ?? [], cum = [0];
+  for (let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][2] - pts[i - 1][2]));
+  const at = (s: number) => {
+    let i = 1;
+    while (i < pts.length - 1 && cum[i] < s) i++;
+    const a = pts[i - 1], b = pts[i], f = Math.min(1, Math.max(0, (s - cum[i - 1]) / Math.max(cum[i] - cum[i - 1], 1e-6)));
+    return { x: a[0] + (b[0] - a[0]) * f, y: a[1] + (b[1] - a[1]) * f, z: a[2] + (b[2] - a[2]) * f, dx: b[0] - a[0], dz: b[2] - a[2] };
+  };
+  const motion = (i: number) => {
+    if (o.mode === "turn") yaw += ((o.turnRate ?? 90) * Math.PI / 180) * dt;
+    else if (o.mode === "move" && pts.length > 1) {
+      const q = at(Math.min(cum[cum.length - 1], (o.speed ?? 6) * i * dt));
+      walker.teleport([q.x, q.y + (o.eye ?? 1.7), q.z]);
+      yaw = -Math.atan2(q.dx, -q.dz);
+      if (o.pitch !== undefined) pitch = o.pitch * Math.PI / 180;
+    } else if (o.mode === "drive") vehicles.step(dt, { throttle: 1, steer: 0, brake: false });
+  };
+  const records: FrameRecord[] = [];
+  const total = (o.warm ?? 0) + o.frames;
+  let farDraws = 0;
+  p.systems.clear();
+  for (let i = 0; i < total; i++) {
+    p.enabled = true;
+    const t0 = p.begin();
+    p.time("sim", () => motion(i));
+    p.time("update", () => {
+      vehicles.sync(); updateVehicleHud();
+      updateCamera(dt);
+      land.update(dt, (elapsed += dt));
+      post.updateRays(camera, land.lighting.sunDir, land.lighting.elevation, quality);
+      const heading = vehicles.active ? new T.Euler().setFromQuaternion(vehicles.active.sim.rotation, "YXZ").y + Math.PI : yaw;
+      villageMap?.update(walker.position.x, walker.position.z, heading, performance.now());
+    });
+    // (the CPU side runs every step; the GPU draws every `renderEvery`-th: SwiftShader takes seconds a frame)
+    const draw = i % (o.renderEvery ?? 1) === 0 || i < (o.warm ?? 0);
+    if (draw) {
+      renderer.info.reset();
+      post.draw(dt);
+    }
+    const rec = JSON.parse(JSON.stringify(p.end(t0))) as FrameRecord & { drawn?: boolean };
+    rec.drawn = draw;
+    records.push(rec);
+    if (i === (o.warm ?? 0) - 1) (p.systems.clear(), (farDraws = land.lighting.farDraws));
+  }
+  farDraws = land.lighting.farDraws - farDraws;
+  p.enabled = false;
+  const n = o.frames, systems: Record<string, number[]> = {};
+  for (const [k, v] of p.systems) systems[k] = v.map((x) => Math.round(x / n));
+  const targets = [
+    ...land.lighting.csm.lights.map((l) => l.shadow.map).filter(Boolean),
+    post.target, post.aoRT, post.blurRT, post.raysRT, ...post.bloomDown, ...post.bloomUp,
+  ] as T.WebGLRenderTarget[];
+  return { warm: records.slice(0, o.warm ?? 0), records: records.slice(o.warm ?? 0), systems, memory: p.memory(land.scene, targets), position: camera.position.toArray(), vehicle: vehicles.state.speed,
+    /** far shadow cascades redrawn during the recorded frames; terrain blocks made so far */
+    farDraws, terrain: { ...land.terrain.stats } };
+}
 async function boot() {
   renderer = new T.WebGLRenderer({ canvas, antialias: false, powerPreference: "high-performance", stencil: false });
   renderer.outputColorSpace = T.SRGBColorSpace;
@@ -428,9 +497,20 @@ async function boot() {
   const start = params.get("place") ?? "foot";
   goto(start);
   setTime(params.has("time") ? +params.get("time")! : world.data.environment.defaultTime);
-  // compile shaders before the first visible frame
+  // Compile every shader before the first visible frame, including those of objects hidden now (the
+  // far LODs, the near model of a car, the far ground's material): otherwise each compiles the first
+  // time it comes into view, a stall in the middle of a turn or a drive.
   land.update(0, 0);
-  renderer.compile(land.scene, camera);
+  {
+    const hidden: T.Object3D[] = [];
+    land.scene.traverse((o) => { if (!o.visible) { hidden.push(o); o.visible = true; } });
+    const probe = new T.Mesh(new T.PlaneGeometry(1, 1), land.terrain.farMaterial);
+    land.scene.add(probe);
+    renderer.compile(land.scene, camera);
+    land.scene.remove(probe);
+    probe.geometry.dispose();
+    for (const o of hidden) o.visible = false;
+  }
   // the village map: places to go are the destinations of the settings panel
   const places = Array.from(document.querySelectorAll<HTMLButtonElement>("[data-place]"))
     .map((b) => ({ key: b.dataset.place!, name: b.textContent!.trim(), l: world.data.landmarks[b.dataset.place!] }))
@@ -495,6 +575,21 @@ async function boot() {
       return vehicles.state;
     },
     get vehicleSystem() { return vehicles; },
+    profile: (o: ProfileOpts) => runProfile(o),
+    /** put the nearest car on the prefectural road (first-person, engine on) for the driving profile */
+    seatDriver: (z = 20) => {
+      if (!vehicles.active) { visitVehicle(); enterOrExit(); }
+      const sim = vehicles.active!.sim;
+      const road = world.data.roads.find((r) => r.class === "prefectural")!.points as number[][];
+      let i = road.findIndex((p) => p[2] >= z); i = Math.max(1, Math.min(road.length - 2, i));
+      const p = road[i], next = road[i + 1], yw = Math.atan2(next[0] - p[0], next[2] - p[2]);
+      sim.body.setTranslation({ x: p[0], y: p[1] + sim.spec.centerHeight + .08, z: p[2] }, true);
+      sim.body.setRotation({ x: 0, y: Math.sin(yw / 2), z: 0, w: Math.cos(yw / 2) }, true);
+      if (vehicles.view !== "first") vehicles.toggleView();
+      for (let k = 0; k < 90; k++) vehicles.step(1 / 60, { throttle: 0, steer: 0, brake: true });
+      vehicles.sync(); updateCamera(0);
+      return vehicles.state;
+    },
     jumpWalk: (x: number, z: number, n: number, run = true) => {
       const d = new T.Vector3(x, 0, z);
       if (d.lengthSq()) d.normalize();
