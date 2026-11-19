@@ -1,9 +1,10 @@
 {
  "file": "far-heightmap.png",
- "resolution": 257,
+ "resolution": 769,
  "extent": 14000.0,
- "minHeight": 0,
- "range": 1600,
+ "minHeight": -60.0,
+ "range": 1060.0,
+ "meshStride": 2,
  "mid": {
   "file": "mid-heightmap.png",
   "cover": "mid-cover.png",
@@ -12,5 +13,5 @@
   "minHeight": -40.0,
   "range": 1000.0
  },
- "note": "Far: ranges for the horizon. Mid: the eroded hills for 1.6 km around the map. The map itself is covered by the detailed terrain."
+ "note": "The river's whole catchment around the map, grown by stream-power erosion (tools/world/beyond.py). Far: the 14 km sheet (the mesh takes every meshStride-th sample). Mid: the 4.8 km square around the map. The map itself is covered by the detailed terrain."
 }
