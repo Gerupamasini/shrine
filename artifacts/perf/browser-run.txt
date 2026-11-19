@@ -1,0 +1,32 @@
+{"id":"minamizawa-farm","index":222,"total":223,"frames":5534,"position":[16.225913988597053,3.3972216213856683,549.8918405957389],"speed":-0.0006351719059510906,"target":[13.4,3.46,550],"rotation":[-0.0020145061425864697,-0.6936938166618347,-0.005763816647231579,0.7202441692352295],"ok":true}
+route-progress okusawa-farm 0 226
+route-progress okusawa-farm 176 226
+{"id":"okusawa-farm","index":225,"total":226,"frames":6017,"position":[299.03351590140875,23.758795552942367,-393.92754001888716],"speed":-0.029085865640405495,"target":[300.72,24.211,-391.62],"rotation":[-0.06988008320331573,0.32908421754837036,0.019528917968273163,0.941508948802948],"ok":true}
+route-progress north-forest 0 253
+route-progress north-forest 193 253
+{"id":"north-forest","index":252,"total":253,"frames":6936,"position":[9.670465369726543,8.16719559841994,-272.7891650233989],"speed":0.0010720916284885753,"target":[9.42,8.214,-270],"rotation":[-0.0019199249800294638,-0.04419127106666565,-0.0004489414277486503,0.9990211725234985],"ok":true}
+route-progress kawamuko-north-farm 0 39
+{"id":"kawamuko-north-farm","index":38,"total":39,"frames":1085,"position":[-285.5502339336454,14.75338318820745,115.28449622947679],"speed":0.02440345404001346,"target":[-282.89,14.568,115.86],"rotation":[0.02244414947926998,0.6452572345733643,-0.040874697268009186,0.762540876865387],"ok":true}
+route-progress kawamuko-contour-farm 0 133
+{"id":"kawamuko-contour-farm","index":132,"total":133,"frames":3668,"position":[-265.49992912031985,8.602621391037914,294.44257408668415],"speed":0.02005445841705454,"target":[-266.34,8.453,297.1],"rotation":[0.041622716933488846,-0.14091907441616058,0.007242404855787754,0.989119291305542],"ok":true}
+route-progress kawamuko-south-farm 0 135
+{"id":"kawamuko-south-farm","index":134,"total":135,"frames":4721,"position":[-354.8702311503404,18.462670866580815,226.61113940077945],"speed":-0.03728501809715539,"target":[-353.81,18.81,224],"rotation":[-0.020994197577238083,-0.9770516157150269,-0.10936688631772995,-0.18157193064689636],"ok":true}
+  ✓  5 tests/rural-driving.spec.ts:3:1 › rural lanes: low speed truck traversal and braking (18.6m)
+  ✓  6 tests/rural-views.spec.ts:2:1 › rural final ground views after bank grading (1.4m)
+Rural world ready; testing complete circuits
+Circuit east, forward passed
+Circuit east, reverse passed
+Circuit north, forward passed
+Circuit north, reverse passed
+Circuit kawamuko, forward passed
+Circuit kawamuko, reverse passed
+  ✓  7 tests/rural.spec.ts:3:1 › rural circuits: walk every new lane in both directions with real collisions (17.6m)
+  ✓  8 tests/steering-input.spec.ts:3:1 › A/D and arrow keys turn toward the driver left/right in both views (1.6m)
+  ✓  9 tests/valley-views.spec.ts:4:1 › valley fields and bunds at ground and distant viewpoints (1.7m)
+
+  Slow test file: tests/rural-driving.spec.ts (18.6m)
+  Slow test file: tests/rural.spec.ts (17.6m)
+  Consider running tests from slow files in parallel. See: https://playwright.dev/docs/test-parallel
+  9 passed (47.0m)
+
+[exited with code 0]

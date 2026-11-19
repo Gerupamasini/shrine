@@ -216,8 +216,14 @@ export class FarTerrain implements System {
         )
         .replace(
           "#include <map_fragment>",
-          `// forest canopy seen from afar: crowns (15 m), crown clusters (60 m), stands (250 m)
-          float crowns = fn(vFW.xz * 0.065), clusters = fn(vFW.xz * 0.017 + 3.1), stands = fn(vFW.xz * 0.004);
+          `// forest canopy seen from afar: crowns (15 m), crown clusters (60 m), stands (250 m). The
+          // crowns are below a pixel past ~1.5 km and the clusters past ~5 km: there they are their
+          // mean and not computed (most of this mesh is that far)
+          float fDist = length(vFW - cameraPosition);
+          float crownFade = smoothstep(1000.0, 1600.0, fDist), clusterFade = smoothstep(3500.0, 5000.0, fDist);
+          float crowns = crownFade < 1.0 ? mix(fn(vFW.xz * 0.065), 0.5, crownFade) : 0.5;
+          float clusters = clusterFade < 1.0 ? mix(fn(vFW.xz * 0.017 + 3.1), 0.5, clusterFade) : 0.5;
+          float stands = fn(vFW.xz * 0.004);
           vec2 st = standOf(vFW.xz);
           float canopy = crowns * 0.45 + clusters * 0.4 + stands * 0.15;
           vec3 sugi = vec3(0.034, 0.05, 0.029), zoki = vec3(0.07, 0.092, 0.045);
@@ -239,10 +245,12 @@ export class FarTerrain implements System {
         )
         .replace(
           "#include <normal_fragment_maps>",
-          `{ vec2 q = vFW.xz * 0.065; float a = fn(q), b = fn(q + vec2(0.2, 0.0)), c = fn(q + vec2(0.0, 0.2));
+          `if (clusterFade < 1.0) { // (the relief of the crowns fades with them)
+            vec2 q = vFW.xz * 0.065; float a = 0.0, b = 0.0, c = 0.0;
+            if (crownFade < 1.0) { a = fn(q); b = fn(q + vec2(0.2, 0.0)); c = fn(q + vec2(0.0, 0.2)); }
             vec2 q2 = vFW.xz * 0.017 + 3.1; float a2 = fn(q2), b2 = fn(q2 + vec2(0.2, 0.0)), c2 = fn(q2 + vec2(0.0, 0.2));
-            vec3 bump = normalize(vec3((a - b) + (a2 - b2) * 0.8, 0.45, (a - c) + (a2 - c2) * 0.8));
-            normal = normalize(normal + (viewMatrix * vec4(bump.x, 0.0, bump.z, 0.0)).xyz * 0.9); }`,
+            vec3 bump = normalize(vec3((a - b) * (1.0 - crownFade) + (a2 - b2) * 0.8, 0.45, (a - c) * (1.0 - crownFade) + (a2 - c2) * 0.8));
+            normal = normalize(normal + (viewMatrix * vec4(bump.x, 0.0, bump.z, 0.0)).xyz * 0.9 * (1.0 - clusterFade)); }`,
         );
     });
     this.mesh = new T.Mesh(g, m);

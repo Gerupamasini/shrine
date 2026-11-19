@@ -53,18 +53,39 @@ export async function populate(land: Landscape, progress: (p: number, label: str
   clumps.scene.traverse((o) => {
     if (o instanceof T.Mesh) geos.push(o.geometry.clone().applyMatrix4(o.matrixWorld));
   });
+  // by distance: photographed clumps at the walker's feet, then blades (four, three segments each),
+  // then sparser, simpler blades (three of two segments, a little wider) out to 42 m; beyond it the
+  // ground's own grass texture. Each field is placed in tiles around the camera, only where it grows.
   geos.forEach((geometry, i) =>
-    land.add(new GrassField(land, wt, { rice: false, spacing: 0.85, radius: 16, blades: 0, seed: i * 7.3, clump: { geometry, map, height: 0.3, scale: 2.2 } })),
+    land.add(new GrassField(land, wt, { rice: false, spacing: 0.85, radius: 16, blades: 0, seed: i * 7.3, tile: 12, clump: { geometry, map, height: 0.3, scale: 2.2 } })),
   );
-  land.add(new GrassField(land, wt, { rice: false, spacing: 0.4, radius: 42, inner: 11, blades: 4 }));
+  land.add(new GrassField(land, wt, { rice: false, spacing: 0.4, radius: 27, inner: 11, blades: 4, segs: 3, tile: 16 }));
+  land.add(new GrassField(land, wt, { rice: false, spacing: 0.52, radius: 42, inner: 24, blades: 3, segs: 2, width: 1.5, tile: 20, seed: 5.7, name: "grass-far" }));
   // rice hills: the photographed grass clump scaled to rice height (rice is a grass), in rows
   // (hills 30 cm apart, about a metre tall by early August, the canopy closed between the rows; only
   // as far as the canopy sheet fades in, about 10 m - beyond it they were hidden under the sheet)
-  land.add(new GrassField(land, wt, { rice: true, spacing: 0.3, radius: 11.5, blades: 0, seed: 3.1, clump: { geometry: geos[0], map, height: 0.32, scale: 3.25 } }));
+  land.add(new GrassField(land, wt, { rice: true, spacing: 0.3, radius: 11.5, blades: 0, seed: 3.1, tile: 12, clump: { geometry: geos[0], map, height: 0.32, scale: 3.25 } }));
   land.add(new RiceCanopy(land, wt));
   land.add(new River(land, wt));
   land.add(smoke);
   land.add(new Dragonflies(land, wt, () => land.lighting.elevation));
   crops(land);
   irrigationWorks(land);
+  freezeStatic(land);
+}
+
+/**
+ * Nothing placed so far moves (the trees sway in their shaders): their matrices are composed once
+ * here, not again every frame. The sky (follows the camera) and the sun's shadow lights and their
+ * targets keep updating; the cars are added after this.
+ */
+export function freezeStatic(land: Landscape) {
+  const keep = new Set<T.Object3D>([land.lighting.sky.mesh, ...land.lighting.csm.lights.flatMap((l) => [l, l.target])]);
+  land.scene.updateMatrixWorld(true);
+  const visit = (o: T.Object3D) => {
+    if (keep.has(o) || (o as T.Light).isLight) return;
+    o.matrixAutoUpdate = false;
+    for (const c of o.children) visit(c);
+  };
+  for (const c of land.scene.children) visit(c);
 }

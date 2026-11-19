@@ -86,11 +86,19 @@ export type Raster = { width: number; height: number; data: Uint8ClampedArray };
  *  premultiplies by alpha, and these rasters keep data in their alpha channel (the grass density of the
  *  vegetation mask, the fourth layer of a splat map) - wherever it is 0 the other three channels read
  *  back as 0 (inside every rice field the rice mask read as "no rice"). */
-export async function loadImageData(path: string): Promise<Raster> {
-  const r = await fetch(publicUrl(path));
-  if (!r.ok) throw Error(`${path}: ${r.status}`);
-  return decodePng(await r.arrayBuffer());
+export function loadImageData(path: string): Promise<Raster> {
+  // (several systems read the same rasters: decode each once)
+  let p = rasters.get(path);
+  if (!p) {
+    p = fetch(publicUrl(path)).then(async (r) => {
+      if (!r.ok) throw Error(`${path}: ${r.status}`);
+      return decodePng(await r.arrayBuffer());
+    });
+    rasters.set(path, p);
+  }
+  return p;
 }
+const rasters = new Map<string, Promise<Raster>>();
 
 /** Decode a non-interlaced 8-bit PNG (grey, grey + alpha, RGB or RGBA) to straight RGBA. */
 export async function decodePng(buf: ArrayBuffer): Promise<Raster> {

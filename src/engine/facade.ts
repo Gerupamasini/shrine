@@ -132,10 +132,17 @@ float fcHash( vec2 p ) {
   p3 += dot( p3, p3.yzx + 33.33 );
   return fract( ( p3.x + p3.y ) * p3.z );
 }
+// far off the fine weathering (streaks, mould, grain, relief) is no longer resolved: the noise fades to
+// its mean over the last fifth of uFcDetail and is not computed beyond it, so a distant house keeps its
+// average tone without paying for the detail
+uniform float uFcDetail;
+float fcFade = 0.0;
 float fcNoise( vec2 p ) {
+  if ( fcFade >= 1.0 ) return 0.5;
   vec2 i = floor( p ), f = fract( p );
   f = f * f * ( 3.0 - 2.0 * f );
-  return mix( mix( fcHash( i ), fcHash( i + vec2( 1.0, 0.0 ) ), f.x ), mix( fcHash( i + vec2( 0.0, 1.0 ) ), fcHash( i + vec2( 1.0, 1.0 ) ), f.x ), f.y );
+  float v = mix( mix( fcHash( i ), fcHash( i + vec2( 1.0, 0.0 ) ), f.x ), mix( fcHash( i + vec2( 0.0, 1.0 ) ), fcHash( i + vec2( 1.0, 1.0 ) ), f.x ), f.y );
+  return mix( v, 0.5, fcFade );
 }
 float fcFbm( vec2 p ) {
   return fcNoise( p ) * 0.5 + fcNoise( p * 2.03 + 1.7 ) * 0.25 + fcNoise( p * 4.01 + 3.1 ) * 0.125 + fcNoise( p * 8.07 + 5.3 ) * 0.0625;
@@ -147,6 +154,7 @@ float fcRough = 0.0;
 
 /** albedo weathering, after <map_fragment> */
 const FRAG_ALBEDO = /* glsl */ `
+fcFade = smoothstep( uFcDetail * 0.8, uFcDetail, length( vViewPosition ) );
 {
   vec3 fcN = normalize( vFcN );
   float fcVert = 1.0 - abs( fcN.y );
@@ -434,6 +442,9 @@ const FRAG_GLASS_FOG = /* glsl */ `
 #endif
 `;
 
+/** distance (m) beyond which the surface detail is dropped (quality setting) */
+export const facadeUniforms = { uFcDetail: { value: 110 } };
+
 /** look-development switches (tools/house-lab) */
 export const facadeDebug = { noBakedAO: false };
 
@@ -453,6 +464,7 @@ export function applyFacade(m: T.MeshStandardMaterial, kind: FacadeKind) {
     m.blendDstAlpha = T.OneFactor;
   }
   addHook(m, "facade-" + kind, (s) => {
+    s.uniforms.uFcDetail = facadeUniforms.uFcDetail;
     s.vertexShader = s.vertexShader
       .replace("#include <common>", "#include <common>\n" + VERT_PARS)
       .replace("#include <uv_vertex>", "#include <uv_vertex>\n" + VERT_UV)
@@ -462,7 +474,8 @@ export function applyFacade(m: T.MeshStandardMaterial, kind: FacadeKind) {
       // after the albedo (anchored on the next chunk: map_fragment may already be expanded)
       .replace("#include <color_fragment>", FRAG_ALBEDO + "\n#include <color_fragment>")
       .replace("#include <roughnessmap_fragment>", "#include <roughnessmap_fragment>\nroughnessFactor = clamp( roughnessFactor + fcRough, 0.04, 1.0 );")
-      .replace("#include <normal_fragment_maps>", T.ShaderChunk.normal_fragment_maps.replace("mapN.xy *= normalScale;", "mapN.xy *= normalScale;\n\tmapN.xy -= fcGrad;"))
+      // (beyond the detail distance the normal map is not read: its relief is below a pixel there)
+      .replace("#include <normal_fragment_maps>", "if ( fcFade < 1.0 ) {\n" + T.ShaderChunk.normal_fragment_maps.replace("mapN.xy *= normalScale;", "mapN.xy *= normalScale * ( 1.0 - fcFade );\n\tmapN.xy -= fcGrad;") + "\n}")
       .replace("#include <aomap_fragment>", FRAG_AO)
       .replace("#include <opaque_fragment>", FRAG_ROOM + (kind === "glass" ? FRAG_GLASS : "#include <opaque_fragment>"))
       .replace("#include <fog_fragment>", kind === "glass" ? FRAG_GLASS_FOG : "#include <fog_fragment>");

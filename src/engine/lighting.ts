@@ -6,7 +6,8 @@ import { atmosphereUniforms } from "./atmosphere";
 import { solarPosition, sunDirection, sunlight } from "./sun";
 import { SkyDome, type SkyMeta } from "./sky";
 
-export type Quality = "low" | "standard" | "high";
+import { QUALITY, type Quality } from "./quality";
+export type { Quality };
 
 /** Layer of the shadow casters big enough to matter beyond the first cascade (trees, buildings,
  *  hills). Everything else - shrubs, props, crops, cars, low walls - casts only near the camera. */
@@ -93,10 +94,24 @@ export class Lighting {
     this.setupShadows(quality);
   }
   srcAz = 0;
+  /** materials that receive the cascaded shadows (re-set up when the number of cascades changes) */
+  private shadowed = new Set<T.Material>();
+  /**
+   * Cascaded sun shadows. The first cascade is fitted to the view every frame and holds every caster:
+   * the car, the walker's surroundings, shrubs and props. The others are squares centred on the camera
+   * that hold the big casters only (FAR_CASTER: trees, buildings, the hills), and are drawn again only
+   * when the camera has moved a few percent of their size or the sun has moved - not every frame and
+   * not when the view turns: the cascade a pixel falls in is chosen by its distance from the camera,
+   * not its depth along the view, so a camera-centred square covers it whichever way the view faces.
+   * One far cascade is redrawn per frame at most. Static casters only: what they hold does not move,
+   * so a map drawn a moment ago is exact (no lag or offset while driving).
+   */
   setupShadows(quality: Quality) {
+    const cascades = QUALITY[quality].shadow.cascades;
+    this.csm?.remove();
     this.csm = new CSM({
       maxFar: 520,
-      cascades: 3,
+      cascades,
       mode: "practical",
       parent: this.scene,
       shadowMapSize: 2048,
@@ -109,25 +124,141 @@ export class Lighting {
       shadowBias: -0.00012,
     });
     this.csm.fade = true;
+    // cascades by distance from the camera (CSMShader selects them by view depth)
+    const chunk = T.ShaderChunk.lights_fragment_begin;
+    const depth = "float linearDepth = (vViewPosition.z) / (shadowFar - cameraNear);";
+    if (chunk.includes(depth)) T.ShaderChunk.lights_fragment_begin = chunk.replace(depth, "float linearDepth = length(vViewPosition) / (shadowFar - cameraNear);");
+    else if (!chunk.includes("length(vViewPosition)")) console.warn("CSM distance patch failed");
     this.csm.lights.forEach((l, i) => {
       l.shadow.normalBias = 0.04;
       l.shadow.radius = 2;
-      void i;
+      l.shadow.autoUpdate = i === 0;
     });
-    this.wrapShadowPass();
+    if (!this.wrapped) this.wrapShadowPass();
+    this.wrapped = true;
+    this.cascadeCount = cascades;
     this.setShadowQuality(quality);
+    // materials set up for another number of cascades recompile against this one
+    for (const m of this.shadowed) this.applyCsm(m);
+  }
+  private wrapped = false;
+  private cascadeCount = 3;
+  /** Set a material up for the cascaded shadows (once; re-applied when the cascades are rebuilt). */
+  setupMaterial(m: T.Material) {
+    this.shadowed.add(m);
+    this.applyCsm(m);
+    const prev = m.onBeforeCompile;
+    m.onBeforeCompile = (s, r) => {
+      prev.call(m, s, r);
+      // the current CSM's uniforms (same as CSM.setupMaterial, but not bound to one CSM instance)
+      const csm = this.csm, breaks: T.Vector2[] = [];
+      (csm as unknown as { _getExtendedBreaks(t: T.Vector2[]): void })._getExtendedBreaks(breaks);
+      s.uniforms.CSM_cascades = { value: breaks };
+      s.uniforms.cameraNear = { value: this.camera.near };
+      s.uniforms.shadowFar = { value: Math.min(this.camera.far, csm.maxFar) };
+      (csm.shaders as unknown as Map<T.Material, unknown>).set(m, s);
+    };
+  }
+  private applyCsm(m: T.Material) {
+    const d = ((m as T.ShaderMaterial).defines ??= {});
+    const changed = d.CSM_CASCADES !== this.cascadeCount;
+    d.USE_CSM = 1;
+    d.CSM_CASCADES = this.cascadeCount;
+    d.CSM_FADE = "";
+    (this.csm.shaders as unknown as Map<T.Material, unknown>).set(m, null);
+    if (changed) m.needsUpdate = true;
   }
   setShadowQuality(quality: Quality) {
-    const size = quality === "high" ? 4096 : quality === "standard" ? 2048 : 1024;
-    this.csm.maxFar = quality === "low" ? 280 : quality === "high" ? 700 : 520;
-    for (const l of this.csm.lights) {
+    const q = QUALITY[quality].shadow;
+    if (q.cascades !== this.cascadeCount) return this.setupShadows(quality);
+    const near = q.near, far = q.farSize;
+    this.csm.maxFar = q.far;
+    this.csm.lights.forEach((l, i) => {
+      const size = i === 0 ? near : far;
       if (l.shadow.mapSize.x !== size) {
         l.shadow.mapSize.set(size, size);
         l.shadow.map?.dispose();
         (l.shadow as { map: T.WebGLRenderTarget | null }).map = null;
       }
-    }
+    });
     this.csm.updateFrustums();
+    this.fitFar();
+  }
+  /** far cascades: [light-space centre drawn at, radius, distance moved before a redraw, sun then] */
+  private far: { at: T.Vector3; world: T.Vector3; R: number; move: number; sun: T.Vector3; valid: boolean }[] = [];
+  /** draws of the far cascades so far (for the profile) */
+  farDraws = 0;
+  private static LIGHT_MARGIN = 700;
+  private fitFar() {
+    const csm = this.csm, far = Math.min(this.camera.far, csm.maxFar);
+    const old = this.far;
+    this.far = [];
+    csm.lights.forEach((l, i) => {
+      if (i === 0) return;
+      const b = csm.breaks[i], dist = b * far;
+      // the fade band past the cascade's far edge (CSM._updateShadowBounds) and the slack for moving
+      const fade = 0.25 * b * b * (far - this.camera.near);
+      const move = Math.max(12, 0.06 * dist);
+      const R = dist + fade + move;
+      const c = l.shadow.camera;
+      c.left = c.bottom = -R;
+      c.right = c.top = R;
+      c.near = 1;
+      c.far = 2 * R + Lighting.LIGHT_MARGIN + 100;
+      c.updateProjectionMatrix();
+      // (a refit for a new field of view keeps a far map drawn at the same size)
+      const o = old[i];
+      this.far[i] = o && Math.abs(o.R - R) < 1e-6 && l.shadow.map ? o : { at: new T.Vector3(1e9, 0, 0), world: new T.Vector3(), R, move, sun: new T.Vector3(), valid: false };
+    });
+  }
+  private fov = 0;
+  private aspect = 0;
+  /** the first cascade's view of the sun in light space (centre, half size, depth), for casters that
+   *  are culled against it on the CPU (the trees) */
+  nearBox = { cx: 0, cy: 0, cz: 0, half: 0, depth: 0 };
+  /** world to light space (x, y across the sun's view, z towards the sun) */
+  toLight = new T.Matrix4();
+  /** redraw every far cascade on the next frame (a teleport, a new time of day) */
+  invalidateShadows() {
+    for (const f of this.far) if (f) f.valid = false;
+    this.forceAll = true;
+  }
+  private forceAll = true;
+  private lastCam = new T.Vector3(1e9, 0, 0);
+  private lo = new T.Matrix4();
+  private loInv = new T.Matrix4();
+  private v = new T.Vector3();
+  private updateFar() {
+    const csm = this.csm, dir = csm.lightDirection;
+    this.lo.lookAt(new T.Vector3(), dir, new T.Vector3(0, 1, 0));
+    this.loInv.copy(this.lo).invert();
+    const p = this.v.copy(this.camera.position).applyMatrix4(this.loInv);
+    // a jump (teleport, first frame): every far cascade now, not one per frame
+    if (this.camera.position.distanceTo(this.lastCam) > 60) this.forceAll = true;
+    this.lastCam.copy(this.camera.position);
+    let budget = 1;
+    csm.lights.forEach((l, i) => {
+      const f = this.far[i];
+      if (!f) return;
+      const stale = !f.valid || f.sun.dot(dir) < 0.999995 || Math.hypot(p.x - f.at.x, p.y - f.at.y) > f.move;
+      if (stale && (budget > 0 || this.forceAll)) {
+        budget--;
+        const texel = (2 * f.R) / l.shadow.mapSize.x;
+        f.at.set(Math.floor(p.x / texel) * texel, Math.floor(p.y / texel) * texel, p.z);
+        f.world.set(f.at.x, f.at.y, p.z + f.R + Lighting.LIGHT_MARGIN).applyMatrix4(this.lo);
+        f.sun.copy(dir);
+        f.valid = true;
+        l.shadow.needsUpdate = true;
+        this.farDraws++;
+      }
+      // (CSM.update placed it for the view; only the position it was drawn from matters)
+      l.position.copy(f.world);
+      l.target.position.copy(f.world).add(dir);
+    });
+    this.forceAll = false;
+    const l0 = csm.lights[0], c0 = this.v.copy(l0.position).applyMatrix4(this.loInv);
+    this.toLight.copy(this.loInv);
+    Object.assign(this.nearBox, { cx: c0.x, cy: c0.y, cz: c0.z, half: l0.shadow.camera.right, depth: l0.shadow.camera.far });
   }
   setTime(hours: number) {
     this.time = hours;
@@ -171,7 +302,16 @@ export class Lighting {
   }
   update() {
     this.camera.updateMatrixWorld();
+    // the first cascade is fitted to the view frustum: refit it when the field of view changes
+    // (wider while driving fast) or the window's shape does
+    if (this.camera.fov !== this.fov || this.camera.aspect !== this.aspect) {
+      this.fov = this.camera.fov;
+      this.aspect = this.camera.aspect;
+      this.csm.updateFrustums();
+      this.fitFar();
+    }
     this.csm.update();
+    this.updateFar();
     this.sky.update(this.camera, this.azimuth, this.elevation);
   }
   private shadowPending = true;
@@ -185,7 +325,7 @@ export class Lighting {
    * shadow casters against the view camera's layers, so a cascade cannot be given layers of its own;
    * the far cascades get a stand-in camera that sees only that layer. Shrubs, props and crops in the
    * far cascades were most of the shadow draw calls. And the maps are drawn once a frame, not again
-   * for every pass that renders the scene.
+   * for every pass that renders the scene; the far ones only when updateFar() marked them.
    */
   private wrapShadowPass() {
     const sm = this.renderer.shadowMap, render = sm.render.bind(sm);
@@ -199,10 +339,11 @@ export class Lighting {
       this.shadowPending = false;
       const cascades = this.csm.lights as T.Light[];
       const near = lights.filter((l) => l === cascades[0] || !cascades.includes(l));
-      const far = lights.filter((l) => l !== cascades[0] && cascades.includes(l));
+      // (cached far cascades are skipped by the renderer unless they were marked for a redraw)
+      const far = lights.filter((l) => l !== cascades[0] && cascades.includes(l) && (l as T.DirectionalLight).shadow.needsUpdate);
       void camera;
       render(near, scene, all as unknown as T.Camera);
-      render(far, scene, big as unknown as T.Camera);
+      if (far.length) render(far, scene, big as unknown as T.Camera);
     };
   }
 }

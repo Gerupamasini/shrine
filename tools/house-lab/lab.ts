@@ -29,12 +29,7 @@ facadeDebug.noBakedAO = params.has("noao");
 const scenejson = await fetch(publicUrl("world/scene.json")).then((r) => r.json());
 const lighting = new Lighting(renderer, scene, camera, scenejson.environment);
 await lighting.init("standard");
-lib.finishers.push((m) => {
-  const prev = m.onBeforeCompile;
-  lighting.csm.setupMaterial(m);
-  const csm = m.onBeforeCompile;
-  m.onBeforeCompile = (s, r) => { prev.call(m, s, r); csm.call(m, s, r); };
-});
+lib.finishers.push((m) => lighting.setupMaterial(m));
 const post = new Post(renderer, scene, camera);
 post.setQuality("standard");
 renderer.setPixelRatio(1);
@@ -99,6 +94,7 @@ const lab = {
   frames(n: number) {
     for (let i = 0; i < n; i++) {
       lighting.update();
+      lighting.renderShadows();
       renderer.info.reset();
       post.draw(1 / 60);
     }
